@@ -11,7 +11,9 @@ Clone project
 git clone https://github.com/your-repo/clinic-backend.git
 
 cd clinic-backend
+Sau khi clone repo, mọi người chỉ cần:
 
+cp .env.example .env
 Install dependencies
 
 npm install
