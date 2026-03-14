@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hệ thống quản lý phòng khám",
+    "version": "1.0.0",
+    "description": "Tài liệu API chuẩn JSON"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local server"
+    }
+  ],
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "summary": "Đăng ký nhân viên",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "HoTen": { "type": "string", "example": "Nguyễn Văn A" },
+                  "Username": { "type": "string", "example": "staff01" },
+                  "Password": { "type": "string", "example": "123456" },
+                  "MaVaiTro": { "type": "integer", "example": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Thành công" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "summary": "Đăng nhập",
+        "tags": ["Auth"],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "Username": { "type": "string", "example": "admin" },
+                  "Password": { "type": "string", "example": "123456" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Trả về Token" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}
