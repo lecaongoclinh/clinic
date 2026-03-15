@@ -57,6 +57,85 @@
           "200": { "description": "Trả về Token" }
         }
       }
+    },
+    "/api/appointments": {
+      "get": {
+        "summary": "Lấy danh sách lịch khám",
+        "tags": ["Appointments"],
+        "parameters": [
+          {
+            "name": "maChuyenKhoa",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "maBacSi",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Appointment" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/specialty": {
+      "get": {
+        "summary": "Lấy danh sách chuyên khoa",
+        "tags": ["Specialty"],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Specialty" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/doctor/doctor-by-specialty": {
+      "get": {
+        "summary": "Lấy danh sách bác sĩ theo chuyên khoa",
+        "tags": ["Doctor"],
+        "parameters": [
+          {
+            "name": "maChuyenKhoa",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Doctor" }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -65,6 +144,33 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "start": { "type": "string", "format": "date-time" },
+          "backgroundColor": { "type": "string" },
+          "TenBacSi": { "type": "string" },
+          "LyDoKham": { "type": "string" }
+        }
+      },
+      "Specialty": {
+        "type": "object",
+        "properties": {
+          "MaChuyenKhoa": { "type": "integer" },
+          "TenChuyenKhoa": { "type": "string" }
+        }
+      },
+      "Doctor": {
+        "type": "object",
+        "properties": {
+          "MaNV": { "type": "integer" },
+          "HoTen": { "type": "string" }
+        }
       }
     }
   }

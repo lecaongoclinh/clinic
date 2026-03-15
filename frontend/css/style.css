@@ -13,6 +13,18 @@
     z-index: 99;
 }
 
+.tippy-box[data-theme~='light-border'] {
+    background-color: white;
+    color: #333;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    font-size: 13px;
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1.2rem !important; /* Chỉnh nhỏ lại theo ý muốn (mặc định thường là 1rem) */
+ 
+}
 
 /*** Spinner ***/
 #spinner {

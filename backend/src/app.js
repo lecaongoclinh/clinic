@@ -4,7 +4,7 @@ import swaggerUi from "swagger-ui-express";
 import fs from "fs";
 import path from "path";
 import authRoutes from "./routes/authRoutes.js";
-
+import appointmentRoutes from "./routes/appointmentsRoutes.js";
 const app = express();
 
 // middleware
@@ -17,6 +17,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // routes
 app.use('/api/auth', authRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/specialty', (await import('./routes/specialtyRoutes.js')).default);
+app.use('/api/doctor', (await import('./routes/doctorRoutes.js')).default);
 
 
 export default app;

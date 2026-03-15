@@ -29,6 +29,8 @@
 
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
 </head>
 
 <body>
@@ -59,7 +61,7 @@
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
-                    <a href="index.html" class="nav-item nav-link active"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                    <a href="index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
                     <!-- <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-laptop me-2"></i>Elements</a>
                         <div class="dropdown-menu bg-transparent border-0">
@@ -68,7 +70,7 @@
                             <a href="element.html" class="dropdown-item">Other Elements</a>
                         </div>
                     </div> -->
-                    <a href="LichKham.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch khám</a>
+                    <a href="LichKham.html" class="nav-item nav-link  active"><i class="fa fa-th me-2"></i>Lịch khám</a>
                     <a href="#" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Phiếu khám</a>
                     <a href="#" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                     <div class="nav-item dropdown">
@@ -177,54 +179,25 @@
             <!-- Navbar End -->
 
 
-            <!-- Sale & Revenue Start -->
-            <div class="container-fluid pt-4 px-4">
-                <div class="row g-4">
-                    <div class="col-sm-6 col-xl-3">
-                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
-                            <i class="fa fa-chart-line fa-3x text-primary"></i>
-                            <div class="ms-3">
-                                <p class="mb-2">Today Sale</p>
-                                <h6 class="mb-0">$1234</h6>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-xl-3">
-                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
-                            <i class="fa fa-chart-bar fa-3x text-primary"></i>
-                            <div class="ms-3">
-                                <p class="mb-2">Total Sale</p>
-                                <h6 class="mb-0">$1234</h6>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-xl-3">
-                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
-                            <i class="fa fa-chart-area fa-3x text-primary"></i>
-                            <div class="ms-3">
-                                <p class="mb-2">Today Revenue</p>
-                                <h6 class="mb-0">$1234</h6>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-xl-3">
-                        <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
-                            <i class="fa fa-chart-pie fa-3x text-primary"></i>
-                            <div class="ms-3">
-                                <p class="mb-2">Total Revenue</p>
-                                <h6 class="mb-0">$1234</h6>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Sale & Revenue End -->
 
 
             <!-- Sales Chart Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
                     <div class="col-sm-12 col-xl-6">
+                        <select id="selectKhoa" class="form-select mb-3" aria-label="Default select example">
+                                <option value="">-- Tất cả khoa --</option>
+                        </select>
+                    </div>
+                    <div class="col-sm-12 col-xl-6">
+                        <select id="selectBacSi" class="form-select mb-3" aria-label="Default select example" disabled>
+                                <option value="">-- Chọn bác sĩ --</option>
+                        </select>
+                    </div>
+                    
+                </div>
+                <div class="row g-4">
+                    <!-- <div class="col-sm-12 col-xl-6">
                         <div class="bg-light text-center rounded p-4">
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <h6 class="mb-0">Worldwide Sales</h6>
@@ -232,23 +205,15 @@
                             </div>
                             <canvas id="worldwide-sales"></canvas>
                         </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
-                        <div class="bg-light text-center rounded p-4">
-                            <div class="d-flex align-items-center justify-content-between mb-4">
-                                <h6 class="mb-0">Salse & Revenue</h6>
-                                <a href="">Show All</a>
-                            </div>
-                            <canvas id="salse-revenue"></canvas>
-                        </div>
-                    </div>
+                    </div> -->
+                    <div id="calendar"></div>
                 </div>
             </div>
             
 
 
             <!-- Footer Start -->
-            <div class="container-fluid pt-4 px-4">
+            <!-- <div class="container-fluid pt-4 px-4">
                 <div class="bg-light rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">
@@ -258,7 +223,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- Footer End -->
         </div>
         <!-- Content End -->
@@ -288,8 +253,141 @@
                 window.location.href = 'login.html';
             }
         });
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectKhoa = document.getElementById('selectKhoa');
+            const selectBacSi = document.getElementById('selectBacSi');
+            const calendarEl = document.getElementById('calendar');
 
+            // 1. Khởi tạo Lịch
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'timeGridWeek',
+            locale: 'vi',
+            slotMinTime: '8:00:00', 
+            slotMaxTime: '19:00:00',
+            allDaySlot: false,
+            weekends: false,
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+
+            // Hiển thị nội dung tùy chỉnh trên ô lịch
+            eventContent: function(arg) {
+                const { event } = arg;
+                const lyDo = event.extendedProps.LyDoKham || '';
+                const bacSi = event.extendedProps.TenBacSi || '';
+        
+            // Tạo HTML hiển thị trên lịch
+                let arrayOfDomNodes = []
+                let titleEl = document.createElement('div')
+                titleEl.className = 'fc-event-main-frame'
+                titleEl.innerHTML = `
+                    <div style="font-size: 0.8em; font-style: italic;"> ${event.start.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})} </div> 
+                    <div style="font-size: 0.85em;">Bệnh nhân: ${event.title}</div>
+                    <div style="font-size: 0.85em;">Bác sĩ: ${bacSi}</div>
+                `;
+                arrayOfDomNodes.push(titleEl)
+                return { domNodes: arrayOfDomNodes }
+            },
+
+            // Hiển thị tooltip khi di chuột vào
+            eventDidMount: function(info) {
+                const { event } = info;
+                const tooltipContent = `
+                    Bệnh nhân: ${event.title}
+                    Bác sĩ: ${event.extendedProps.TenBacSi}
+                    Khoa: ${event.extendedProps.TenChuyenKhoa}
+                    Lý do: ${event.extendedProps.LyDoKham}
+                    Thời gian: ${event.start.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}
+                `;
+            
+                
+                tippy(info.el, {
+                    content: tooltipContent.replace(/\n/g, '<br>'),
+                    allowHTML: true,
+                    theme: 'light-border'
+                });
+                
+            },
+
+            events: function(info, successCallback, failureCallback) {
+                const maChuyenKhoa = selectKhoa.value || '';
+                const maBacSi = selectBacSi.value || '';
+                
+                fetch(`http://localhost:3000/api/appointments?maChuyenKhoa=${maChuyenKhoa}&maBacSi=${maBacSi}`)
+                    .then(res => {
+                        if (!res.ok) throw new Error("Lỗi lấy lịch khám");
+                        return res.json();
+                    })
+                    .then(data => {
+                        // FullCalendar tự động đưa các trường không phải id/title/start vào extendedProps
+                        successCallback(Array.isArray(data) ? data : []);
+                        console.log("Dữ liệu lịch đã tải thành công:", data);
+                    })
+                    .catch(err => {
+                        console.error("Lỗi Fetch Lịch:", err);
+                        failureCallback(err);
+                    });
+            }
+        });
+
+        calendar.render();
+
+            // 2. Load danh sách khoa khi trang tải xong
+            fetch('http://localhost:3000/api/specialty')
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(k => {
+                            const option = new Option(k.TenChuyenKhoa, k.MaChuyenKhoa);
+                            selectKhoa.add(option);
+                        });
+                    }
+                })
+                .catch(err => console.error("Lỗi Fetch Khoa:", err));
+
+            // 3. Sự kiện khi chọn Khoa
+            selectKhoa.addEventListener('change', async function() {
+                const maKhoa = this.value;
+                
+                // Reset ô chọn bác sĩ về trạng thái ban đầu
+                selectBacSi.innerHTML = '<option value="">-- Tất cả bác sĩ --</option>';
+                
+                if (maKhoa) {
+                    selectBacSi.disabled = false;
+                    try {
+                        const res = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maKhoa}`);
+                        if (!res.ok) throw new Error("Lỗi lấy danh sách bác sĩ");
+                        
+                        const doctors = await res.json();
+                        if (Array.isArray(doctors)) {
+                            doctors.forEach(bs => {
+                                const option = new Option(bs.HoTen, bs.MaNV);
+                                selectBacSi.add(option);
+                            });
+                        }
+                    } catch (err) {
+                        console.error("Lỗi load bác sĩ:", err);
+                        selectBacSi.disabled = true;
+                    }
+                } else {
+                    selectBacSi.disabled = true;
+                }
+                
+                // Luôn refetch để cập nhật lịch (trường hợp chọn lại "Tất cả khoa")
+                calendar.refetchEvents();
+            });
+
+            // 4. Sự kiện khi chọn Bác sĩ
+            selectBacSi.addEventListener('change', () => {
+                calendar.refetchEvents();
+            });
+        });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
 </body>
 
 </html>

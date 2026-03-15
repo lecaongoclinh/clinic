@@ -11,8 +11,8 @@ const authController = {
     },
     login: async (req, res) => {
         try {
-            const { Username, Password } = req.body;
-            const data = await userService.login(Username, Password);
+            const { username, password } = req.body;
+            const data = await userService.login(username, password);
             res.status(200).json(data);
         } catch (error) {
             res.status(401).json({ error: error.message });
