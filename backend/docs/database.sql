@@ -247,3 +247,22 @@ INSERT INTO HoaDon (MaBA, MaNhanVien, PhuongThucThanhToan, TrangThai) VALUES
 INSERT INTO ChiTietHoaDon (MaHD, MaDichVu, SoTien) VALUES 
 (1, 1, 150000.00),
 (1, 2, 300000.00);
+
+-- Sửa db
+ALTER TABLE LichKham
+ADD MaLich INT,
+ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
+
+CREATE TABLE ChiTietDonThuoc (
+    MaCTDT INT AUTO_INCREMENT PRIMARY KEY,
+    MaDT INT,
+    MaThuoc INT,
+    SoLuong INT,
+    LieuDung VARCHAR(255),
+    FOREIGN KEY (MaDT) REFERENCES DonThuoc(MaDT),
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc)
+);
+
+ALTER TABLE PhieuKham
+ADD MaLich INT,
+ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
