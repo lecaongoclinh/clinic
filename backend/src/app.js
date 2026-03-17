@@ -20,6 +20,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/specialty', (await import('./routes/specialtyRoutes.js')).default);
 app.use('/api/doctor', (await import('./routes/doctorRoutes.js')).default);
+app.use('/api/schedules', (await import('./routes/scheduleRoutes.js')).default);
 
 
 export default app;
