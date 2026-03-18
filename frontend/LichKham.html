@@ -72,7 +72,7 @@
                     </div> -->
                     <a href="schedule.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
                     <a href="LichKham.html" class="nav-item nav-link active"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
-                    <a href="#" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                    <a href="BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                         <div class="dropdown-menu bg-transparent border-0">
@@ -184,10 +184,11 @@
             <!-- Sales Chart Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
-                    <div class="col-12">
+                    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+                        <h5>Quản lý lịch đặt khám</h5>
                         <button id="btnCreateAppointment" class="btn btn-primary mb-3">Tạo lịch khám</button>
                     </div>
-                    <div class="col-sm-12 col-xl-4">
+                    <div class="col-sm-12 col-xl-4" style="padding: 0px;">
                         <input 
                             type="text" 
                             id="tenBN" 
@@ -217,7 +218,7 @@
                                 <button class="nav-link" id="table-tab" data-bs-toggle="tab" data-bs-target="#table-pane" type="button" role="tab">Chờ xác nhận</button>
                             </li>
                         </ul>
-                        <div class="tab-content" id="appointmentTabsContent">
+                        <div class="tab-content" id="appointmentTabsContent" style="margin-top: 10px;">
                             <div class="tab-pane fade show active" id="calendar-pane" role="tabpanel">
                                 <div id="calendar"></div>
                             </div>

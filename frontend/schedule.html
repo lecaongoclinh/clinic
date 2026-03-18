@@ -341,7 +341,7 @@
                     <a href="index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
                     <a href="schedule.html" class="nav-item nav-link active"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
                     <a href="LichKham.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
-                    <a href="#" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                    <a href="BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                         <div class="dropdown-menu bg-transparent border-0">
@@ -385,23 +385,17 @@
 
             <!-- Main Content Start -->
             <div class="container-fluid pt-4 px-4">
-                <!-- Header -->
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <h4 class="mb-3"><i class="fa fa-clock me-2"></i>Quản Lý Lịch Làm Việc Bác Sĩ</h4>
-                    </div>
-                </div>
 
                 <!-- Alert Messages -->
                 <div id="alertContainer"></div>
 
                 <!-- Create Schedule Button -->
                 <div class="row mb-4">
-                    <div class="col-lg-8 mx-auto">
+                    <!-- <div class="col-lg-8 mx-auto">
                         <button type="button" class="btn btn-schedule btn-primary mb-3" id="toggleFormBtn">
                             <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
                         </button>
-                    </div>
+                    </div> -->
                 </div>
 
                 <!-- Create Schedule Section -->
@@ -533,10 +527,15 @@
                     <div class="col-12">
                         <div class="bg-light rounded p-4 mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5><i class="fa fa-list me-2"></i>Danh Sách Lịch Làm Việc</h5>
-                                
+                                <h5>
+                                    <i class="fa fa-list me-2"></i>Danh Sách Lịch Làm Việc
+                                </h5>
+
+                                <button type="button" class="btn btn-schedule btn-primary">
+                                    <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
+                                </button>
                             </div>
-                            
+                                                        
                             <!-- Loading Spinner -->
                             <div class="loading-spinner" id="loadingSpinner">
                                 <div class="spinner-border text-primary" role="status">
