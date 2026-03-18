@@ -391,11 +391,11 @@
 
                 <!-- Create Schedule Button -->
                 <div class="row mb-4">
-                    <!-- <div class="col-lg-8 mx-auto">
+                    <div class="col-lg-8 mx-auto align-items-center d-flex justify-content-between">
                         <button type="button" class="btn btn-schedule btn-primary mb-3" id="toggleFormBtn">
                             <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
                         </button>
-                    </div> -->
+                    </div>
                 </div>
 
                 <!-- Create Schedule Section -->
@@ -525,15 +525,14 @@
                 <!-- Schedules List Section -->
                 <div class="row">
                     <div class="col-12">
+                    
                         <div class="bg-light rounded p-4 mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <h5>
                                     <i class="fa fa-list me-2"></i>Danh Sách Lịch Làm Việc
                                 </h5>
 
-                                <button type="button" class="btn btn-schedule btn-primary">
-                                    <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
-                                </button>
+                               
                             </div>
                                                         
                             <!-- Loading Spinner -->
@@ -671,11 +670,19 @@
         const closeFormBtn = document.getElementById('closeFormBtn');
         const scheduleFormSection = document.getElementById('scheduleFormSection');
 
-        // toggleFormBtn: hiện form
-        toggleFormBtn.addEventListener('click', function () {
-            scheduleFormSection.style.display = 'block';
-        });
+        // Xóa toàn bộ đoạn cũ, thay bằng:
+        if (toggleFormBtn) {
+            toggleFormBtn.addEventListener('click', function () {
+                const isVisible = scheduleFormSection.style.display !== 'none';
+                scheduleFormSection.style.display = isVisible ? 'none' : 'block';
+            });
+        }
 
+        if (closeFormBtn) {
+            closeFormBtn.addEventListener('click', function () {
+                scheduleFormSection.style.display = 'none';
+            });
+        }
         // closeFormBtn: ẩn form
         closeFormBtn.addEventListener('click', function () {
             scheduleFormSection.style.display = 'none';
