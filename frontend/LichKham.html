@@ -232,6 +232,7 @@
                                                 <th>Ngày hẹn</th>
                                                 <th>Giờ hẹn</th>
                                                 <th>Lý do</th>
+                                                <th>Xác nhận</th>
                                                 <th>Thao tác</th>
                                             </tr>
                                         </thead>
@@ -370,7 +371,7 @@
 
     <!-- Modal Chỉnh sửa lịch khám -->
     <div class="modal fade" id="editAppointmentModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Chỉnh sửa lịch khám</h5>
@@ -379,42 +380,56 @@
                 <div class="modal-body">
                     <form id="editAppointmentForm">
                         <input type="hidden" id="editMaLK">
-                        <div class="mb-3">
-                            <label for="editMaBN" class="form-label">Mã bệnh nhân</label>
-                            <input type="number" class="form-control" id="editMaBN" required>
+                        <input type="hidden" id="editMaBN">
+                        <input type="hidden" id="editTrangThai">
+
+                        <!-- STEP 1: Thông tin bệnh nhân hiện tại -->
+                        <div class="mb-3" id="editPatientInfoContainer">
+                            <label class="form-label"><strong>Bước 1: Thông tin bệnh nhân</strong></label>
+                            <div id="editPatientInfoDisplay" class="alert alert-info">
+                                <!-- Thông tin bệnh nhân sẽ được hiển thị tại đây -->
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="editMaBacSi" class="form-label">Bác sĩ</label>
-                            <select class="form-select" id="editMaBacSi" required>
+
+                        <!-- STEP 2: Chọn chuyên khoa -->
+                        <div class="mb-3" id="editSpecialtyStep" style="display: none;">
+                            <label class="form-label"><strong>Bước 2: Chọn chuyên khoa</strong></label>
+                            <select class="form-select" id="editMaChuyenKhoa" required>
+                                <option value="">-- Chọn chuyên khoa --</option>
+                            </select>
+                        </div>
+
+                        <!-- STEP 3: Chọn bác sĩ -->
+                        <div class="mb-3" id="editDoctorStep" style="display: none;">
+                            <label class="form-label"><strong>Bước 3: Chọn bác sĩ</strong></label>
+                            <select class="form-select" id="editMaBacSiStep" required>
                                 <option value="">-- Chọn bác sĩ --</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="editNgayHen" class="form-label">Ngày hẹn</label>
-                            <input type="date" class="form-control" id="editNgayHen" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editGioHen" class="form-label">Giờ hẹn</label>
-                            <input type="time" class="form-control" id="editGioHen" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editLyDoKham" class="form-label">Lý do khám</label>
-                            <textarea class="form-control" id="editLyDoKham" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="editTrangThai" class="form-label">Trạng thái</label>
-                            <select class="form-select" id="editTrangThai">
-                                <option value="ChoXacNhan">Chờ xác nhận</option>
-                                <option value="DaXacNhan">Đã xác nhận</option>
-                                <option value="DaHuy">Đã hủy</option>
-                                <option value="DaKham">Đã khám</option>
-                            </select>
+
+                        <!-- STEP 4: Chọn ngày giờ và lý do khám -->
+                        <div class="mb-3" id="editAppointmentDetailsStep" style="display: none;">
+                            <label class="form-label"><strong>Bước 4: Chọn ngày giờ và lý do khám</strong></label>
+                            
+                            <div class="mb-3">
+                                <label for="editNgayHen" class="form-label">Ngày hẹn</label>
+                                <input type="date" class="form-control" id="editNgayHen" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editGioHen" class="form-label">Giờ hẹn</label>
+                                <input type="time" class="form-control" id="editGioHen" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editLyDoKham" class="form-label">Lý do khám</label>
+                                <textarea class="form-control" id="editLyDoKham" rows="3"></textarea>
+                            </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-primary" id="btnSubmitEdit">Cập nhật</button>
+                    <button type="button" class="btn btn-primary" id="btnSubmitEdit" style="display: none;">Cập nhật</button>
+                    <button type="button" class="btn btn-success" id="btnConfirm" style="display: none;">Xác nhận</button>
                     <button type="button" class="btn btn-danger" id="btnDelete">Xóa</button>
                 </div>
             </div>
@@ -489,7 +504,7 @@
                     }
                 } catch (err) {
                     console.error("Lỗi load bác sĩ:", err);
-                    alert("Không tải được danh sách bác sĩ. Kiểm tra server.");
+                    // alert("Không tải được danh sách bác sĩ. Kiểm tra server.");
                 }
             }
 
@@ -506,7 +521,7 @@
                             const pending = data.filter(app => app.TrangThai === 'ChoXacNhan');
                             console.log("Pending appointments:", pending);
                             if (pending.length === 0) {
-                                pendingTableBody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Không có lịch chờ xác nhận</td></tr>';
+                                pendingTableBody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Không có lịch chờ xác nhận</td></tr>';
                             }
                             pending.forEach(app => {
                                 const row = document.createElement('tr');
@@ -518,8 +533,11 @@
                                     <td>${new Date(app.start).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})}</td>
                                     <td>${app.LyDoKham || ''}</td>
                                     <td>
-                                        <button class="btn btn-sm btn-primary edit-btn" data-id="${app.id}" data-mabn="${app.MaBN}">Sửa</button>
-                                        <button class="btn btn-sm btn-danger delete-btn" data-id="${app.id}">Xóa</button>
+                                        <button class="btn btn-sm btn-success confirm-btn" data-id="${app.id}" title="Xác nhận"> Xác nhận</button>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary edit-btn" data-id="${app.id}" data-mabn="${app.MaBN}" title="Sửa">✎ Sửa</button>
+                                        <button class="btn btn-sm btn-danger delete-btn" data-id="${app.id}" title="Xóa">✕ Xóa</button>
                                     </td>
                                 `;
                                 pendingTableBody.appendChild(row);
@@ -922,20 +940,39 @@
                     .then(data => {
                         const appointment = data.find(app => app.id == maLK);
                         if (appointment) {
+                            // Store basic info
                             document.getElementById('editMaLK').value = appointment.id;
                             document.getElementById('editMaBN').value = appointment.MaBN;
+                            document.getElementById('editTrangThai').value = appointment.TrangThai;
+
+                            // STEP 1: Display patient info
+                            const editPatientInfoDisplay = document.getElementById('editPatientInfoDisplay');
+                            editPatientInfoDisplay.innerHTML = `
+                                <strong>Bệnh nhân:</strong> ${appointment.title}<br>
+                                <strong>ID:</strong> ${appointment.MaBN}<br>
+                                <strong>Bác sĩ hiện tại:</strong> ${appointment.TenBacSi}<br>
+                                <strong>Chuyên khoa hiện tại:</strong> ${appointment.TenChuyenKhoa}
+                            `;
+
+                            // Set current values
                             document.getElementById('editNgayHen').value = new Date(appointment.start).toISOString().split('T')[0];
                             document.getElementById('editGioHen').value = new Date(appointment.start).toTimeString().slice(0,5);
                             document.getElementById('editLyDoKham').value = appointment.LyDoKham || '';
-                            document.getElementById('editTrangThai').value = appointment.TrangThai;
-                            
-                            // Load doctors for edit select
-                            document.getElementById('editMaBacSi').innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
-                            allDoctors.forEach(bs => {
-                                const option = new Option(`${bs.HoTen} (${bs.TenChuyenKhoa})`, bs.MaNV);
-                                if (bs.HoTen === appointment.TenBacSi) option.selected = true;
-                                document.getElementById('editMaBacSi').add(option);
-                            });
+
+                            // STEP 2: Load specialties and pre-fill current specialty
+                            // Use TenChuyenKhoa and TenBacSi to find MaChuyenKhoa and MaBacSi
+                            loadEditSpecialtiesWithCurrentName(appointment.TenChuyenKhoa, appointment.TenBacSi);
+
+                            // Show/hide confirm button based on status
+                            const btnConfirm = document.getElementById('btnConfirm');
+                            const btnSubmitEdit = document.getElementById('btnSubmitEdit');
+                            if (appointment.TrangThai === 'ChoXacNhan') {
+                                btnConfirm.style.display = 'inline-block';
+                                btnSubmitEdit.style.display = 'inline-block';
+                            } else {
+                                btnConfirm.style.display = 'none';
+                                btnSubmitEdit.style.display = 'inline-block';
+                            }
 
                             editAppointmentModal.show();
                         }
@@ -943,15 +980,142 @@
                     .catch(err => console.error('Lỗi load appointment:', err));
             }
 
-            // Submit edit
+            // Load specialties for edit form with pre-selected current specialty by name
+            function loadEditSpecialtiesWithCurrentName(currentTenChuyenKhoa, currentTenBacSi) {
+                const editMaChuyenKhoa = document.getElementById('editMaChuyenKhoa');
+                fetch('http://localhost:3000/api/specialty')
+                    .then(res => res.json())
+                    .then(specialties => {
+                        editMaChuyenKhoa.innerHTML = '<option value="">-- Chọn chuyên khoa --</option>';
+                        let foundMaChuyenKhoa = null;
+                        
+                        if (Array.isArray(specialties)) {
+                            specialties.forEach(specialty => {
+                                const option = new Option(specialty.TenChuyenKhoa, specialty.MaChuyenKhoa);
+                                editMaChuyenKhoa.add(option);
+                                
+                                // Find current specialty code by name
+                                if (specialty.TenChuyenKhoa === currentTenChuyenKhoa) {
+                                    foundMaChuyenKhoa = specialty.MaChuyenKhoa;
+                                }
+                            });
+                        }
+                        
+                        // Pre-select current specialty if found
+                        if (foundMaChuyenKhoa) {
+                            editMaChuyenKhoa.value = foundMaChuyenKhoa;
+                            // Load doctors for current specialty and pre-select current doctor
+                            loadEditDoctorsWithCurrentName(foundMaChuyenKhoa, currentTenBacSi);
+                        } else {
+                            showEditSteps();
+                        }
+                    })
+                    .catch(err => console.error('Lỗi load chuyên khoa:', err));
+            }
+
+            // Load doctors for current specialty with pre-selected doctor by name
+            function loadEditDoctorsWithCurrentName(maChuyenKhoa, currentTenBacSi) {
+                const editMaBacSiStep = document.getElementById('editMaBacSiStep');
+                
+                fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maChuyenKhoa}`)
+                    .then(res => res.json())
+                    .then(doctors => {
+                        editMaBacSiStep.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                        let foundMaBacSi = null;
+                        
+                        if (Array.isArray(doctors)) {
+                            doctors.forEach(doctor => {
+                                const option = new Option(doctor.HoTen, doctor.MaNV);
+                                editMaBacSiStep.add(option);
+                                
+                                // Find current doctor code by name
+                                if (doctor.HoTen === currentTenBacSi) {
+                                    foundMaBacSi = doctor.MaNV;
+                                }
+                            });
+                        }
+                        
+                        // Pre-select current doctor if found
+                        if (foundMaBacSi) {
+                            editMaBacSiStep.value = foundMaBacSi;
+                        }
+                        
+                        showEditStepsWithDoctor();
+                    })
+                    .catch(err => console.error('Lỗi load bác sĩ:', err));
+            }
+            
+            // Show edit steps with doctor already selected
+            function showEditStepsWithDoctor() {
+                document.getElementById('editSpecialtyStep').style.display = 'block';
+                document.getElementById('editDoctorStep').style.display = 'block';
+                document.getElementById('editAppointmentDetailsStep').style.display = 'block';
+            }
+            
+            // Load specialties for edit form (legacy)
+            function loadEditSpecialties() {
+                loadEditSpecialtiesWithCurrent(null, null);
+            }
+
+            // Show edit steps visibility
+            function showEditSteps() {
+                document.getElementById('editSpecialtyStep').style.display = 'block';
+                document.getElementById('editDoctorStep').style.display = 'none';
+                document.getElementById('editAppointmentDetailsStep').style.display = 'none';
+            }
+
+            // Handle specialty change for edit
+            document.getElementById('editMaChuyenKhoa').addEventListener('change', async (e) => {
+                const maChuyenKhoa = e.target.value;
+                const editMaBacSiStep = document.getElementById('editMaBacSiStep');
+                editMaBacSiStep.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                
+                if (!maChuyenKhoa) {
+                    document.getElementById('editDoctorStep').style.display = 'none';
+                    document.getElementById('editAppointmentDetailsStep').style.display = 'none';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maChuyenKhoa}`);
+                    const doctors = await res.json();
+                    
+                    if (Array.isArray(doctors)) {
+                        doctors.forEach(doctor => {
+                            const option = new Option(doctor.HoTen, doctor.MaNV);
+                            editMaBacSiStep.add(option);
+                        });
+                    }
+                    
+                    document.getElementById('editDoctorStep').style.display = 'block';
+                } catch (err) {
+                    console.error('Lỗi load bác sĩ:', err);
+                }
+            });
+
+            // Handle doctor change for edit
+            document.getElementById('editMaBacSiStep').addEventListener('change', (e) => {
+                if (e.target.value) {
+                    document.getElementById('editAppointmentDetailsStep').style.display = 'block';
+                } else {
+                    document.getElementById('editAppointmentDetailsStep').style.display = 'none';
+                }
+            });
+
+            // Submit edit (update appointment)
             document.getElementById('btnSubmitEdit').addEventListener('click', async () => {
                 const maLK = document.getElementById('editMaLK').value;
                 const maBN = document.getElementById('editMaBN').value;
-                const maBacSi = document.getElementById('editMaBacSi').value;
+                const maBacSi = document.getElementById('editMaBacSiStep').value || null;
                 const ngayHen = document.getElementById('editNgayHen').value;
                 const gioHen = document.getElementById('editGioHen').value;
                 const lyDoKham = document.getElementById('editLyDoKham').value;
                 const trangThai = document.getElementById('editTrangThai').value;
+
+                if (!ngayHen || !gioHen || (maBacSi === '')) {
+                    alert('Vui lòng điền đầy đủ thông tin bắt buộc');
+                    return;
+                }
 
                 try {
                     const res = await fetch(`http://localhost:3000/api/appointments/${maLK}`, {
@@ -972,6 +1136,46 @@
                 } catch (err) {
                     console.error('Lỗi cập nhật:', err);
                     alert('Lỗi cập nhật lịch khám');
+                }
+            });
+
+            // Confirm appointment (change status to DaXacNhan)
+            document.getElementById('btnConfirm').addEventListener('click', async () => {
+                if (!confirm('Bạn có chắc muốn xác nhận lịch khám này?')) return;
+
+                const maLK = document.getElementById('editMaLK').value;
+                const maBN = document.getElementById('editMaBN').value;
+                const maBacSi = document.getElementById('editMaBacSiStep').value;
+                const ngayHen = document.getElementById('editNgayHen').value;
+                const gioHen = document.getElementById('editGioHen').value;
+                const lyDoKham = document.getElementById('editLyDoKham').value;
+
+                try {
+                    const res = await fetch(`http://localhost:3000/api/appointments/${maLK}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            maBN, 
+                            maBacSi: maBacSi || null, 
+                            ngayHen, 
+                            gioHen, 
+                            lyDoKham, 
+                            trangThai: 'DaXacNhan' 
+                        })
+                    });
+
+                    if (res.ok) {
+                        alert('Xác nhận lịch khám thành công!');
+                        editAppointmentModal.hide();
+                        calendar.refetchEvents();
+                        loadPendingAppointments();
+                    } else {
+                        const error = await res.json();
+                        alert('Lỗi: ' + error.error);
+                    }
+                } catch (err) {
+                    console.error('Lỗi xác nhận:', err);
+                    alert('Lỗi xác nhận lịch khám');
                 }
             });
 
@@ -1000,7 +1204,7 @@
                 }
             });
 
-            // Handle table edit/delete buttons
+            // Handle table edit/delete/confirm buttons
             pendingTableBody.addEventListener('click', (e) => {
                 if (e.target.classList.contains('edit-btn')) {
                     const maLK = e.target.dataset.id;
@@ -1008,8 +1212,76 @@
                 } else if (e.target.classList.contains('delete-btn')) {
                     const maLK = e.target.dataset.id;
                     deleteAppointment(maLK);
+                } else if (e.target.classList.contains('confirm-btn')) {
+                    const maLK = e.target.dataset.id;
+                    confirmAppointmentQuick(maLK);
                 }
             });
+
+            // Quick confirm appointment (without opening modal)
+            async function confirmAppointmentQuick(maLK) {
+                if (!confirm('Bạn có chắc muốn xác nhận lịch khám này?')) return;
+
+                // Get appointment details first
+                try {
+                    const res = await fetch(`http://localhost:3000/api/appointments?tenBN=&maChuyenKhoa=&maBacSi=`);
+                    const data = await res.json();
+                    const appointment = data.find(app => app.id == maLK);
+
+                    if (!appointment) {
+                        alert('Không tìm thấy lịch khám');
+                        return;
+                    }
+
+                    // Validate required information
+                    const ngayHen = new Date(appointment.start).toISOString().split('T')[0];
+                    const gioHen = new Date(appointment.start).toTimeString().slice(0, 5);
+                    
+                    if (!ngayHen || !gioHen || !appointment.title || !appointment.MaBN || !appointment.TenBacSi) {
+                        alert('Thông tin lịch khám không đầy đủ (Ngày hẹn, Giờ hẹn, Bác sĩ là bắt buộc). Vui lòng sửa lịch khám trước khi xác nhận.');
+                        return;
+                    }
+
+                    // Get maBacSi from allDoctors array using doctor name
+                    let maBacSi = appointment.MaBacSi;
+                    if (!maBacSi && appointment.TenBacSi && allDoctors.length > 0) {
+                        const doctor = allDoctors.find(d => d.HoTen === appointment.TenBacSi);
+                        maBacSi = doctor ? doctor.MaNV : null;
+                    }
+
+                    if (!maBacSi) {
+                        alert('Thông tin lịch khám không đầy đủ (Mã bác sĩ không xác định). Vui lòng sửa lịch khám trước khi xác nhận.');
+                        openEditModal(maLK);
+                        return;
+                    }
+
+                    // Update appointment with new status
+                    const updateRes = await fetch(`http://localhost:3000/api/appointments/${maLK}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            maBN: appointment.MaBN,
+                            maBacSi: maBacSi,
+                            ngayHen: ngayHen,
+                            gioHen: gioHen,
+                            lyDoKham: appointment.LyDoKham || '',
+                            trangThai: 'DaXacNhan'
+                        })
+                    });
+
+                    if (updateRes.ok) {
+                        alert('Xác nhận lịch khám thành công!');
+                        calendar.refetchEvents();
+                        loadPendingAppointments();
+                    } else {
+                        const error = await updateRes.json();
+                        alert('Lỗi: ' + error.error);
+                    }
+                } catch (err) {
+                    console.error('Lỗi xác nhận:', err);
+                    alert('Lỗi xác nhận lịch khám');
+                }
+            }
 
             async function deleteAppointment(maLK) {
                 if (!confirm('Bạn có chắc muốn xóa lịch khám này?')) return;
