@@ -1,5 +1,4 @@
 import express from 'express';
-import { authenticateToken } from '../middleware/auth.js';
 import { getPatients, getPatientById } from '../controllers/patientController.js';
 
 const router = express.Router();
