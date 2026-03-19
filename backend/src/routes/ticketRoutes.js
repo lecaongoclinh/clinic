@@ -5,14 +5,19 @@ import {
     getDoctorsBySpecialty,
     getPatientAppointments,
     createWalkInTicket,
-    createAppointmentTicket,  
+    createAppointmentTicket,
     getWaitingTickets,
+    callNextPatient,
+    registerNewPatient  // Thêm import này
 } from '../controllers/ticketController.js';
 
 const router = express.Router();
 
 // Tìm kiếm bệnh nhân
 router.get('/patients/search', searchPatients);
+
+// Đăng ký bệnh nhân mới
+router.post('/patients/register', registerNewPatient);
 
 // Lấy danh sách chuyên khoa
 router.get('/specialties', getSpecialties);
@@ -24,12 +29,15 @@ router.get('/doctors/specialty/:specialtyId', getDoctorsBySpecialty);
 router.get('/patients/:patientId/appointments', getPatientAppointments);
 
 // Tạo phiếu khám tại chỗ
-router.post('/walk-in', createWalkInTicket);  // SỬA: bỏ /tickets vì đã có prefix
+router.post('/walk-in', createWalkInTicket);
 
-// Tạo phiếu khám từ lịch hẹn - THIẾU route này
-router.post('/appointment', createAppointmentTicket);  // THÊM route này
+// Tạo phiếu khám từ lịch hẹn
+router.post('/appointment', createAppointmentTicket);
 
 // Lấy danh sách phiếu khám đang chờ
-router.get('/waiting', getWaitingTickets);  // SỬA: bỏ /tickets vì đã có prefix
+router.get('/waiting', getWaitingTickets);
+
+// Gọi bệnh nhân tiếp theo
+router.post('/call-next', callNextPatient);
 
 export default router;

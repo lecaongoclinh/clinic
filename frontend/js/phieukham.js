@@ -3,6 +3,7 @@ let selectedPatient = null;
 let selectedAppointment = null;
 let searchTimeout;
 let currentTicketType = '';
+let patientType = 'EXISTING'; // 'EXISTING' hoặc 'NEW'
 
 function showLoading() {
     console.log('Loading...');
@@ -79,8 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(loadWaitingList, 10000);
     
     setupSearchListeners();
+    setupPatientTypeListeners();
     
-    // Khởi tạo modal khi trang load
     initializeModal();
 });
 
@@ -93,6 +94,40 @@ function initializeModal() {
     }
 }
 
+// Thiết lập listeners cho loại bệnh nhân
+function setupPatientTypeListeners() {
+    const existingRadio = document.getElementById('patientTypeExisting');
+    const newRadio = document.getElementById('patientTypeNew');
+    
+    if (existingRadio) {
+        existingRadio.addEventListener('change', function() {
+            if (this.checked) {
+                patientType = 'EXISTING';
+                document.getElementById('existingPatientSection').style.display = 'block';
+                document.getElementById('newPatientSection').style.display = 'none';
+                clearSelectedPatient();
+            }
+        });
+    }
+    
+    if (newRadio) {
+        newRadio.addEventListener('change', function() {
+            if (this.checked) {
+                patientType = 'NEW';
+                document.getElementById('existingPatientSection').style.display = 'none';
+                document.getElementById('newPatientSection').style.display = 'block';
+                clearSelectedPatient();
+                
+                // Focus vào ô họ tên
+                setTimeout(() => {
+                    document.getElementById('newPatientName').focus();
+                }, 200);
+            }
+        });
+    }
+}
+
+// Danh sách phiếu khám chờ
 // Danh sách phiếu khám chờ
 async function loadWaitingList() {
     try {
@@ -128,16 +163,19 @@ async function loadWaitingList() {
             const badgeClass = item.LoaiKham === 'appointment' ? 'badge-appointment' : 'badge-walk-in';
             const badgeText = item.LoaiKham === 'appointment' ? 'Hẹn trước' : 'Tại chỗ';
             
+            // Sử dụng ThoiGianTao từ API
+            const thoiGianTao = item.ThoiGianTao || '--:--';
+            
             div.innerHTML = `
-                <div class="waiting-number me-3">${item.STT ? item.STT.toString().padStart(2,'0') : 'Hẹn trước'}</div>
+                <div class="waiting-number me-3">${item.STT ? item.STT.toString().padStart(2,'0') : 'Hẹn'}</div>
                 <div class="flex-grow-1">
                     <strong>${item.TenBenhNhan}</strong><br>
                     <small class="text-muted">${formatPhoneNumber(item.SoDienThoai)} • ${item.DisplayInfo || ''}</small>
                     ${item.TenBacSi ? `<small class="d-block text-primary">Bác sĩ: ${item.TenBacSi}</small>` : ''}
                 </div>
-                <div>
-                    <span class="${badgeClass} me-2">${badgeText}</span>
-                    <small class="text-muted">${new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</small>
+                <div class="text-end">
+                    <span class="${badgeClass}">${badgeText}</span><br>
+                    <small class="text-muted">${thoiGianTao}</small>
                 </div>
             `;
             list.appendChild(div);
@@ -192,7 +230,7 @@ async function loadSpecialtiesToModal() {
         const select = document.getElementById('modalSpecialtySelect');
         if (!select) return;
         
-        select.innerHTML = '<option value="">Chọn chuyên khoa</option>';
+        select.innerHTML = '<option value="">-- Chọn chuyên khoa --</option>';
         (data.data || []).forEach(sp => {
             select.innerHTML += `<option value="${sp.MaChuyenKhoa}">${sp.TenChuyenKhoa}</option>`;
         });
@@ -211,7 +249,7 @@ async function handleSpecialtyChange(select) {
     if (!doctorSelect) return;
     
     if (!specialtyId) {
-        doctorSelect.innerHTML = '<option value="">Chọn chuyên khoa trước</option>';
+        doctorSelect.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
         doctorSelect.disabled = true;
         return;
     }
@@ -220,8 +258,6 @@ async function handleSpecialtyChange(select) {
     doctorSelect.disabled = true;
     
     try {
-        console.log('Đang gọi API:', `${API_BASE_URL}/tickets/doctors/specialty/${specialtyId}`);
-        
         const res = await fetch(`${API_BASE_URL}/tickets/doctors/specialty/${specialtyId}`, {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         });
@@ -285,7 +321,6 @@ function setupSearchListeners() {
         searchBtn.addEventListener('click', modalSearchPatients);
     }
     
-    // Click outside để đóng kết quả tìm kiếm
     document.addEventListener('click', function(e) {
         const resultsDiv = document.getElementById('modalSearchResults');
         const searchInput = document.getElementById('modalSearchInput');
@@ -329,10 +364,6 @@ async function modalSearchPatients() {
         if (data.data?.length > 0) {
             data.data.forEach(p => {
                 const item = document.createElement('div');
-                item.className = 'p-2 border-bottom hover-bg-light';
-                item.style.cursor = 'pointer';
-                item.onmouseover = () => item.classList.add('bg-light');
-                item.onmouseout = () => item.classList.remove('bg-light');
                 item.innerHTML = `
                     <div class="fw-bold">${p.HoTen}</div>
                     <small class="text-muted">
@@ -397,10 +428,7 @@ async function loadPatientAppointments(patientId) {
         if (data.data && data.data.length > 0) {
             data.data.forEach(apt => {
                 const div = document.createElement('div');
-                div.className = 'appointment-item p-3 border-bottom cursor-pointer';
-                div.style.cursor = 'pointer';
-                div.onmouseover = () => div.classList.add('bg-light');
-                div.onmouseout = () => div.classList.remove('bg-light');
+                div.className = 'appointment-item';
                 div.onclick = (e) => selectAppointment(apt, e);
                 div.innerHTML = `
                     <div class="d-flex justify-content-between align-items-center">
@@ -428,11 +456,11 @@ function selectAppointment(appointment, event) {
     selectedAppointment = appointment;
     
     document.querySelectorAll('.appointment-item').forEach(el => {
-        el.classList.remove('selected', 'bg-primary', 'text-white');
+        el.classList.remove('selected');
     });
     
     if (event && event.currentTarget) {
-        event.currentTarget.classList.add('selected', 'bg-primary', 'text-white');
+        event.currentTarget.classList.add('selected');
     }
     
     showToast('success', `Đã chọn lịch hẹn ngày ${formatDateTime(appointment.NgayHen, appointment.GioHen)}`);
@@ -453,6 +481,72 @@ function clearSelectedPatient() {
     if (appointmentList) appointmentList.innerHTML = '';
 }
 
+// Validate form bệnh nhân mới
+function validateNewPatientForm() {
+    const name = document.getElementById('newPatientName').value.trim();
+    const phone = document.getElementById('newPatientPhone').value.trim();
+    
+    if (!name) {
+        showToast('warning', 'Vui lòng nhập họ tên bệnh nhân');
+        document.getElementById('newPatientName').focus();
+        return false;
+    }
+    
+    if (!phone) {
+        showToast('warning', 'Vui lòng nhập số điện thoại');
+        document.getElementById('newPatientPhone').focus();
+        return false;
+    }
+    
+    const phoneRegex = /(0[3|5|7|8|9])+([0-9]{8})\b/;
+    if (!phoneRegex.test(phone)) {
+        showToast('warning', 'Số điện thoại không hợp lệ');
+        document.getElementById('newPatientPhone').focus();
+        return false;
+    }
+    
+    return true;
+}
+
+// Lấy dữ liệu từ form bệnh nhân mới
+function getNewPatientData() {
+    return {
+        HoTen: document.getElementById('newPatientName').value.trim(),
+        SoDienThoai: document.getElementById('newPatientPhone').value.trim(),
+        NgaySinh: document.getElementById('newPatientDob').value || null,
+        GioiTinh: document.getElementById('newPatientGender').value || null,
+        DiaChi: document.getElementById('newPatientAddress').value.trim() || null,
+        Email: document.getElementById('newPatientEmail').value.trim() || null,
+
+    };
+}
+
+// Đăng ký bệnh nhân mới
+async function registerNewPatient(patientData) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/tickets/patients/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify(patientData)
+        });
+        
+        const data = await res.json();
+        
+        if (!res.ok) {
+            throw new Error(data.message || 'Đăng ký thất bại');
+        }
+        
+        return data.data;
+        
+    } catch (err) {
+        console.error('Register patient error:', err);
+        throw err;
+    }
+}
+
 // Tạo phiếu khám
 async function createTicket() {
     console.log('Bắt đầu tạo phiếu...');
@@ -462,18 +556,43 @@ async function createTicket() {
         return;
     }
     
-    if (!selectedPatient) {
-        showToast('warning', 'Vui lòng chọn bệnh nhân');
-        return;
+    let patientMaBN = null;
+    let patientName = '';
+    let patientPhone = '';
+    
+    if (patientType === 'EXISTING') {
+        if (!selectedPatient) {
+            showToast('warning', 'Vui lòng chọn bệnh nhân');
+            return;
+        }
+        patientMaBN = selectedPatient.MaBN;
+        patientName = selectedPatient.HoTen;
+        patientPhone = selectedPatient.SoDienThoai;
+        
+    } else {
+        if (!validateNewPatientForm()) {
+            return;
+        }
+        
+        const newPatientData = getNewPatientData();
+        
+        try {
+            showLoading();
+            const registeredPatient = await registerNewPatient(newPatientData);
+            patientMaBN = registeredPatient.MaBN;
+            patientName = registeredPatient.HoTen;
+            patientPhone = registeredPatient.SoDienThoai;
+            
+            showToast('success', 'Đăng ký bệnh nhân thành công');
+            
+        } catch (err) {
+            showToast('error', err.message || 'Đăng ký bệnh nhân thất bại');
+            hideLoading();
+            return;
+        }
     }
     
-
-    const patientName = selectedPatient.HoTen;
-    const patientPhone = selectedPatient.SoDienThoai;
-    const patientMaBN = selectedPatient.MaBN;
     const ticketType = currentTicketType;
-    
-    console.log('Thông tin bệnh nhân đã lưu:', { patientName, patientPhone, patientMaBN });
     
     let requestData = { MaBN: patientMaBN };
     let apiUrl = '';
@@ -489,7 +608,6 @@ async function createTicket() {
         const doctorSelect = document.getElementById('modalDoctorSelect');
         if (doctorSelect && doctorSelect.value) {
             requestData.MaBacSi = doctorSelect.value;
-            console.log('Bệnh nhân chọn bác sĩ:', doctorSelect.value);
         }
         
         apiUrl = `${API_BASE_URL}/tickets/walk-in`;
@@ -504,7 +622,6 @@ async function createTicket() {
     }
 
     console.log('Dữ liệu gửi:', requestData);
-    showLoading();
 
     try {
         const token = localStorage.getItem('token');
@@ -541,24 +658,19 @@ async function createTicket() {
         const ticketTypeText = ticketType === 'WALK_IN' ? 'tại chỗ' : 'hẹn trước';
         showToast('success', `Tạo phiếu ${ticketTypeText} thành công! Số thứ tự: #${data.ticket?.STT?.toString().padStart(2,'0') || '—'}`);
 
-        // Đóng modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('createTicketModal'));
         if (modal) modal.hide();
         
-        // Reset form
         resetModalForm();
-        
-        // Load lại danh sách chờ
         loadWaitingList();
 
-      
         if (confirm('Bạn có muốn in phiếu khám ngay không?')) {
             printTicket({
                 STT: data.ticket?.STT,
-                TenBenhNhan: patientName,  
-                SoDienThoai: patientPhone, 
+                TenBenhNhan: patientName,
+                SoDienThoai: patientPhone,
                 TenBacSi: data.ticket?.TenBacSi,
-                LoaiKham: ticketType  
+                LoaiKham: ticketType
             });
         }
 
@@ -573,15 +685,30 @@ async function createTicket() {
 // Reset form
 function resetModalForm() {
     currentTicketType = '';
-    const typeInput = document.getElementById('selectedTicketType');
-    if (typeInput) typeInput.value = '';
+    patientType = 'EXISTING';
     
     document.getElementById('typeWalkIn')?.classList.remove('selected');
     document.getElementById('typeAppointment')?.classList.remove('selected');
+    
+    const existingRadio = document.getElementById('patientTypeExisting');
+    const newRadio = document.getElementById('patientTypeNew');
+    if (existingRadio) existingRadio.checked = true;
+    if (newRadio) newRadio.checked = false;
+    
+    document.getElementById('existingPatientSection').style.display = 'block';
+    document.getElementById('newPatientSection').style.display = 'none';
+    
     document.getElementById('appointmentSection').style.display = 'none';
     document.getElementById('specialtySection').style.display = 'block';
     
     clearSelectedPatient();
+    
+    document.getElementById('newPatientName').value = '';
+    document.getElementById('newPatientPhone').value = '';
+    document.getElementById('newPatientDob').value = '';
+    document.getElementById('newPatientGender').value = '';
+    document.getElementById('newPatientAddress').value = '';
+    document.getElementById('newPatientEmail').value = '';
     
     const specialtySelect = document.getElementById('modalSpecialtySelect');
     if (specialtySelect) {
@@ -590,7 +717,7 @@ function resetModalForm() {
     
     const doctorSelect = document.getElementById('modalDoctorSelect');
     if (doctorSelect) {
-        doctorSelect.innerHTML = '<option value="">Chọn chuyên khoa trước</option>';
+        doctorSelect.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
         doctorSelect.disabled = true;
     }
     
@@ -666,9 +793,9 @@ function logout() {
     }
 }
 
-// Export functions for global use
 window.selectTicketType = selectTicketType;
 window.openCreateTicketModal = openCreateTicketModal;
 window.handleSpecialtyChange = handleSpecialtyChange;
 window.createTicket = createTicket;
 window.logout = logout;
+window.clearSelectedPatient = clearSelectedPatient;

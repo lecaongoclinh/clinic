@@ -321,24 +321,15 @@ export const createWalkInTicket = async (req, res) => {
         // Lấy thông tin lễ tân từ token
         const maLeTan = req.user?.MaNV || 3;
 
+        const now = new Date();
+        const gioTao = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}`;
+
         // Tạo phiếu khám
         const [insertResult] = await connection.query(
             `INSERT INTO PhieuKham (
-                MaBN, 
-                MaLeTan, 
-                MaBacSi,
-                MaChuyenKhoa,
-                NgayKham, 
-                STT,
-                TrangThai
-            ) VALUES (?, ?, ?, ?, CURDATE(), ?, 'ChoKham')`,
-            [
-                MaBN,
-                maLeTan,
-                selectedDoctor,
-                MaChuyenKhoa,
-                stt
-            ]
+              MaBN, MaLeTan, MaBacSi, MaChuyenKhoa, NgayKham, STT, TrangThai,GioTao
+             ) VALUES (?, ?, ?, ?, NOW(), ?, 'ChoKham',?)`,
+             [MaBN, maLeTan, selectedDoctor, MaChuyenKhoa, stt, gioTao]
         );
 
         // Lấy thông tin phiếu vừa tạo
@@ -518,6 +509,7 @@ export const getWaitingTickets = async (req, res) => {
                 pk.STT,
                 pk.NgayKham,
                 pk.TrangThai,
+                TIME_FORMAT(pk.GioTao, '%H:%i') as ThoiGianTao,  -- Lấy từ cột GioTao
                 bn.HoTen as TenBenhNhan,
                 bn.SoDienThoai,
                 nv.HoTen as TenBacSi,
@@ -537,7 +529,7 @@ export const getWaitingTickets = async (req, res) => {
              LEFT JOIN ChuyenKhoa ck ON pk.MaChuyenKhoa = ck.MaChuyenKhoa
              LEFT JOIN LichKham lk ON pk.MaLK = lk.MaLK
              WHERE pk.TrangThai = 'ChoKham' 
-                AND DATE(pk.NgayKham) = CURDATE()
+                AND pk.NgayKham = CURDATE()
              ORDER BY 
                 CASE 
                     WHEN pk.MaLK IS NOT NULL THEN 0 
@@ -545,6 +537,9 @@ export const getWaitingTickets = async (req, res) => {
                 END,
                 pk.STT ASC`
         );
+
+        console.log('Dữ liệu từ database:', rows); 
+
 
         res.json({
             success: true,
@@ -613,5 +608,60 @@ export const callNextPatient = async (req, res) => {
         res.status(500).json({ success: false, message: 'Lỗi server' });
     } finally {
         connection.release();
+    }
+};
+
+// Đăng ký bệnh nhân mới
+export const registerNewPatient = async (req, res) => {
+    try {
+        const { HoTen, SoDienThoai, NgaySinh, GioiTinh, DiaChi, Email } = req.body;
+        
+        // Kiểm tra dữ liệu bắt buộc
+        if (!HoTen || !SoDienThoai) {
+            return res.status(400).json({
+                success: false,
+                message: 'Họ tên và số điện thoại là bắt buộc'
+            });
+        }
+        
+        // Kiểm tra số điện thoại đã tồn tại chưa
+        const [existing] = await pool.query(
+            'SELECT * FROM BenhNhan WHERE SoDienThoai = ?',
+            [SoDienThoai]
+        );
+        
+        if (existing.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Số điện thoại đã được đăng ký'
+            });
+        }
+        
+        // Tạo mã bệnh nhân mới (có thể để database tự động tăng)
+        const [result] = await pool.query(
+            `INSERT INTO BenhNhan 
+             (HoTen, SoDienThoai, NgaySinh, GioiTinh, DiaChi, Email) 
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [HoTen, SoDienThoai, NgaySinh, GioiTinh, DiaChi, Email]
+        );
+        
+        // Lấy thông tin bệnh nhân vừa tạo
+        const [newPatient] = await pool.query(
+            'SELECT * FROM BenhNhan WHERE MaBN = ?',
+            [result.insertId]
+        );
+        
+        res.status(201).json({
+            success: true,
+            message: 'Đăng ký bệnh nhân thành công',
+            data: newPatient[0]
+        });
+        
+    } catch (error) {
+        console.error('Error in registerNewPatient:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Lỗi server: ' + error.message 
+        });
     }
 };

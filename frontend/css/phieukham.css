@@ -211,3 +211,143 @@
     right: 20px;
     z-index: 9999;
 }
+
+.exam-type-card {
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+    margin-bottom: 10px;
+}
+
+.exam-type-card:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.exam-type-card.selected {
+    border-color: #007bff;
+    background-color: #e7f1ff;
+}
+
+#modalSearchResults {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    background: white;
+    position: absolute;
+    width: 100%;
+    z-index: 1060;
+}
+
+#modalSearchResults > div {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#modalSearchResults > div:hover {
+    background-color: #f8f9fa;
+}
+
+#modalSearchResults > div:last-child {
+    border-bottom: none;
+}
+
+.selected-patient-info {
+    background-color: #e7f1ff;
+    border-left: 4px solid #007bff;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.appointment-item {
+    padding: 12px;
+    border-bottom: 1px solid #dee2e6;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.appointment-item:hover {
+    background-color: #f8f9fa;
+}
+
+.appointment-item.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+.appointment-item.selected small {
+    color: rgba(255,255,255,0.9) !important;
+}
+
+#waitingList > div {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    transition: all 0.2s;
+}
+
+#waitingList > div:hover {
+    background-color: #f8f9fa;
+}
+
+.waiting-number {
+    width: 45px;
+    height: 45px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.badge-walk-in {
+    background-color: #28a745;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.badge-appointment {
+    background-color: #007bff;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* Đảm bảo input trong form bệnh nhân mới có thể nhập */
+#newPatientSection input,
+#newPatientSection select,
+#newPatientSection textarea {
+    background-color: white !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    z-index: 1060;
+    position: relative;
+}
+
+/* Điều chỉnh z-index cho modal */
+.modal {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+#newPatientSection {
+    position: relative;
+    z-index: 1060;
+}
