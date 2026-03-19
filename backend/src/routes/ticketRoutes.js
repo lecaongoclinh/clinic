@@ -5,8 +5,8 @@ import {
     getDoctorsBySpecialty,
     getPatientAppointments,
     createWalkInTicket,
+    createAppointmentTicket,  
     getWaitingTickets,
-    callNextPatient
 } from '../controllers/ticketController.js';
 
 const router = express.Router();
@@ -24,10 +24,12 @@ router.get('/doctors/specialty/:specialtyId', getDoctorsBySpecialty);
 router.get('/patients/:patientId/appointments', getPatientAppointments);
 
 // Tạo phiếu khám tại chỗ
-router.post('/tickets/walk-in', createWalkInTicket);
+router.post('/walk-in', createWalkInTicket);  // SỬA: bỏ /tickets vì đã có prefix
+
+// Tạo phiếu khám từ lịch hẹn - THIẾU route này
+router.post('/appointment', createAppointmentTicket);  // THÊM route này
 
 // Lấy danh sách phiếu khám đang chờ
-router.get('/tickets/waiting', getWaitingTickets);
-
+router.get('/waiting', getWaitingTickets);  // SỬA: bỏ /tickets vì đã có prefix
 
 export default router;

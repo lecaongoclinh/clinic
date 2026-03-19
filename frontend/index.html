@@ -54,8 +54,7 @@
                         <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                     </div>
                     <div class="ms-3">
-                        <h6 class="mb-0">LCNL</h6>
-                        <span>Admin</span>
+                        <h6 class="mb-0" id="username"></h6>
                     </div>
                 </div>
                 <div class="navbar-nav w-100">
@@ -68,9 +67,9 @@
                             <a href="element.html" class="dropdown-item">Other Elements</a>
                         </div>
                     </div> -->
-                    <a href="LichKham.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch khám</a>
-                    <a href="#" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Phiếu khám</a>
-                    <a href="#" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                    <a href="schedule.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
+                    <a href="LichKham.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
+                    <a href="BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                         <div class="dropdown-menu bg-transparent border-0">
@@ -164,7 +163,7 @@
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                             <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                            <span class="d-none d-lg-inline-flex">Admin</span>
+                            <span class="d-none d-lg-inline-flex" id="username"></span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
                             <a href="#" class="dropdown-item">My Profile</a>
@@ -180,7 +179,7 @@
             <!-- Sale & Revenue Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
-                    <div class="col-sm-6 col-xl-3">
+                    <!-- <div class="col-sm-6 col-xl-3">
                         <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
                             <i class="fa fa-chart-line fa-3x text-primary"></i>
                             <div class="ms-3">
@@ -188,8 +187,8 @@
                                 <h6 class="mb-0">$1234</h6>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-sm-6 col-xl-3">
+                    </div> -->
+                    <!-- <div class="col-sm-6 col-xl-3">
                         <div class="bg-light rounded d-flex align-items-center justify-content-between p-4">
                             <i class="fa fa-chart-bar fa-3x text-primary"></i>
                             <div class="ms-3">
@@ -215,7 +214,7 @@
                                 <h6 class="mb-0">$1234</h6>
                             </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <!-- Sale & Revenue End -->
@@ -224,7 +223,7 @@
             <!-- Sales Chart Start -->
             <div class="container-fluid pt-4 px-4">
                 <div class="row g-4">
-                    <div class="col-sm-12 col-xl-6">
+                    <!-- <div class="col-sm-12 col-xl-6">
                         <div class="bg-light text-center rounded p-4">
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <h6 class="mb-0">Worldwide Sales</h6>
@@ -232,8 +231,8 @@
                             </div>
                             <canvas id="worldwide-sales"></canvas>
                         </div>
-                    </div>
-                    <div class="col-sm-12 col-xl-6">
+                    </div> -->
+                    <!-- <div class="col-sm-12 col-xl-6">
                         <div class="bg-light text-center rounded p-4">
                             <div class="d-flex align-items-center justify-content-between mb-4">
                                 <h6 class="mb-0">Salse & Revenue</h6>
@@ -241,14 +240,14 @@
                             </div>
                             <canvas id="salse-revenue"></canvas>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             
 
 
             <!-- Footer Start -->
-            <div class="container-fluid pt-4 px-4">
+            <!-- <div class="container-fluid pt-4 px-4">
                 <div class="bg-light rounded-top p-4">
                     <div class="row">
                         <div class="col-12 col-sm-6 text-center text-sm-start">
@@ -258,7 +257,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> -->
             <!-- Footer End -->
         </div>
         <!-- Content End -->
@@ -287,8 +286,12 @@
             if (!token) {
                 window.location.href = '/signin';
             }
+            const username = localStorage.getItem('username');
+            if (username) {
+                document.getElementById('username').textContent = username;
+            }
         });
-
+        
     </script>
 </body>
 

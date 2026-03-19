@@ -15,11 +15,11 @@ const userService = {
     if (!isMatch) throw new Error('Mật khẩu không chính xác');
 
     const token = jwt.sign(
-        { id: user.MaNV, userName: user.userName, role: user.MaVaiTro },
+        { id: user.MaNV, userName: user.Username, role: user.MaVaiTro },
         process.env.JWT_SECRET, // Lấy từ file .env
         { expiresIn: process.env.JWT_EXPIRES_IN || '1d' } // Thời gian hết hạn token
     );
-    return { token, user: { id: user.MaNV, userName: user.userName, role: user.MaVaiTro } };
+    return { token, user: { id: user.MaNV, userName: user.Username, role: user.MaVaiTro } };
   },
   getUserByUserName: async (username) => {
     return await User.findByUsername(username);

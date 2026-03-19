@@ -11,6 +11,17 @@ const Doctor = {
         `;
         const [rows] = await db.execute(query, [maChuyenKhoa]);
         return rows;
+    },
+    getAllDoctors: async () => {
+        const query = `
+        SELECT nv.MaNV, nv.HoTen, ck.TenChuyenKhoa
+            FROM NhanVien nv
+            LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
+            WHERE nv.MaVaiTro = (SELECT MaVaiTro FROM VaiTro WHERE TenVaiTro = 'Bac Si')
+            AND nv.TrangThai = TRUE
+        `;
+        const [rows] = await db.execute(query);
+        return rows;
     }
 }
 
