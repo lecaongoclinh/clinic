@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>CLINIC - Phiếu khám</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/phieukham.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container-xxl position-relative bg-white d-flex p-0">
+        <!-- Sidebar Start -->
+        <div class="sidebar pe-4 pb-3">
+            <nav class="navbar bg-light navbar-light">
+                <a href="/" class="navbar-brand mx-4 mb-3">
+                    <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>CLINIC</h3>
+                </a>
+                <div class="d-flex align-items-center ms-4 mb-4">
+                    <div class="position-relative">
+                        <img class="rounded-circle" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                        <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0" id="userName">Lễ tân</h6>
+                        <span>Lễ tân</span>
+                    </div>
+                </div>
+                <div class="navbar-nav w-100">
+                    <a href="/" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                    <a href="/lichkham" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch khám</a>
+                    <a href="/phieukham" class="nav-item nav-link active"><i class="fa fa-keyboard me-2"></i>Phiếu khám</a>
+                    <a href="/benhan" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="far fa-file-alt me-2"></i>Thuốc
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="/kho-thuoc" class="dropdown-item">Kho thuốc</a>
+                            <a href="/don-thuoc" class="dropdown-item">Đơn thuốc</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <!-- Sidebar End -->
+
+        <!-- Content Start -->
+        <div class="content">
+            <!-- Navbar Start -->
+            <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+                <a href="#" class="sidebar-toggler flex-shrink-0">
+                    <i class="fa fa-bars"></i>
+                </a>
+                <div class="navbar-nav align-items-center ms-auto">
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                            <span class="d-none d-lg-inline-flex" id="navbarUserName">Lễ tân</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                            <a href="#" class="dropdown-item">Hồ sơ</a>
+                            <a href="#" class="dropdown-item">Cài đặt</a>
+                            <a href="#" class="dropdown-item" onclick="logout()">Đăng xuất</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- Navbar End -->
+
+            <!-- Main Content -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <button class="btn btn-lg btn-primary w-100 mb-3" onclick="openCreateTicketModal()">
+                            <i class="fa fa-plus-circle me-2"></i>Tạo phiếu khám mới
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Danh sách chờ -->
+                <div class="bg-light rounded p-4">
+                    <h5 class="mb-3">
+                        <i class="fa fa-clock me-2 text-primary"></i>
+                        Danh sách chờ khám hôm nay
+                        <span class="badge bg-primary ms-2" id="waitingCount">0</span>
+                    </h5>
+                    <div id="waitingList" style="max-height: 500px; overflow-y: auto;">
+                        <!-- Nội dung sẽ được load bởi JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Tạo phiếu khám -->
+            <div class="modal fade" id="createTicketModal" tabindex="-1" aria-labelledby="createTicketModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="createTicketModalLabel">Tạo phiếu khám mới</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <!-- Chọn loại phiếu khám -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Loại phiếu khám <span class="text-danger">*</span></label>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="exam-type-card" id="typeWalkIn" onclick="selectTicketType('WALK_IN')">
+                                            <i class="fa fa-walking fa-2x mb-2 text-primary"></i>
+                                            <h6>Khám tại chỗ</h6>
+                                            <small class="text-muted">Bệnh nhân đến trực tiếp</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="exam-type-card" id="typeAppointment" onclick="selectTicketType('APPOINTMENT')">
+                                            <i class="fa fa-calendar-check fa-2x mb-2 text-success"></i>
+                                            <h6>Khám theo lịch hẹn</h6>
+                                            <small class="text-muted">Bệnh nhân đã đặt lịch</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selectedTicketType" value="">
+                            </div>
+
+                            <!-- Tìm bệnh nhân -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Tìm bệnh nhân <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="modalSearchInput" placeholder="Nhập tên, SĐT hoặc mã bệnh nhân...">
+                                    <button class="btn btn-primary" type="button" id="modalSearchBtn"><i class="fa fa-search"></i></button>
+                                </div>
+                                <div id="modalSearchResults" class="mt-3 border rounded p-2" style="max-height: 220px; overflow-y: auto; display: none;"></div>
+                            </div>
+
+                            <!-- Bệnh nhân đã chọn -->
+                            <div id="selectedPatientInModal" class="alert alert-info" style="display: none;">
+                                <strong>Đã chọn:</strong> <span id="selectedPatientNameModal"></span><br>
+                                <small id="selectedPatientInfoModal"></small>
+                                <button class="btn btn-sm btn-outline-secondary mt-2" onclick="clearSelectedPatient()">Chọn bệnh nhân khác</button>
+                            </div>
+
+                            <!-- Danh sách lịch hẹn (chỉ hiển thị khi chọn APPOINTMENT) -->
+                            <div id="appointmentSection" style="display: none;">
+                                <label class="form-label fw-bold">Chọn lịch hẹn <span class="text-danger">*</span></label>
+                                <div id="appointmentList" class="border rounded p-2" style="max-height: 250px; overflow-y: auto;">
+                                    <!-- Lịch hẹn sẽ load bằng JS -->
+                                </div>
+                            </div>
+
+                            <!-- Phần chuyên khoa và bác sĩ trong modal -->
+                            <div id="specialtySection">
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Chuyên khoa <span class="text-danger">*</span></label>
+                                        <select class="form-select" id="modalSpecialtySelect" onchange="handleSpecialtyChange(this)">
+                                            <option value="">-- Chọn chuyên khoa --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Bác sĩ <span class="text-muted">(Không chọn sẽ tự động xếp)</span></label>
+                                        <select class="form-select" id="modalDoctorSelect" disabled>
+                                            <option value="">-- Chọn chuyên khoa trước --</option>
+                                        </select>
+                                        <small class="text-muted">Để trống nếu muốn hệ thống tự chọn bác sĩ phù hợp</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                            <button type="button" class="btn btn-primary" onclick="createTicket()">
+                                <i class="fa fa-ticket-alt me-2"></i>Tạo phiếu khám
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back to Top -->
+            <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+        </div>
+        <!-- Content End -->
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Page Specific Javascript -->
+    <script src="/js/phieukham.js"></script>
+</body>
+</html>

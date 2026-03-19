@@ -1,4 +1,11 @@
 import express from 'express';
+import { getPatients, getPatientById } from '../controllers/patientController.js';
+
+const router = express.Router();
+
+router.get('/', authenticateToken, getPatients);
+router.get('/:id', authenticateToken, getPatientById);
+
 import patientController from '../controllers/patientController.js';
 
 const patientRoutes = express.Router();
