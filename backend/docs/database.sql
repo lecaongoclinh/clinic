@@ -266,6 +266,79 @@ CREATE TABLE ChiTietDonThuoc (
 ALTER TABLE PhieuKham
 ADD MaLich INT,
 ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
-
+-- fix
 ALTER TABLE PhieuKham ADD COLUMN MaBN INT NULL;
 ALTER TABLE PhieuKham ADD FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN);
+
+db chị thêm mấy cái này
+--them--
+
+INSERT INTO NhaCungCap (TenNCC, DiaChi, SoDienThoai) VALUES
+('Công ty TNHH Dược phẩm TW1 - Chi nhánh Miền Bắc', 'Số 179 Giải Phóng, Đống Đa, Hà Nội', '02438693489'),
+('Công ty Cổ phần Dược Hậu Giang (DHG Pharma)', '226 Nguyễn Văn Cừ, Quận Ninh Kiều, Cần Thơ', '02923821001'),
+('Công ty TNHH Stellapharm', 'Khu công nghiệp Việt Nam - Singapore II, Bình Dương', '02743888888'),
+('Công ty TNHH MTV Dược phẩm OPC', '208 Nguyễn Trãi, Phường 3, Quận 5, TP. Hồ Chí Minh', '02838551122'),
+('Công ty Cổ phần Pymepharco', '166 - 170 Nguyễn Huệ, TP. Huế, Thừa Thiên Huế', '02343826666'),
+('Công ty TNHH Thương mại Dược phẩm Khải Hoàn', 'Số 68 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội', '02439363388'),
+('Nhà cung cấp thiết bị y tế & thuốc generic ABC', 'Tầng 5, Tòa nhà số 123 Lê Lợi, Quận 1, TP. HCM', '02838209999');
+
+CREATE TABLE LoThuoc (
+    MaLo INT AUTO_INCREMENT PRIMARY KEY,
+    MaThuoc INT,
+    SoLo VARCHAR(50),
+    HanSuDung DATE,
+    SoLuongTon INT,
+    GiaNhap DECIMAL(10,2),
+    MaCTPN INT,
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
+    FOREIGN KEY (MaCTPN) REFERENCES ChiTietPhieuNhap(MaCTPN)
+);
+
+
+ALTER TABLE DonThuoc
+ADD TrangThai ENUM('ChuaXuat','DaXuat') DEFAULT 'ChuaXuat';
+
+
+ALTER TABLE Thuoc
+DROP COLUMN GiaNhap,
+DROP COLUMN HanSuDung;
+
+
+ALTER TABLE ChiTietHoaDon
+ADD MaThuoc INT NULL,
+ADD FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc);
+
+
+ALTER TABLE ChiTietPhieuNhap
+DROP COLUMN SoLo;
+
+
+ALTER TABLE PhieuNhapThuoc
+ADD TongTien DECIMAL(12,2) DEFAULT 0;
+
+CREATE TABLE Thuoc_NhaCungCap (
+    MaThuoc INT,
+    MaNCC INT,
+    PRIMARY KEY (MaThuoc, MaNCC),
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
+    FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC)
+);
+
+INSERT INTO Thuoc_NhaCungCap (MaThuoc, MaNCC) VALUES
+(1, 1),
+(1, 2),
+(2, 2),
+(2, 3);
+
+ALTER TABLE Thuoc_NhaCungCap
+ADD GiaNhap DECIMAL(10,2);
+
+INSERT INTO Thuoc (TenThuoc, DonViTinh, SoLuongTon, GiaBan) VALUES
+('Amoxicillin 500mg', 'Viên', 500, 2500.00),
+('Berberin 100mg', 'Lọ', 150, 15000.00),
+('Vitamin C 500mg', 'Viên', 800, 1000.00),
+('Decolgen Forte', 'Vỉ', 300, 18000.00),
+('Panadol Extra', 'Vỉ', 450, 22000.00),
+('Smecta 3g', 'Gói', 250, 7000.00),
+('Efferalgan 500mg', 'Viên sủi', 400, 5500.00),
+('Gaviscon', 'Gói', 180, 20000.00);
