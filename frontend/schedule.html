@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Lịch Làm Việc Bác Sĩ - CLINIC</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link href="img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+    <link href="lib/tempusdominus/css/tempusdominus-bootstrap-4.min.css" rel="stylesheet" />
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="css/style.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+    <style>
+        .schedule-form {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #009cff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 156, 255, 0.25);
+        }
+
+        .btn-schedule {
+            background-color: #009cff;
+            border: none;
+            padding: 8px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-schedule:hover {
+            background-color: #0084d6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 156, 255, 0.4);
+        }
+
+        .alert-custom {
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+        .table-schedule {
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1);
+        }
+
+        .table thead th {
+            background-color: #009cff;
+            color: white;
+            font-weight: 600;
+            padding: 15px;
+            border: none;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .table tbody td {
+            padding: 12px 15px;
+            vertical-align: middle;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .badge-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .btn-sm-custom {
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            margin-right: 5px;
+        }
+
+        .btn-delete {
+            background-color: #dc3545;
+            border: none;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .success-message {
+            color: #155724;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group-wrapper {
+            margin-bottom: 20px;
+        }
+
+        .modal-header {
+            background-color: #009cff;
+            color: white;
+        }
+
+        .modal-header .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.2em;
+        }
+
+        .time-input-wrapper {
+            position: relative;
+        }
+
+        .time-input-wrapper::after {
+            content: '⏱️';
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+
+        /* Shift Matrix Styles */
+        .shift-matrix-wrapper {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+        }
+
+        .shift-matrix {
+            margin-bottom: 0;
+        }
+
+        .shift-matrix thead th {
+            background-color: #009cff;
+            color: white;
+            font-weight: 600;
+            border: 1px solid #0084d6;
+            padding: 15px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .shift-matrix tbody td {
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .shift-matrix tbody tr td:first-child {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            cursor: default;
+        }
+
+        .shift-matrix tbody tr:hover td:not(:first-child) {
+            background-color: #f0f7ff;
+        }
+
+        .shift-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            accent-color: #009cff;
+        }
+
+        .shift-checkbox:hover {
+            transform: scale(1.1);
+        }
+
+        .shift-checkbox:checked {
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+        }
+
+        .shift-matrix tbody tr.selected td:not(:first-child) {
+            background-color: #d4edda;
+        }
+       
+#scheduleCalendar {
+    background: #fff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.fc-event-custom {
+    padding: 2px 4px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Popup */
+.event-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+}
+
+.event-popup-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 1050;
+    width: 320px;
+    overflow: hidden;
+}
+
+.event-popup-header {
+    background: #3788d8;
+    color: #fff;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.event-popup-body {
+    padding: 16px;
+}
+
+.event-popup-body p {
+    margin-bottom: 8px;
+}
+
+.event-popup-footer {
+    padding: 12px 16px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+</style>
+</head>
+
+<body>
+    <div class="container-xxl position-relative bg-white d-flex p-0">
+        <!-- Spinner Start -->
+        <div id="spinner" class="show bg-white position-fixed translate-middle w-100 vh-100 top-50 start-50 d-flex align-items-center justify-content-center">
+            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+        <!-- Spinner End -->
+
+        <!-- Sidebar Start -->
+        <div class="sidebar pe-4 pb-3">
+            <nav class="navbar bg-light navbar-light">
+                <a href="index.html" class="navbar-brand mx-4 mb-3">
+                    <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>CLINIC</h3>
+                </a>
+                <div class="d-flex align-items-center ms-4 mb-4">
+                    <div class="position-relative">
+                        <img class="rounded-circle" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                        <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                    </div>
+                    <div class="ms-3">
+                        <h6 class="mb-0" id="username"></h6>
+                    </div>
+                </div>
+                <div class="navbar-nav w-100">
+                    <a href="index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                    <a href="schedule.html" class="nav-item nav-link active"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
+                    <a href="LichKham.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
+                    <a href="BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="#" class="dropdown-item">Kho thuốc</a>
+                            <a href="#" class="dropdown-item">Đơn thuốc</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+        <!-- Sidebar End -->
+
+        <!-- Content Start -->
+        <div class="content">
+            <!-- Navbar Start -->
+            <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+                <a href="index.html" class="navbar-brand d-flex d-lg-none me-4">
+                    <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+                </a>
+                <a href="#" class="sidebar-toggler flex-shrink-0">
+                    <i class="fa fa-bars"></i>
+                </a>
+                <form class="d-none d-md-flex ms-4">
+                    <input class="form-control border-0" type="search" placeholder="Search">
+                </form>
+                <div class="navbar-nav align-items-center ms-auto">
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                            <span class="d-none d-lg-inline-flex" id="username-top"></span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                            <a href="#" class="dropdown-item">My Profile</a>
+                            <a href="#" class="dropdown-item">Settings</a>
+                            <a href="#" class="dropdown-item">Log Out</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!-- Navbar End -->
+
+            <!-- Main Content Start -->
+            <div class="container-fluid pt-4 px-4">
+
+                <!-- Alert Messages -->
+                <div id="alertContainer"></div>
+
+                <!-- Create Schedule Button -->
+                <div class="row mb-4">
+                    <div class="col-lg-8 mx-auto align-items-center d-flex justify-content-between">
+                        <button type="button" class="btn btn-schedule btn-primary mb-3" id="toggleFormBtn">
+                            <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Create Schedule Section -->
+                <div class="row mb-4" id="scheduleFormSection" style="display: none;">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="schedule-form">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0"><i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc Mới</h5>
+                                <button type="button" class="btn-close" id="closeFormBtn" aria-label="Close"></button>
+                            </div>
+
+                            <form id="scheduleForm">
+                                <div class="row">
+                                    <!-- Specialty Selection -->
+                                    <div class="col-md-6 form-group-wrapper">
+                                        <label for="chuyenKhoa" class="form-label">Chuyên Khoa <span class="text-danger">*</span></label>
+                                        <select id="chuyenKhoa" class="form-select" required>
+                                            <option value="">-- Chọn Chuyên Khoa --</option>
+                                        </select>
+                                        <div class="error-message" id="error-chuyenKhoa"></div>
+                                    </div>
+
+                                    <!-- Doctor Selection -->
+                                    <div class="col-md-6 form-group-wrapper">
+                                        <label for="bacSiId" class="form-label">Bác Sĩ <span class="text-danger">*</span></label>
+                                        <select id="bacSiId" class="form-select" required disabled>
+                                            <option value="">-- Chọn Bác Sĩ --</option>
+                                        </select>
+                                        <div class="error-message" id="error-bacSiId"></div>
+                                    </div>
+
+                                    <!-- Room Selection -->
+                                    <div class="col-md-6 form-group-wrapper">
+                                        <label for="phongKhamId" class="form-label">Phòng Khám <span class="text-danger">*</span></label>
+                                        <select id="phongKhamId" class="form-select" required>
+                                            <option value="">-- Chọn Phòng --</option>
+                                        </select>
+                                        <div class="error-message" id="error-phongKhamId"></div>
+                                    </div>
+
+                                    <!-- Date Selection -->
+                                    <div class="col-md-6 form-group-wrapper">
+                                        <label for="ngayLamViec" class="form-label">Ngày Bắt Đầu (Thứ 2) <span class="text-danger">*</span></label>
+                                        <input type="date" id="ngayLamViec" class="form-control" required>
+                                        <div class="error-message" id="error-ngayLamViec"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Shift Selection Matrix -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <label class="form-label"><strong>Chọn Ca Làm Việc Trong Tuần <span class="text-danger">*</span></strong></label>
+                                        <div class="shift-matrix-wrapper">
+                                            <table class="table table-bordered shift-matrix">
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-center" style="width: 120px;">Ngày</th>
+                                                        <th class="text-center">Ca Sáng<br><small>(07:00 - 11:30)</small></th>
+                                                        <th class="text-center">Ca Chiều<br><small>(13:30 - 17:00)</small></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="text-center fw-bold">Thứ 2</td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="0" data-shift="morning" id="shift-0-0">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="0" data-shift="afternoon" id="shift-0-1">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center fw-bold">Thứ 3</td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="1" data-shift="morning" id="shift-1-0">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="1" data-shift="afternoon" id="shift-1-1">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center fw-bold">Thứ 4</td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="2" data-shift="morning" id="shift-2-0">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="2" data-shift="afternoon" id="shift-2-1">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center fw-bold">Thứ 5</td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="3" data-shift="morning" id="shift-3-0">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="3" data-shift="afternoon" id="shift-3-1">
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-center fw-bold">Thứ 6</td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="4" data-shift="morning" id="shift-4-0">
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <input type="checkbox" class="shift-checkbox" data-day="4" data-shift="afternoon" id="shift-4-1">
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <div class="error-message" id="error-shifts"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="d-grid mt-4">
+                                    <button type="submit" class="btn btn-schedule btn-primary" id="submitBtn">
+                                        <i class="fa fa-save me-2"></i>Tạo Lịch Làm Việc
+                                    </button>
+                                </div>
+                                <div class="success-message" id="success-message"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Schedules List Section -->
+                <div class="row">
+                    <div class="col-12">
+                    
+                        <div class="bg-light rounded p-4 mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5>
+                                    <i class="fa fa-list me-2"></i>Danh Sách Lịch Làm Việc
+                                </h5>
+
+                               
+                            </div>
+                                                        
+                            <!-- Loading Spinner -->
+                            <div class="loading-spinner" id="loadingSpinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                                <p class="mt-2">Đang tải dữ liệu...</p>
+                            </div>
+
+                            <!-- Schedules Table -->
+                            <!-- <div class="table-schedule" id="scheduleTableContainer" style="display: none;">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Bác Sĩ</th>
+                                            <th>Phòng Khám</th>
+                                            <th>Ngày Làm</th>
+                                            <th>Giờ Bắt Đầu</th>
+                                            <th>Giờ Kết Thúc</th>
+                                            <th>Thao Tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="scheduleTableBody">
+                                    </tbody>
+                                </table>
+                            </div> -->
+                            <div class="row g-4">
+                                <div class="col-sm-12 col-xl-6">
+                                    <select id="selectKhoa" class="form-select mb-3" aria-label="Default select example">
+                                            <option value="">-- Tất cả khoa --</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-12 col-xl-6">
+                                    <select id="filterDoctor" class="form-select mb-3" aria-label="Default select example" disabled>
+                                            <option value="">-- Tất cả bác sĩ --</option>
+                                    </select>
+                                </div>
+                                
+                            </div>
+                            <!-- <select id="filterDoctor" class="form-select" style="max-width: 250px;">
+                                        <option value="">-- Tất cả bác sĩ --</option>
+                            </select> -->
+                            <div id="calendarContainer">
+                                <div id="scheduleCalendar"></div>
+                            </div>
+                            <!-- Empty State -->
+                            <div class="empty-state" id="emptyState" style="display: none;">
+                                <i class="fas fa-inbox"></i>
+                                <p>Chưa có lịch làm việc nào</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                <div class="row">
+                    <!-- <select id="filterDoctor" class="form-select" style="max-width: 250px;">
+                                        <option value="">-- Tất cả bác sĩ --</option>
+                                    </select> -->
+                    <!-- Calendar Container -->
+                    <!-- <div id="calendarContainer">
+                        <div id="scheduleCalendar"></div>
+                    </div> -->
+            </div>
+            <!-- Main Content End -->
+
+            <!-- Footer Start -->
+            <div class="container-fluid pt-4 px-4">
+                <div class="bg-light rounded-top p-4">
+                    <div class="row">
+                        <div class="col-12 col-sm-6 text-center text-sm-start">
+                            &copy; <a href="#">Clinic</a> 2026.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Footer End -->
+        </div>
+        <!-- Content End -->
+
+        <!-- Back to Top -->
+        <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Xác Nhận Xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Bạn có chắc chắn muốn xóa lịch làm việc này không?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/chart/chart.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+    <script src="lib/tempusdominus/js/moment.min.js"></script>
+    <script src="lib/tempusdominus/js/moment-timezone.min.js"></script>
+    <script src="lib/tempusdominus/js/tempusdominus-bootstrap-4.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+    <script src="js/schedule.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+            const username = localStorage.getItem('username');
+            if (username) {
+                document.getElementById('username').textContent = username;
+                document.getElementById('username-top').textContent = username;
+            }
+        });
+       // DOM Elements
+        const toggleFormBtn = document.getElementById('toggleFormBtn');
+        const closeFormBtn = document.getElementById('closeFormBtn');
+        const scheduleFormSection = document.getElementById('scheduleFormSection');
+
+        // Xóa toàn bộ đoạn cũ, thay bằng:
+        if (toggleFormBtn) {
+            toggleFormBtn.addEventListener('click', function () {
+                const isVisible = scheduleFormSection.style.display !== 'none';
+                scheduleFormSection.style.display = isVisible ? 'none' : 'block';
+            });
+        }
+
+        if (closeFormBtn) {
+            closeFormBtn.addEventListener('click', function () {
+                scheduleFormSection.style.display = 'none';
+            });
+        }
+        // closeFormBtn: ẩn form
+        closeFormBtn.addEventListener('click', function () {
+            scheduleFormSection.style.display = 'none';
+        });
+    </script>
+    <!-- <script>
+                // DOM Elements - thêm
+        const selectKhoa = document.getElementById('selectKhoa');
+
+        /**
+         * Populate selectKhoa sau khi load specialties
+         */
+        function populateSpecialtyFilter() {
+            selectKhoa.innerHTML = '<option value="">-- Tất cả khoa --</option>';
+            specialties.forEach(specialty => {
+                const option = document.createElement('option');
+                option.value = specialty.MaChuyenKhoa;
+                option.textContent = specialty.TenChuyenKhoa;
+                selectKhoa.appendChild(option);
+            });
+        }
+    </script> -->
+</body>
+
+</html>

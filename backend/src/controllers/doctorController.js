@@ -9,6 +9,14 @@ const doctorController = {
         } catch (error) {
             res.status(500).json({ error: error.message });
         }      
+    },
+    getAllDoctors: async (req, res) => {
+        try {
+            const data = await doctorService.getAllDoctors();
+            res.status(200).json(data);
+        } catch (error) {
+            res.status(500).json({ error: error.message });
+        }      
     }
 };
 

@@ -8,6 +8,14 @@ const doctorService = {
         } catch (error) {
             throw new Error(error.message);
         }
+    },
+    getAllDoctors: async() => {
+        try {
+            const doctors = await Doctor.getAllDoctors();
+            return doctors;
+        } catch (error) {
+            throw new Error(error.message);
+        }
     }
 };
 
