@@ -3,7 +3,6 @@ import ImportsController from "../controllers/importsController.js";
 
 const router = express.Router();
 
-// 🔥 route cụ thể phải để trên
 router.get("/by-supplier", ImportsController.getBySupplier);
 
 router.get("/", ImportsController.getAll);

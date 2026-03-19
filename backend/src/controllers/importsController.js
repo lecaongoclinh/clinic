@@ -33,7 +33,7 @@ const ImportsController = {
         }
     },
 
-    // 🔥 LOAD THUỐC THEO NCC
+    // LOAD THUỐC THEO NCC
     getBySupplier: async (req, res) => {
         try {
             const { MaNCC } = req.query;

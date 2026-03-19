@@ -56,7 +56,6 @@ const MedicinesModel = {
         return rows;
     },
 
-    // ================= NEW =================
 getBySupplier: async (MaNCC) => {
     const [rows] = await db.query(`
         SELECT 

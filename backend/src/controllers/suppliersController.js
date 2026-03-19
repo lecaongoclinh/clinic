@@ -38,7 +38,6 @@ const SuppliersController = {
         try {
             const { TenNCC, DiaChi, SoDienThoai } = req.body;
 
-            // validate giống medicines
             if (!TenNCC || !DiaChi || !SoDienThoai) {
                 return res.status(400).json({
                     message: "Thiếu dữ liệu (TenNCC, DiaChi, SoDienThoai)"

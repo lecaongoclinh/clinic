@@ -9,7 +9,7 @@ const ImportsService = {
 
     getItems: async (id) => await ImportsModel.getItems(id),
 
-    // 🔥 CORE LOGIC
+    //CORE LOGIC
     createImport: async (data) => {
         const connection = await db.getConnection();
         if (!MaThuoc || !SoLuong || !GiaNhap) {

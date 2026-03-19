@@ -107,7 +107,7 @@ const DispenseService = {
             };
 
         } catch (error) {
-            console.error("🔥 DISPENSE ERROR:", error);
+            console.error("DISPENSE ERROR:", error);
 
             if (connection) await connection.rollback();
 

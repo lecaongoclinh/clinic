@@ -101,7 +101,7 @@ const MedicinesController = {
         }
     },
 
-    // ================= NEW =================
+    
     getBySupplier: async (req, res) => {
         try {
             const { MaNCC } = req.query;
