@@ -28,6 +28,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/specialty', specialtyRoutes);
 app.use('/api/doctor', doctorRoutes);
-app.use('/api/tickets', ticketRoutes); // 🔥 thêm cái này
+app.use('/api/tickets', ticketRoutes); 
 
 export default app;

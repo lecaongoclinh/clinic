@@ -1,7 +1,6 @@
 import express from 'express';
 import patientController, { getPatients, getPatientById } from '../controllers/patientController.js';
-// nếu có auth thì import thêm
-// import { authenticateToken } from '../middleware/auth.js';
+
 
 const router = express.Router();
 
