@@ -77,6 +77,20 @@
                             <a href="#" class="dropdown-item">Đơn thuốc</a>
                         </div>
                     </div>
+                    <!-- thêm -->
+                     <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý thuốc</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="./pages/medicines.html" class="dropdown-item">Danh mục thuốc</a>
+                            <a href="./pages/suppliers.html" class="dropdown-item">Nhà cung cấp</a>
+                            <a href="./pages/imports.html" class="dropdown-item">Nhập thuốc</a>
+                            <a href="./pages/inventory.html" class="dropdown-item">Kho thuốc</a>
+                            <a href="./pages//dispense.html" class="dropdown-item">Xuất thuốc</a>
+                        </div>
+                    </div>
+                    <!-- hết -->
+
+
                 </div>
             </nav>
         </div>
@@ -283,9 +297,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const token = localStorage.getItem('token');
-            if (!token) {
-                window.location.href = 'login.html';
-            }
+            // if (!token) {
+            //     window.location.href = 'signin.html';
+            // }
             const username = localStorage.getItem('username');
             if (username) {
                 document.getElementById('username').textContent = username;

@@ -5,6 +5,14 @@ import fs from "fs";
 import path from "path";
 import authRoutes from "./routes/authRoutes.js";
 import appointmentRoutes from "./routes/appointmentsRoutes.js";
+
+import medicinesRoutes from "./routes/medicinesRoutes.js";
+import suppliersRoutes from "./routes/suppliersRoutes.js";
+import importsRoutes from "./routes/importsRoutes.js";
+import dispenseRoutes from "./routes/dispenseRoutes.js";
+
+import prescriptionRouters from "./routes/prescriptionRoutes.js";
+
 const app = express();
 
 // middleware
@@ -21,5 +29,18 @@ app.use('/api/appointments', appointmentRoutes);
 app.use('/api/specialty', (await import('./routes/specialtyRoutes.js')).default);
 app.use('/api/doctor', (await import('./routes/doctorRoutes.js')).default);
 
+/* ===== routes bạn thêm ===== */
+
+app.use('/api/medicines', (await import('./routes/medicinesRoutes.js')).default);
+
+
+app.use('/api/suppliers', (await import('./routes/suppliersRoutes.js')).default);
+
+
+app.use("/api/imports", (await import('./routes/importsRoutes.js')).default);
+
+app.use("/api/dispense", (await import('./routes/dispenseRoutes.js')).default);
+app.use("/api/batches", (await import('./routes/batchRoutes.js')).default);
+app.use("/api/prescriptions", (await import('./routes/prescriptionRoutes.js')).default);
 
 export default app;

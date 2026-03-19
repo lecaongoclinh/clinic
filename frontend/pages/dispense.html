@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Xuất thuốc</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <!-- Favicon -->
+    <link href="../img/favicon.ico" rel="icon">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- CSS -->
+    <!-- <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet"> -->
+<link href="/clinic/frontend/css/bootstrap.min.css" rel="stylesheet">
+<link href="/clinic/frontend/css/style.css" rel="stylesheet">
+    <style>
+        .prescription-item {
+            cursor: pointer;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .prescription-item:hover {
+            background: #f1f1f1;
+        }
+
+        .active-item {
+            background: #0d6efd;
+            color: white;
+        }
+
+        .danger {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container-xxl position-relative bg-white d-flex p-0">
+
+    <!-- Sidebar -->
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a href="../index.html" class="navbar-brand mx-4 mb-3">
+                <h3 class="text-primary">
+                    <i class="fa fa-hashtag me-2"></i>CLINIC
+                </h3>
+            </a>
+
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
+                <div class="ms-3">
+                    <h6 id="usernameSidebar"></h6>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a href="../index.html" class="nav-item nav-link">
+                    <i class="fa fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+
+                <a href="medicines.html" class="nav-item nav-link">
+                    <i class="fa fa-pills me-2"></i>Danh mục thuốc
+                </a>
+
+                <a href="suppliers.html" class="nav-item nav-link">
+                    <i class="fa fa-truck me-2"></i>Nhà cung cấp
+                </a>
+
+                <a href="imports.html" class="nav-item nav-link">
+                    <i class="fa fa-download me-2"></i>Nhập thuốc
+                </a>
+
+                <a href="inventory.html" class="nav-item nav-link">
+                    <i class="fa fa-warehouse me-2"></i>Kho thuốc
+                </a>
+
+                <a href="dispense.html" class="nav-item nav-link active">
+                    <i class="fa fa-upload me-2"></i>Xuất thuốc
+                </a>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a href="#" class="sidebar-toggler">
+                <i class="fa fa-bars"></i>
+            </a>
+
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
+                        <span id="usernameNavbar"></span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+
+                <!-- DANH SÁCH ĐƠN -->
+                <div class="col-4">
+                    <div class="bg-light rounded p-3 shadow-sm">
+                        <h5>Danh sách đơn thuốc</h5>
+                        <div id="prescriptionList"></div>
+                    </div>
+                </div>
+
+                <!-- CHI TIẾT -->
+                <div class="col-8">
+                    <div class="bg-light rounded p-4 shadow-sm">
+
+                        <h5>Chi tiết đơn thuốc</h5>
+
+                        <div id="patientInfo" class="mb-3"></div>
+
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Số lượng</th>
+                                    <th>Tồn kho</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="medicineTable"></tbody>
+                        </table>
+
+                        <button id="btnDispense" class="btn btn-success mt-3">
+                            <i class="fa fa-check me-2"></i>Xuất thuốc
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="container-fluid pt-4 px-4">
+            <div class="bg-light rounded p-3 text-center">
+                © Clinic 2026
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- <script src="../js/main.js"></script>
+<script src="../js/dispense.js"></script> -->
+<script src="/clinic/frontend/js/main.js"></script>
+<script src="/clinic/frontend/js/dispense.js"></script>
+<!-- Load username -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const username = localStorage.getItem('username');
+    if (username) {
+        document.getElementById('usernameSidebar').textContent = username;
+        document.getElementById('usernameNavbar').textContent = username;
+    }
+});
+</script>
+
+</body>
+</html>
