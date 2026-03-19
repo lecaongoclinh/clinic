@@ -467,11 +467,18 @@ async function createTicket() {
         return;
     }
     
-    const MaBN = selectedPatient.MaBN;
-    let requestData = { MaBN };
+
+    const patientName = selectedPatient.HoTen;
+    const patientPhone = selectedPatient.SoDienThoai;
+    const patientMaBN = selectedPatient.MaBN;
+    const ticketType = currentTicketType;
+    
+    console.log('Thông tin bệnh nhân đã lưu:', { patientName, patientPhone, patientMaBN });
+    
+    let requestData = { MaBN: patientMaBN };
     let apiUrl = '';
     
-    if (currentTicketType === 'WALK_IN') {
+    if (ticketType === 'WALK_IN') {
         const MaChuyenKhoa = document.getElementById('modalSpecialtySelect').value;
         if (!MaChuyenKhoa) {
             showToast('warning', 'Vui lòng chọn chuyên khoa');
@@ -487,7 +494,7 @@ async function createTicket() {
         
         apiUrl = `${API_BASE_URL}/tickets/walk-in`;
         
-    } else if (currentTicketType === 'APPOINTMENT') {
+    } else if (ticketType === 'APPOINTMENT') {
         if (!selectedAppointment) {
             showToast('warning', 'Vui lòng chọn lịch hẹn');
             return;
@@ -531,22 +538,27 @@ async function createTicket() {
             return;
         }
 
-        const ticketTypeText = currentTicketType === 'WALK_IN' ? 'tại chỗ' : 'hẹn trước';
+        const ticketTypeText = ticketType === 'WALK_IN' ? 'tại chỗ' : 'hẹn trước';
         showToast('success', `Tạo phiếu ${ticketTypeText} thành công! Số thứ tự: #${data.ticket?.STT?.toString().padStart(2,'0') || '—'}`);
 
+        // Đóng modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('createTicketModal'));
         if (modal) modal.hide();
         
+        // Reset form
         resetModalForm();
+        
+        // Load lại danh sách chờ
         loadWaitingList();
 
+      
         if (confirm('Bạn có muốn in phiếu khám ngay không?')) {
             printTicket({
                 STT: data.ticket?.STT,
-                TenBenhNhan: selectedPatient.HoTen,
-                SoDienThoai: selectedPatient.SoDienThoai,
+                TenBenhNhan: patientName,  
+                SoDienThoai: patientPhone, 
                 TenBacSi: data.ticket?.TenBacSi,
-                LoaiKham: currentTicketType
+                LoaiKham: ticketType  
             });
         }
 
