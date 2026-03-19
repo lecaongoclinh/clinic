@@ -22,7 +22,7 @@ function renderTable(data) {
     }
 
     data.forEach(med => {
-        const status = med.SoLuongTon < 10
+        const status = med.TongTon < 10
             ? `<span class="badge bg-danger px-3 py-1 rounded-pill">Sắp hết</span>`
             : `<span class="badge bg-success px-3 py-1 rounded-pill">Còn hàng</span>`;
 
@@ -32,7 +32,7 @@ function renderTable(data) {
                 <td class="fw-bold">${med.TenThuoc}</td>
                 <td>${med.DonViTinh}</td>
                 <td class=" fw-semibold">${formatCurrency(med.GiaBan)}</td>
-                <td>${med.SoLuongTon}</td>
+                <td>${med.TongTon}</td>
                 <td>${status}</td>
                 <td class="text-center">
                     <button class="btn btn-warning btn-sm rounded-pill px-3 me-1"
@@ -180,5 +180,5 @@ async function deleteMedicine(id) {
 // ================= INIT =================
 document.addEventListener("DOMContentLoaded", () => {
     loadMedicines();
-    setupSearch(); // 🔥 thêm dòng này
+    setupSearch(); // 
 });
