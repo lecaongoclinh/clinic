@@ -4,6 +4,11 @@ import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// import routes đầy đủ
+import authRoutes from './routes/authRoutes.js';
+import appointmentRoutes from './routes/appointmentsRoutes.js';
+import specialtyRoutes from './routes/specialtyRoutes.js';
+import doctorRoutes from './routes/doctorRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,29 +23,11 @@ app.use(express.json());
 app.use(morgan('dev'));
 app.use(express.static(frontendPath));
 
-// Routes API
-app.use('/api', ticketRoutes);
-
-// Routes cho trang frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
-app.get('/phieukham', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'phieukham.html'));
-});
-// routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
-app.use('/api/patients', (await import('./routes/patientRoutes.js')).default);
-app.use('/api/specialty', (await import('./routes/specialtyRoutes.js')).default);
-app.use('/api/doctor', (await import('./routes/doctorRoutes.js')).default);
-app.use('/api/schedules', (await import('./routes/scheduleRoutes.js')).default);
-app.use('/api/medical-records', (await import('./routes/medicalRecordsRoutes.js')).default);
-
-// 404 handler
-app.use((req, res) => {
-    res.status(404).send('Không tìm thấy trang');
-});
+app.use('/api/specialty', specialtyRoutes);
+app.use('/api/doctor', doctorRoutes);
+app.use('/api/tickets', ticketRoutes); 
 
 export default app;

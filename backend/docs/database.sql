@@ -373,7 +373,7 @@ INSERT INTO HoaDon (MaBA, MaNhanVien, PhuongThucThanhToan, TrangThai) VALUES
 -- 15. Chi Tiết Hóa Đơn
 INSERT INTO ChiTietHoaDon (MaHD, MaDichVu, SoTien) VALUES 
 (1, 1, 150000.00),
-(1, 2, 300000.00);
+(1, 3, 300000.00);
 
 -- Sửa db
 ALTER TABLE LichKham
