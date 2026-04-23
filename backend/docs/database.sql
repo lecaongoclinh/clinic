@@ -1,13 +1,24 @@
+
 -- Tạo database nếu chưa có
-DROP DATABASE IF EXISTS ClinicManagement;
 CREATE DATABASE IF NOT EXISTS ClinicManagement;
 USE ClinicManagement;
 
+-- Tạm dừng kiểm tra khóa ngoại để xóa bảng cũ (nếu có) mà không bị lỗi
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS ChiTietHoaDon, HoaDon, DichVu, ChiTietDonThuoc, DonThuoc, 
-                     ChiTietPhieuNhap, PhieuNhapThuoc, NhaCungCap, Thuoc, 
-                     BenhAn, PhieuKham, LichKham, LichLamViecBacSi, 
-                     PhongKham, BenhNhan, NhanVien, ChuyenKhoa, VaiTro;
+
+# bổ sung thêm các bảng mới tạo 
+
+DROP TABLE IF EXISTS 
+            ChiTietKiemKe, PhieuKiemKe,
+            ChiTietPhieuXuat, PhieuXuatThuoc,
+            PhieuHuyThuoc, LichSuKho,
+            LoThuoc, Kho,
+            ChiTietHoaDon, HoaDon, DichVu, DonThuoc,
+            ChiTietPhieuNhap, PhieuNhapThuoc,
+            Thuoc_NhaCungCap, NhaCungCap, Thuoc,
+            BenhAn, PhieuKham, LichKham,
+            LichLamViecBacSi, PhongKham,
+            BenhNhan, NhanVien, ChuyenKhoa, VaiTro;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- 1. Bảng Vai Trò
@@ -69,7 +80,7 @@ CREATE TABLE LichLamViecBacSi (
     FOREIGN KEY (MaPhong) REFERENCES PhongKham(MaPhong)
 );
 
--- 7. Bảng Lịch Khám 
+-- 7. Bảng Lịch Khám (Hẹn trước)
 CREATE TABLE LichKham (
     MaLK INT AUTO_INCREMENT PRIMARY KEY,
     MaBN INT NOT NULL,
@@ -78,32 +89,22 @@ CREATE TABLE LichKham (
     GioHen TIME,
     LyDoKham TEXT,
     TrangThai ENUM('ChoXacNhan','DaXacNhan','DaHuy','DaKham') DEFAULT 'ChoXacNhan',
-    MaLich INT,
     FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN),
-    FOREIGN KEY (MaBacSi) REFERENCES NhanVien(MaNV),
-    FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich)
+    FOREIGN KEY (MaBacSi) REFERENCES NhanVien(MaNV)
 );
 
 -- 8. Bảng Phiếu Khám (Tiếp nhận thực tế)
 CREATE TABLE PhieuKham (
     MaPK INT AUTO_INCREMENT PRIMARY KEY,
-    MaBN INT NOT NULL,
-    MaLK INT NULL,
+    MaLK INT,
     MaLeTan INT,
     MaPhong INT,
-    MaBacSi INT NULL,
-    MaChuyenKhoa INT NULL,
-    MaLich INT NULL,
     STT INT,
     NgayKham DATE DEFAULT (CURRENT_DATE),
     TrangThai ENUM('ChoKham','DangKham','DaKham','BoVe') DEFAULT 'ChoKham',
-    FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN),
     FOREIGN KEY (MaLK) REFERENCES LichKham(MaLK),
     FOREIGN KEY (MaLeTan) REFERENCES NhanVien(MaNV),
-    FOREIGN KEY (MaPhong) REFERENCES PhongKham(MaPhong),
-    FOREIGN KEY (MaBacSi) REFERENCES NhanVien(MaNV),
-    FOREIGN KEY (MaChuyenKhoa) REFERENCES ChuyenKhoa(MaChuyenKhoa),
-    FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich)
+    FOREIGN KEY (MaPhong) REFERENCES PhongKham(MaPhong)
 );
 
 -- 9. Bảng Bệnh Án
@@ -119,11 +120,13 @@ CREATE TABLE BenhAn (
     FOREIGN KEY (MaBacSi) REFERENCES NhanVien(MaNV)
 );
 
+#đổi tên trường từ từ DonViTinh sang DonViCoBan
+
 -- 10. Bảng Thuốc
 CREATE TABLE Thuoc (
     MaThuoc INT AUTO_INCREMENT PRIMARY KEY,
     TenThuoc VARCHAR(100) NOT NULL,
-    DonViTinh VARCHAR(20),
+    DonViCoBan VARCHAR(20),
     SoLuongTon INT DEFAULT 0,
     GiaNhap DECIMAL(10,2),
     GiaBan DECIMAL(10,2),
@@ -167,18 +170,7 @@ CREATE TABLE DonThuoc (
     FOREIGN KEY (MaBA) REFERENCES BenhAn(MaBA)
 );
 
--- 15. Bảng Chi Tiết Đơn Thuốc
-CREATE TABLE ChiTietDonThuoc (
-    MaCTDT INT AUTO_INCREMENT PRIMARY KEY,
-    MaDT INT,
-    MaThuoc INT,
-    SoLuong INT,
-    LieuDung VARCHAR(255),
-    FOREIGN KEY (MaDT) REFERENCES DonThuoc(MaDT),
-    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc)
-);
-
--- 16. Bảng Dịch Vụ
+-- 15. Bảng Dịch Vụ
 CREATE TABLE DichVu (
     MaDichVu INT AUTO_INCREMENT PRIMARY KEY,
     TenDichVu VARCHAR(100),
@@ -186,7 +178,7 @@ CREATE TABLE DichVu (
     Loai ENUM('KhamBenh','XetNghiem','SieuAm')
 );
 
--- 17. Bảng Hóa Đơn
+-- 16. Bảng Hóa Đơn
 CREATE TABLE HoaDon (
     MaHD INT AUTO_INCREMENT PRIMARY KEY,
     MaBA INT,
@@ -198,7 +190,7 @@ CREATE TABLE HoaDon (
     FOREIGN KEY (MaNhanVien) REFERENCES NhanVien(MaNV)
 );
 
--- 18. Bảng Chi Tiết Hóa Đơn
+-- 17. Bảng Chi Tiết Hóa Đơn
 CREATE TABLE ChiTietHoaDon (
     MaCTHD INT AUTO_INCREMENT PRIMARY KEY,
     MaHD INT,
@@ -207,37 +199,866 @@ CREATE TABLE ChiTietHoaDon (
     FOREIGN KEY (MaHD) REFERENCES HoaDon(MaHD),
     FOREIGN KEY (MaDichVu) REFERENCES DichVu(MaDichVu)
 );
+ALTER TABLE LichKham
+ADD MaLich INT,
+ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
+
+CREATE TABLE ChiTietDonThuoc (
+    MaCTDT INT AUTO_INCREMENT PRIMARY KEY,
+    MaDT INT,
+    MaThuoc INT,
+    SoLuong INT,
+    LieuDung VARCHAR(255),
+    FOREIGN KEY (MaDT) REFERENCES DonThuoc(MaDT),
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc)
+);
+
+ALTER TABLE PhieuKham
+ADD MaLich INT,
+ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
+
+ALTER TABLE PhieuKham ADD COLUMN MaBN INT NULL;
+ALTER TABLE PhieuKham ADD FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN);
+
+ALTER TABLE PhieuKham 
+ADD COLUMN GioTao TIME;
+
+CREATE TABLE LoThuoc (
+    MaLo INT AUTO_INCREMENT PRIMARY KEY,
+    MaThuoc INT,
+    SoLo VARCHAR(50),
+    HanSuDung DATE,
+    GiaNhap DECIMAL(10,2),
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
+    FOREIGN KEY (MaCTPN) REFERENCES ChiTietPhieuNhap(MaCTPN)
+);
 
 
--- 1. Vai Trò
+ALTER TABLE DonThuoc
+ADD TrangThai ENUM('ChuaXuat','DaXuat') DEFAULT 'ChuaXuat';
+
+ALTER TABLE ChiTietHoaDon
+ADD MaThuoc INT NULL,
+ADD FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc);
+
+
+ALTER TABLE Thuoc 
+DROP COLUMN GiaNhap,
+DROP COLUMN HanSuDung,
+DROP COLUMN SoLuongTon;
+
+
+ALTER TABLE Thuoc
+ADD HoatChat VARCHAR(255),
+ADD HamLuong VARCHAR(100),
+ADD DangBaoChe VARCHAR(100),
+ADD QuyCachDongGoi VARCHAR(100),
+ADD HangSanXuat VARCHAR(255),
+ADD NuocSanXuat VARCHAR(100),
+ADD NhietDoBaoQuan VARCHAR(50),
+ADD MaVach VARCHAR(100),
+ADD LoaiThuoc ENUM('ThuocKeDon','KhongKeDon','VatTuYTe'),
+ADD TrangThai BOOLEAN DEFAULT TRUE;
+
+
+ALTER TABLE NhaCungCap
+ADD Email VARCHAR(100),
+ADD MaSoThue VARCHAR(50),
+ADD NguoiLienHe VARCHAR(100),
+ADD DieuKhoanThanhToan TEXT;
+
+
+CREATE TABLE Thuoc_NhaCungCap (
+    MaThuoc INT,
+    MaNCC INT,
+    GiaNhap DECIMAL(10,2),
+    PRIMARY KEY (MaThuoc, MaNCC),
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
+    FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC)
+);
+
+
+CREATE TABLE Kho (
+    MaKho INT AUTO_INCREMENT PRIMARY KEY,
+    TenKho VARCHAR(100),
+    NhietDoToiThieu FLOAT,
+    NhietDoToiDa FLOAT,
+    TrangThai BOOLEAN DEFAULT TRUE
+);
+
+
+ALTER TABLE PhieuNhapThuoc
+ADD TongTien DECIMAL(12,2) DEFAULT 0,
+ADD LoaiPhieu ENUM('NhapMua','NhapTra','NhapKhac') DEFAULT 'NhapMua',
+ADD GhiChu TEXT;
+
+
+ALTER TABLE LoThuoc
+ADD NgaySanXuat DATE,
+ADD NhietDoBaoQuan VARCHAR(50),
+ADD TrangThai ENUM('ConHan','SapHetHan','HetHan','DaHuy') DEFAULT 'ConHan',
+ADD SoLuongNhap INT,
+ADD SoLuongDaXuat INT DEFAULT 0,
+ADD GhiChu TEXT,
+ADD MaKho INT,
+ADD MaNCC INT;
+
+ALTER TABLE LoThuoc
+ADD FOREIGN KEY (MaKho) REFERENCES Kho(MaKho),
+ADD FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC);
+
+
+CREATE TABLE PhieuXuatThuoc (
+    MaPX INT AUTO_INCREMENT PRIMARY KEY,
+    MaNhanVien INT,
+    MaKho INT,
+    LoaiXuat ENUM('BanChoBN','NoiBo','TraNCC','Huy'),
+    MaBN INT NULL,
+    NgayXuat DATETIME DEFAULT CURRENT_TIMESTAMP,
+    GhiChu TEXT,
+    FOREIGN KEY (MaNhanVien) REFERENCES NhanVien(MaNV),
+    FOREIGN KEY (MaKho) REFERENCES Kho(MaKho),
+    FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN)
+);
+
+
+CREATE TABLE ChiTietPhieuXuat (
+    MaCTPX INT AUTO_INCREMENT PRIMARY KEY,
+    MaPX INT,
+    MaLo INT,
+    SoLuong INT,
+    DonGia DECIMAL(10,2),
+    ThanhTien DECIMAL(12,2),
+    FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX),
+    FOREIGN KEY (MaLo) REFERENCES LoThuoc(MaLo)
+);
+
+
+CREATE TABLE PhieuKiemKe (
+    MaKK INT AUTO_INCREMENT PRIMARY KEY,
+    MaKho INT,
+    MaNhanVien INT,
+    NgayKiemKe DATETIME DEFAULT CURRENT_TIMESTAMP,
+    TrangThai ENUM('Nhap','DaDuyet'),
+    FOREIGN KEY (MaKho) REFERENCES Kho(MaKho),
+    FOREIGN KEY (MaNhanVien) REFERENCES NhanVien(MaNV)
+);
+
+
+CREATE TABLE ChiTietKiemKe (
+    MaCTKK INT AUTO_INCREMENT PRIMARY KEY,
+    MaKK INT,
+    MaLo INT,
+    SoLuongHeThong INT,
+    SoLuongThucTe INT,
+    ChenhLech INT,
+    LyDo TEXT,
+    FOREIGN KEY (MaKK) REFERENCES PhieuKiemKe(MaKK),
+    FOREIGN KEY (MaLo) REFERENCES LoThuoc(MaLo)
+);
+
+
+CREATE TABLE LichSuKho (
+    MaLS INT AUTO_INCREMENT PRIMARY KEY,
+    MaThuoc INT,
+    MaLo INT,
+    Loai ENUM('Nhap','Xuat','KiemKe','Huy'),
+    SoLuong INT,
+    ThoiGian DATETIME DEFAULT CURRENT_TIMESTAMP,
+    ThamChieuID INT,
+    GhiChu TEXT
+);
+
+CREATE TABLE PhieuHuyThuoc (
+    MaHuy INT AUTO_INCREMENT PRIMARY KEY,
+    MaLo INT,
+    SoLuong INT,
+    LyDo TEXT,
+    NgayHuy DATETIME DEFAULT CURRENT_TIMESTAMP,
+    MaNhanVien INT,
+    FOREIGN KEY (MaLo) REFERENCES LoThuoc(MaLo),
+    FOREIGN KEY (MaNhanVien) REFERENCES NhanVien(MaNV)
+);
+
+CREATE TABLE QuyDoiDonVi (
+    MaQD INT AUTO_INCREMENT PRIMARY KEY,
+    MaThuoc INT,
+    TenDonVi VARCHAR(50),   -- Vien, Vi, Hop, Thung
+    SoLuong INT,            -- số lượng quy đổi về đơn vị cơ bản
+    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc)
+);
+
+-- thêm ---
+
+ALTER TABLE PhieuXuatThuoc
+ADD TrangThai ENUM('Nhap','HoanThanh','Huy') DEFAULT 'Nhap';
+
+
+ALTER TABLE PhieuXuatThuoc
+ADD MaDT INT NULL,
+ADD FOREIGN KEY (MaDT) REFERENCES DonThuoc(MaDT);
+
+
+
+ALTER TABLE PhieuXuatThuoc
+ADD TongTien DECIMAL(12,2) DEFAULT 0,
+ADD MaNCC INT NULL,
+ADD LyDoHuy TEXT;
+
+ALTER TABLE PhieuXuatThuoc
+ADD FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC);
+
+ALTER TABLE LoThuoc
+ADD CONSTRAINT chk_trangthai_lo 
+CHECK (TrangThai IN ('ConHan','SapHetHan','HetHan','DaHuy'));
+
+--- hiện tại đang null, sau khi thêm dữ liệu vào mới dùng câu này---
+ALTER TABLE LoThuoc
+MODIFY MaCTPN INT NOT NULL;
+
+
+ALTER TABLE DichVu
+ADD COLUMN MaDV VARCHAR(20) UNIQUE NULL,
+ADD COLUMN MoTa TEXT NULL,
+ADD COLUMN TrangThai TINYINT(1) DEFAULT 1;
+
+UPDATE DichVu
+SET MaDV = CONCAT(
+    CASE 
+        WHEN Loai = 'KhamBenh' THEN 'DVK'
+        WHEN Loai = 'XetNghiem' THEN 'DVX'
+        WHEN Loai = 'SieuAm' THEN 'DVS'
+        ELSE 'DV'
+    END,
+    LPAD(MaDichVu, 3, '0')
+)
+WHERE MaDV IS NULL;
+
+
+INSERT INTO DichVu (TenDichVu, Gia, Loai, MaDV, MoTa, TrangThai) VALUES
+('Khám nội tổng quát', 250000, 'KhamBenh', 'DVK001', 'Khám lâm sàng tổng quát cho bệnh nhân', 1),
+('Xét nghiệm công thức máu', 180000, 'XetNghiem', 'DVX001', 'Phân tích chỉ số máu cơ bản', 1),
+('Siêu âm ổ bụng', 450000, 'SieuAm', 'DVS001', 'Siêu âm tổng quát vùng ổ bụng', 1),
+('Khám tai mũi họng', 220000, 'KhamBenh', 'DVK002', 'Khám chuyên khoa tai mũi họng', 1),
+('Xét nghiệm đường huyết', 120000, 'XetNghiem', 'DVX002', 'Đo nồng độ đường huyết trong máu', 1);
+
+
+CREATE TABLE GoiDichVu (
+    MaGoi INT AUTO_INCREMENT PRIMARY KEY,
+    MaGDV VARCHAR(20) UNIQUE NULL,
+    TenGoi VARCHAR(150) NOT NULL,
+    MoTa TEXT NULL,
+    GiaGoi DECIMAL(12,2) NOT NULL DEFAULT 0,
+    TrangThai TINYINT(1) DEFAULT 1,
+    MauHienThi VARCHAR(20) NULL,
+    BieuTuong VARCHAR(50) NULL,
+    NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    NgayCapNhat TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ChiTietGoiDichVu (
+    MaCTGoi INT AUTO_INCREMENT PRIMARY KEY,
+    MaGoi INT NOT NULL,
+    MaDichVu INT NOT NULL,
+    SoLuong INT DEFAULT 1,
+    GhiChu VARCHAR(255) NULL,
+    FOREIGN KEY (MaGoi) REFERENCES GoiDichVu(MaGoi) ON DELETE CASCADE,
+    FOREIGN KEY (MaDichVu) REFERENCES DichVu(MaDichVu) ON DELETE CASCADE,
+    UNIQUE KEY uq_goi_dichvu (MaGoi, MaDichVu)
+);
+
+ALTER TABLE DichVu
+ADD COLUMN ThoiLuongPhut INT DEFAULT 15,
+ADD COLUMN CanDatTruoc TINYINT(1) DEFAULT 0,
+ADD COLUMN CanChiDinhBacSi TINYINT(1) DEFAULT 0,
+ADD COLUMN HuongDanTruocKham TEXT NULL,
+ADD COLUMN ThuTuHienThi INT DEFAULT 0,
+ADD COLUMN MauNhan VARCHAR(20) NULL,
+ADD COLUMN MaChuyenKhoa INT NULL,
+ADD FOREIGN KEY (MaChuyenKhoa) REFERENCES ChuyenKhoa(MaChuyenKhoa);
+
+CREATE TABLE CauHinhDichVu (
+    MaCauHinh INT AUTO_INCREMENT PRIMARY KEY,
+    MaDichVu INT NOT NULL UNIQUE,
+    ThoiLuongPhut INT DEFAULT 15,
+    CanDatTruoc TINYINT(1) DEFAULT 0,
+    CanChiDinhBacSi TINYINT(1) DEFAULT 0,
+    HuongDanTruocKham TEXT NULL,
+    ThuTuHienThi INT DEFAULT 0,
+    MauNhan VARCHAR(20) NULL,
+    MaChuyenKhoa INT NULL,
+    FOREIGN KEY (MaDichVu) REFERENCES DichVu(MaDichVu) ON DELETE CASCADE,
+    FOREIGN KEY (MaChuyenKhoa) REFERENCES ChuyenKhoa(MaChuyenKhoa)
+);
+
+INSERT INTO GoiDichVu (
+    TenGoi,
+    MoTa,
+    GiaGoi,
+    TrangThai,
+    BieuTuong,
+    MauHienThi
+) VALUES
+(
+    'Gói khám sức khỏe tổng quát',
+    'Gói khám dành cho kiểm tra sức khỏe định kỳ cơ bản',
+    1250000,
+    1,
+    'fa-heartbeat',
+    '#2563eb'
+),
+(
+    'Gói chăm sóc thai kỳ',
+    'Gói theo dõi và chăm sóc thai kỳ định kỳ',
+    8400000,
+    1,
+    'fa-user-md',
+    '#7c3aed'
+),
+(
+    'Gói tầm soát tim mạch',
+    'Gói kiểm tra sức khỏe tim mạch và các chỉ số liên quan',
+    2100000,
+    1,
+    'fa-heart',
+    '#dc2626'
+);
+
+INSERT INTO ChiTietGoiDichVu (MaGoi, MaDichVu, SoLuong, GhiChu) VALUES
+(1, 1, 1, 'Khám tổng quát ban đầu'),
+(1, 2, 1, 'Xét nghiệm máu định kỳ'),
+(1, 5, 1, 'Kiểm tra đường huyết'),
+
+(2, 1, 1, 'Khám định kỳ thai kỳ'),
+(2, 3, 2, 'Siêu âm thai'),
+(2, 5, 1, 'Theo dõi đường huyết thai kỳ'),
+
+(3, 1, 1, 'Khám nội tổng quát'),
+(3, 2, 1, 'Xét nghiệm máu'),
+(3, 5, 1, 'Kiểm tra đường huyết');
+
+INSERT INTO CauHinhDichVu (
+    MaDichVu,
+    ThoiLuongPhut,
+    CanDatTruoc,
+    CanChiDinhBacSi,
+    MaChuyenKhoa,
+    ThuTuHienThi,
+    MauNhan,
+    HuongDanTruocKham
+) VALUES
+(1, 20, 1, 0, 1, 1, '#0ea5e9', 'Nên đến trước 15 phút để làm thủ tục'),
+(2, 15, 1, 1, 1, 2, '#f97316', 'Nhịn ăn 8 giờ trước khi lấy máu nếu có chỉ định'),
+(3, 25, 1, 1, 1, 3, '#8b5cf6', 'Uống đủ nước trước khi siêu âm nếu bác sĩ yêu cầu'),
+(4, 20, 1, 0, 6, 4, '#2563eb', 'Không dùng thuốc xịt mũi trước khi khám nếu không cần thiết'),
+(5, 10, 0, 0, 1, 5, '#16a34a', 'Có thể thực hiện nhanh trong ngày');
+-- 2. Bổ sung bảng HoaDon
+ALTER TABLE HoaDon
+ADD NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP AFTER MaNhanVien,
+ADD TongTien DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER TrangThai,
+ADD GhiChu TEXT NULL AFTER TongTien,
+ADD MaPX INT NULL AFTER MaBA,
+ADD FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX);
+
+ALTER TABLE HoaDon
+MODIFY NgayThanhToan TIMESTAMP NULL;
+
+-- 3. Bổ sung bảng ChiTietHoaDon
+ALTER TABLE ChiTietHoaDon
+ADD SoLuong INT NOT NULL DEFAULT 1 AFTER MaThuoc,
+ADD DonGia DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER SoLuong,
+ADD LoaiMuc ENUM('DichVu','Thuoc') NOT NULL DEFAULT 'DichVu' AFTER DonGia,
+ADD GhiChu TEXT NULL AFTER LoaiMuc;
+
+ALTER TABLE HoaDon
+MODIFY TrangThai ENUM('ChuaThanhToan','DaThanhToan','QuaHan','Huy') DEFAULT 'ChuaThanhToan';
+
+ALTER TABLE ChiTietHoaDon
+ADD LoaiMuc ENUM('DichVu','Thuoc') DEFAULT 'DichVu',
+ADD SoLuong INT DEFAULT 1,
+ADD DonGia DECIMAL(12,2) DEFAULT 0,
+ADD ThanhTien DECIMAL(12,2) DEFAULT 0,
+ADD DienGiai VARCHAR(255) NULL;
+
+ALTER TABLE ChiTietHoaDon
+ADD MaPX INT NULL,
+ADD FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX);
+
+ALTER TABLE HoaDon
+ADD MaHoaDon VARCHAR(30) UNIQUE NULL,
+ADD NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+ADD TongTien DECIMAL(12,2) DEFAULT 0,
+ADD GiamGia DECIMAL(12,2) DEFAULT 0,
+ADD ThanhTienCuoi DECIMAL(12,2) DEFAULT 0,
+ADD HanThanhToan DATE NULL,
+ADD GhiChu TEXT NULL;
+
+
+INSERT INTO HoaDon
+(
+    MaBA, MaNhanVien, PhuongThucThanhToan, NgayThanhToan, TrangThai,
+    MaHoaDon, NgayTao, TongTien, GiamGia, ThanhTienCuoi, HanThanhToan, GhiChu
+)
+VALUES
+(1, 29, 'TienMat', NULL, 'ChuaThanhToan', 'HD00001', NOW(), 370000, 20000, 350000, DATE_ADD(CURDATE(), INTERVAL 3 DAY), 'Hóa đơn khám ngoại trú'),
+(1, 29, 'ChuyenKhoan', NOW(), 'DaThanhToan', 'HD00002', NOW(), 450000, 50000, 400000, DATE_ADD(CURDATE(), INTERVAL 5 DAY), 'Đã thanh toán online');
+
+INSERT INTO ChiTietHoaDon
+(
+    MaHD, MaDichVu, SoTien, MaThuoc, LoaiMuc, SoLuong, DonGia, ThanhTien, DienGiai, MaPX
+)
+VALUES
+(1, 1, 250000, NULL, 'DichVu', 1, 250000, 250000, 'Khám nội tổng quát', NULL),
+(1, 2, 120000, NULL, 'DichVu', 1, 120000, 120000, 'Xét nghiệm đường huyết', NULL),
+(2, 3, 450000, NULL, 'DichVu', 1, 450000, 450000, 'Siêu âm ổ bụng', NULL);
+
+-- 4. Index hỗ trợ tra cứu và thống kê
+
+CREATE INDEX idx_hoadon_ngaytao ON HoaDon(NgayTao);
+CREATE INDEX idx_hoadon_trangthai ON HoaDon(TrangThai);
+CREATE INDEX idx_hoadon_maba ON HoaDon(MaBA);
+
+ALTER TABLE HoaDon
+ADD MaPX INT NULL,
+ADD CONSTRAINT fk_hoadon_mapx
+FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX);
+
+CREATE INDEX idx_cthd_mahd ON ChiTietHoaDon(MaHD);
+CREATE INDEX idx_cthd_madichvu ON ChiTietHoaDon(MaDichVu);
+CREATE INDEX idx_cthd_mathuoc ON ChiTietHoaDon(MaThuoc);
+CREATE INDEX idx_cthd_loaimuc ON ChiTietHoaDon(LoaiMuc);
+
+CREATE INDEX idx_dichvu_loai ON DichVu(Loai);
+CREATE INDEX idx_dichvu_trangthai ON DichVu(TrangThai);
+
+INSERT INTO QuyDoiDonVi (MaThuoc, TenDonVi, SoLuong) VALUES
+
+-- ===============================
+-- 1. Augmentin (Đơn vị cơ bản: Viên)
+-- 1 vỉ = 7 viên | 1 hộp = 2 vỉ | 1 thùng = 100 hộp
+-- ===============================
+(1, 'Vien', 1),
+(1, 'Vi', 7),
+(1, 'Hop', 14),
+(1, 'Thung', 1400),
+
+-- ===============================
+-- 2. Panadol Extra (Đơn vị cơ bản: Viên)
+-- 1 vỉ = 12 viên | 1 hộp = 15 vỉ | 1 thùng = 40 hộp
+-- ===============================
+(2, 'Vien', 1),
+(2, 'Vi', 12),
+(2, 'Hop', 180),
+(2, 'Thung', 7200),
+
+-- ===============================
+-- 3. Amlor (Đơn vị cơ bản: Viên)
+-- 1 vỉ = 10 viên | 1 hộp = 3 vỉ
+-- ===============================
+(3, 'Vien', 1),
+(3, 'Vi', 10),
+(3, 'Hop', 30),
+
+-- ===============================
+-- 4. Glucophage (Đơn vị cơ bản: Viên)
+-- 1 vỉ = 20 viên | 1 hộp = 5 vỉ
+-- ===============================
+(4, 'Vien', 1),
+(4, 'Vi', 20),
+(4, 'Hop', 100),
+
+-- ===============================
+-- 5. Paracetamol 500 (Đơn vị cơ bản: Viên)
+-- ===============================
+(5, 'Vien', 1),
+(5, 'Vi', 10),
+(5, 'Hop', 100),
+
+-- ===============================
+-- 6. Nexium Mups (Đơn vị cơ bản: Viên)
+-- 1 vỉ = 7 viên | 1 hộp = 2 vỉ
+-- ===============================
+(6, 'Vien', 1),
+(6, 'Vi', 7),
+(6, 'Hop', 14),
+
+-- ===============================
+-- 7. Vitamin C (Đơn vị cơ bản: Viên)
+-- ===============================
+(7, 'Vien', 1),
+(7, 'Vi', 10),
+(7, 'Hop', 100),
+
+-- ===============================
+-- 8. Gaviscon (Đơn vị cơ bản: Gói)
+-- 1 hộp = 24 gói | 1 thùng = 24 hộp
+-- ===============================
+(8, 'Goi', 1),
+(8, 'Hop', 24),
+(8, 'Thung', 576),
+
+-- ===============================
+-- 9. Smecta (Đơn vị cơ bản: Gói)
+-- ===============================
+(9, 'Goi', 1),
+(9, 'Hop', 30),
+
+-- ===============================
+-- 10. Losartan (Đơn vị cơ bản: Viên)
+-- ===============================
+(10, 'Vien', 1),
+(10, 'Vi', 10),
+(10, 'Hop', 30);
+
+-- ================= FIX LO THUOC + NHAP THUOC =================
+
+ALTER TABLE ChiTietPhieuNhap
+ADD DonViNhap VARCHAR(50),
+ADD SoLuongNhap INT,
+ADD HeSoQuyDoi INT;
+
+-- 1. FIX MaCTPN NULL
+SET SQL_SAFE_UPDATES = 0;
+UPDATE LoThuoc l
+JOIN ChiTietPhieuNhap ct 
+    ON l.MaThuoc = ct.MaThuoc
+SET l.MaCTPN = ct.MaCTPN
+WHERE l.MaCTPN IS NULL;
+
+-- 2. SET NOT NULL
+ALTER TABLE LoThuoc
+MODIFY MaCTPN INT NOT NULL;
+
+-- 3. ADD UNIQUE
+ALTER TABLE LoThuoc
+ADD CONSTRAINT unique_ctpn UNIQUE (MaCTPN);
+
+-- 4. ADD INDEX
+CREATE INDEX idx_ctpn ON LoThuoc(MaCTPN);
+
+-- 5. FIX SoLuongNhap đúng theo ChiTietPhieuNhap
+UPDATE LoThuoc l
+JOIN ChiTietPhieuNhap ct 
+    ON l.MaCTPN = ct.MaCTPN
+SET l.SoLuongNhap = ct.SoLuong;
+
+
+-- 6. FIX TRIGGER NHAP KHO
+DELIMITER $$
+
+CREATE TRIGGER trg_nhap_kho
+AFTER INSERT ON ChiTietPhieuNhap
+FOR EACH ROW
+BEGIN
+    DECLARE lo_id INT;
+
+    SELECT MaLo INTO lo_id
+    FROM LoThuoc
+    WHERE MaCTPN = NEW.MaCTPN
+    LIMIT 1;
+
+    IF lo_id IS NOT NULL THEN
+        UPDATE LoThuoc
+        SET SoLuongNhap = COALESCE(SoLuongNhap,0) + NEW.SoLuong
+        WHERE MaLo = lo_id;
+
+        INSERT INTO LichSuKho(MaThuoc, MaLo, Loai, SoLuong, ThamChieuID)
+        VALUES (NEW.MaThuoc, lo_id, 'Nhap', NEW.SoLuong, NEW.MaPN);
+    END IF;
+
+END$$
+
+DELIMITER ;
+
+-- 7. FIX TongTien phieu nhap
+UPDATE PhieuNhapThuoc pn
+SET TongTien = (
+    SELECT IFNULL(SUM(ct.SoLuong * ct.GiaNhap),0)
+    FROM ChiTietPhieuNhap ct
+    WHERE ct.MaPN = pn.MaPN
+);
+
+-- 1. RÀNG BUỘC & KHO
+
+ALTER TABLE PhieuNhapThuoc 
+ADD MaKho INT,
+ADD FOREIGN KEY (MaKho) REFERENCES Kho(MaKho);
+
+ALTER TABLE ChiTietPhieuNhap
+ADD CONSTRAINT chk_soluong_nhap CHECK (SoLuong > 0), -- FIX (>0 thay vì >=0)
+ADD CONSTRAINT chk_gianhap CHECK (GiaNhap >= 0);
+
+ALTER TABLE ChiTietPhieuXuat
+ADD CONSTRAINT chk_soluong_xuat CHECK (SoLuong > 0),
+ADD CONSTRAINT chk_dongia CHECK (DonGia >= 0);
+
+ALTER TABLE LoThuoc
+ADD CONSTRAINT unique_lo_thuoc UNIQUE (MaThuoc, SoLo);
+
+CREATE INDEX idx_lo_hansudung ON LoThuoc(HanSuDung);
+CREATE INDEX idx_lo_thuoc ON LoThuoc(MaThuoc);
+
+
+-- 2. VIEW PHỤC VỤ NGHIỆP VỤ
+
+CREATE OR REPLACE VIEW LoThuoc_FEFO AS
+SELECT *
+FROM LoThuoc
+WHERE (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) > 0
+AND TrangThai != 'HetHan'
+ORDER BY HanSuDung ASC;
+
+--- thêm---
+
+CREATE OR REPLACE VIEW LoThuoc_FEFO AS
+SELECT 
+    MaLo,
+    MaThuoc,
+    MaKho,
+    SoLo,
+    HanSuDung,
+    TrangThai,
+    (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) AS Ton
+FROM LoThuoc
+WHERE 
+    (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) > 0
+    AND TrangThai IN ('ConHan','SapHetHan')
+ORDER BY HanSuDung ASC;
+
+
+CREATE INDEX idx_fefo 
+ON LoThuoc(MaThuoc, MaKho, HanSuDung);
+
+
+CREATE OR REPLACE VIEW TonKhoTheoThuoc AS
+SELECT 
+    MaThuoc,
+    SUM(COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) AS TongTon
+FROM LoThuoc
+GROUP BY MaThuoc;
+
+CREATE OR REPLACE VIEW TonKhoTheoLo AS
+SELECT 
+    MaLo,
+    MaThuoc,
+    (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) AS TonLo,
+    HanSuDung
+FROM LoThuoc;
+
+CREATE OR REPLACE VIEW ThuocSapHetHan AS
+SELECT *
+FROM LoThuoc
+WHERE HanSuDung <= DATE_ADD(CURDATE(), INTERVAL 90 DAY)
+AND TrangThai != 'HetHan';
+
+CREATE OR REPLACE VIEW BaoCaoNhapXuat AS
+SELECT 
+    Loai,
+    MaThuoc,
+    MaLo,
+    SoLuong,
+    ThoiGian
+FROM LichSuKho;
+
+
+-- 3. TRIGGER QUẢN LÝ HẠN DÙNG
+
+DROP TRIGGER IF EXISTS trg_update_trangthai_lo;
+DELIMITER $$
+
+CREATE TRIGGER trg_update_trangthai_lo
+BEFORE UPDATE ON LoThuoc
+FOR EACH ROW
+BEGIN
+    IF NEW.HanSuDung < CURDATE() THEN
+        SET NEW.TrangThai = 'HetHan';
+    ELSEIF NEW.HanSuDung < DATE_ADD(CURDATE(), INTERVAL 90 DAY) THEN
+        SET NEW.TrangThai = 'SapHetHan';
+    ELSE
+        SET NEW.TrangThai = 'ConHan';
+    END IF;
+END$$
+
+DELIMITER ;
+
+
+DROP TRIGGER IF EXISTS trg_update_trangthai_lo_insert;
+DELIMITER $$
+
+CREATE TRIGGER trg_update_trangthai_lo_insert
+BEFORE INSERT ON LoThuoc
+FOR EACH ROW
+BEGIN
+    IF NEW.HanSuDung < CURDATE() THEN
+        SET NEW.TrangThai = 'HetHan';
+    ELSEIF NEW.HanSuDung < DATE_ADD(CURDATE(), INTERVAL 90 DAY) THEN
+        SET NEW.TrangThai = 'SapHetHan';
+    ELSE
+        SET NEW.TrangThai = 'ConHan';
+    END IF;
+END$$
+
+DELIMITER ;
+
+-- 6. HỦY THUỐC 
+
+
+DROP TRIGGER IF EXISTS trg_huy_thuoc;
+DELIMITER $$
+
+CREATE TRIGGER trg_huy_thuoc
+AFTER INSERT ON PhieuHuyThuoc
+FOR EACH ROW
+BEGIN
+    DECLARE ton INT;
+    DECLARE thuoc_id INT;
+
+    SELECT (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)), MaThuoc
+    INTO ton, thuoc_id
+    FROM LoThuoc
+    WHERE MaLo = NEW.MaLo;
+
+    IF ton IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Lo khong ton tai';
+    END IF;
+
+    IF ton < NEW.SoLuong THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Khong du ton de huy';
+    END IF;
+
+    UPDATE LoThuoc
+    SET SoLuongDaXuat = COALESCE(SoLuongDaXuat,0) + NEW.SoLuong
+    WHERE MaLo = NEW.MaLo;
+
+    UPDATE LoThuoc
+    SET TrangThai = 'DaHuy'
+    WHERE MaLo = NEW.MaLo
+      AND (COALESCE(SoLuongNhap,0) - COALESCE(SoLuongDaXuat,0)) = 0;
+
+    INSERT INTO LichSuKho(MaThuoc, MaLo, Loai, SoLuong, ThamChieuID)
+    VALUES (thuoc_id, NEW.MaLo, 'Huy', NEW.SoLuong, NEW.MaHuy);
+
+END$$
+
+DELIMITER ;
+
+INSERT INTO Kho (
+    TenKho,
+    NhietDoToiThieu,
+    NhietDoToiDa,
+    TrangThai
+) VALUES
+('Kho Chính (Thuốc thường)', 15.0, 30.0, TRUE);
+
+INSERT INTO PhieuNhapThuoc 
+    (MaNCC, MaNhanVien, NgayNhap, TongTien, LoaiPhieu, GhiChu, MaKho) 
+VALUES
+(1, 29, '2026-03-01', 0.00, 'NhapMua', 'Nhập lô hàng tháng 3/2026 từ GSK: Augmentin và Panadol Extra', 1),
+(1, 29, '2026-03-05', 0.00, 'NhapMua', 'Nhập bổ sung từ GSK: Ventolin Evohaler và Gaviscon Dual Action', 1),
+(2, 30, '2026-03-10', 0.00, 'NhapMua', 'Nhập từ Pfizer: Amlor và Lipitor (thuốc tim mạch)', 1),
+(3, 30, '2026-03-12', 0.00, 'NhapMua', 'Nhập từ AstraZeneca: Nexium Mups và Crestor (dạ dày và mỡ máu)', 1),
+(4, 29, '2026-03-15', 0.00, 'NhapMua', 'Nhập từ Merck: Glucophage; và Losartan từ Stada (đái tháo đường & huyết áp)', 1);
+
+INSERT INTO Thuoc (TenThuoc, DonViCoBan, GiaBan, HoatChat, HamLuong, DangBaoChe, QuyCachDongGoi, HangSanXuat, NuocSanXuat, NhietDoBaoQuan, MaVach, LoaiThuoc, TrangThai) VALUES
+('Augmentin', 'Viên', 15500.00, 'Amoxicillin, Acid Clavulanic', '500mg/125mg', 'Viên nén bao phim', 'Hộp 2 vỉ x 7 viên', 'GlaxoSmithKline', 'Pháp/Anh', 'Dưới 25°C', '3004508200123', 'ThuocKeDon', NULL),
+
+('Panadol Extra', 'Viên', 1250.00, 'Paracetamol, Caffeine', '500mg/65mg', 'Viên nén', 'Hộp 15 vỉ x 12 viên', 'GSK', 'Australia', 'Dưới 30°C', '8934658000012', 'KhongKeDon', NULL),
+
+('Amlor', 'Viên', 9800.00, 'Amlodipine besylate', '5mg', 'Viên nang cứng', 'Hộp 3 vỉ x 10 viên', 'Pfizer', 'Pháp', 'Dưới 30°C', '3004500012345', 'ThuocKeDon', NULL),
+
+('Glucophage', 'Viên', 4500.00, 'Metformin hydrochloride', '850mg', 'Viên nén bao phim', 'Hộp 5 vỉ x 20 viên', 'Merck', 'Pháp', 'Dưới 25°C', '4022536789012', 'ThuocKeDon', NULL),
+
+('Ventolin Evohaler', 'Bình', 95000.00, 'Salbutamol', '100mcg/liều', 'Hỗn dịch xịt định liều', 'Hộp 1 bình 200 liều', 'GSK', 'Tây Ban Nha/Anh', 'Dưới 30°C', '5012345678901', 'ThuocKeDon', NULL),
+
+('Nexium Mups', 'Viên', 22500.00, 'Esomeprazole magnesium', '40mg', 'Viên nén bao tan trong ruột', 'Hộp 2 vỉ x 7 viên', 'AstraZeneca', 'Thụy Điển', 'Dưới 30°C', '7321835002015', 'ThuocKeDon', NULL),
+
+('Crestor', 'Viên', 18500.00, 'Rosuvastatin calcium', '10mg', 'Viên nén bao phim', 'Hộp 2 vỉ x 14 viên', 'AstraZeneca', 'Anh', 'Dưới 30°C', '7321835010041', 'ThuocKeDon', NULL),
+
+('Gaviscon Dual Action', 'Gói', 12000.00, 'Natri alginate + Natri bicarbonate + Canxi carbonate', '10ml', 'Hỗn dịch uống', 'Hộp 24 gói x 10ml', 'Reckitt Benckiser', 'Anh', 'Dưới 30°C', '5000158069542', 'KhongKeDon', NULL),
+
+('Lipitor', 'Viên', 18000.00, 'Atorvastatin calcium', '10mg', 'Viên nén bao phim', 'Hộp 3 vỉ x 10 viên', 'Pfizer', 'Ireland', 'Dưới 30°C', '3004501234567', 'ThuocKeDon', NULL),
+
+('Losartan', 'Viên', 6500.00, 'Losartan potassium', '50mg', 'Viên nén bao phim', 'Hộp 3 vỉ x 10 viên', 'Stada', 'Hàn Quốc', 'Dưới 30°C', '8931234567890', 'ThuocKeDon', NULL);
+
+
+
+INSERT INTO NhaCungCap (TenNCC, DiaChi, SoDienThoai, Email, MaSoThue, NguoiLienHe, DieuKhoanThanhToan) VALUES
+('GlaxoSmithKline Vietnam', 'Lô I-5, Đường D1, KCN Tân Thuận, Q.7, TP.HCM', '02837701234', 'contact@gsk.com.vn', '0101234567', 'Nguyễn Thị Lan', 'Thanh toán trong 30 ngày kể từ ngày nhận hàng'),
+('Pfizer Vietnam', 'Tầng 12, Tòa nhà Saigon Centre, Q.1, TP.HCM', '02838245678', 'procurement@pfizer.com.vn', '0107654321', 'Trần Văn Bình', 'Thanh toán 45 ngày'),
+('AstraZeneca Vietnam', 'Số 2, Đường Nguyễn Thị Minh Khai, Q.3, TP.HCM', '02839345678', 'supply@astrazeneca.com.vn', '0109876543', 'Lê Thị Hương', 'Thanh toán 30 ngày'),
+('Merck Vietnam', 'Tầng 15, Tòa nhà Bitexco, Q.1, TP.HCM', '02839123456', 'vnprocurement@merckgroup.com', '0101122334', 'Phạm Minh Quân', 'Thanh toán 60 ngày'),
+('Stada Vietnam', 'Khu công nghiệp Biên Hòa, Đồng Nai', '02513891234', 'info@stada.vn', '0105566778', 'Hoàng Văn Nam', 'Thanh toán 30 ngày');
+
+
+USE clinicmanagement; -- Đảm bảo đã chọn database trước khi chạy
+
+INSERT INTO NhaCungCap (TenNCC, DiaChi, SoDienThoai, Email, MaSoThue, NguoiLienHe, DieuKhoanThanhToan) VALUES
+('Sanofi Vietnam', '10 Hàm Nghi, Quận 1, TP.HCM', '02838298526', 'supply.vn@sanofi.com', '0102233445', 'Nguyễn Minh Triết', 'Thanh toán 30 ngày'),
+('Zuellig Pharma Vietnam', 'KCN Tân Tạo, Quận Bình Tân, TP.HCM', '02837542655', 'zp.vn@zuelligpharma.com', '0103344556', 'Trương Mỹ Linh', 'Thanh toán 45 ngày'),
+('Dược Hậu Giang (DHG)', '288 Nguyễn Văn Cừ, Cần Thơ', '02923891433', 'dhgpharma@dhgpharma.com.vn', '1800156801', 'Lê Hoàng Nam', 'Thanh toán 15 ngày'),
+('Traphaco Vietnam', '75 Yên Ninh, Ba Đình, Hà Nội', '02436810615', 'info@traphaco.com.vn', '0100108656', 'Đặng Thu Thảo', 'Thanh toán 30 ngày'),
+('DKSH Vietnam', 'Số 23 Đại lộ Thống Nhất, KCN VSIP, Bình Dương', '02743756312', 'healthcare.vn@dksh.com', '3700303206', 'Phan Anh Tuấn', 'Thanh toán 60 ngày');
+
 INSERT INTO VaiTro (TenVaiTro) VALUES 
-('Admin'), 
-('Bac Si'), 
-('Le Tan'), 
-('Ke Toan');
+('Duoc Si'), 
+('Nhan Vien Kho')
+;
 
--- 2. Chuyên Khoa
-INSERT INTO ChuyenKhoa (TenChuyenKhoa) VALUES 
-('Nội Tổng Quát'), 
-('Nhi Khoa'), 
-('Sản Phụ Khoa'), 
-('Da Liễu'),
-('Tim Mạch'),
-('Tai Mũi Họng');
+INSERT INTO ChiTietPhieuNhap (MaPN, MaThuoc, SoLuong, GiaNhap)
+VALUES 
+(21, 1, 280, 11000.00), (21, 2, 1800, 950.00),  
+(22, 5, 50, 75000.00), (22, 8, 240, 9500.00),  
+(23, 3, 300, 7200.00), (23, 9, 300, 14500.00), 
+(24, 6, 140, 18500.00), (24, 7, 280, 15000.00), 
+(25, 4, 1000, 3200.00), (25, 10, 300, 4800.00);
+
+INSERT INTO Thuoc_NhaCungCap (MaThuoc, MaNCC, GiaNhap) 
+VALUES 
+(1, 1, 11000.00), (2, 1, 950.00), (5, 1, 75000.00), (8, 1, 9500.00),
+(3, 2, 7200.00), (9, 2, 14500.00),
+(6, 3, 18500.00), (7, 3, 15000.00),
+(4, 4, 3200.00),
+(10, 5, 4800.00);
+
+INSERT INTO LoThuoc 
+    (MaThuoc, SoLo, HanSuDung, GiaNhap, MaCTPN, NgaySanXuat, NhietDoBaoQuan, TrangThai, SoLuongNhap, SoLuongDaXuat, GhiChu, MaKho, MaNCC) 
+VALUES
+-- Nhóm GSK (MaNCC = 1)
+(1, 'AUG24001', '2026-12-01', 11000.00, NULL, '2023-12-01', 'Dưới 25°C', NULL, 280, 0, 'Lô nhập khẩu Pháp, hộp 14 viên', 1, 1),
+(2, 'PAN25012', '2027-05-20', 850.00, NULL, '2024-05-20', 'Dưới 30°C', NULL, 1800, 0, 'Lô Australia, hộp 180 viên', 1, 1),
+(5, 'VEN2309', '2026-03-15', 75000.00, NULL, '2023-03-15', 'Dưới 30°C', NULL, 50, 0, 'Bình xịt định liều', 1, 1),
+(8, 'GAV2408', '2026-09-12', 9500.00, NULL, '2023-09-12', 'Dưới 30°C', NULL, 240, 0, 'Hỗn dịch uống, hộp 24 gói', 1, 1),
+
+-- Nhóm Pfizer (MaNCC = 2)
+(3, 'AML2405', '2026-08-30', 7200.00, NULL, '2023-08-30', 'Dưới 30°C', NULL, 300, 0, 'Hộp 30 viên', 1, 2),
+(9, 'LIP2411', '2026-11-15', 14500.00, NULL, '2023-11-15', 'Dưới 30°C', NULL, 300, 0, 'Thuốc mỡ máu Pfizer', 1, 2),
+
+-- Nhóm AstraZeneca (MaNCC = 3)
+(6, 'NEX2402', '2026-11-30', 18500.00, NULL, '2024-02-28', 'Dưới 30°C', NULL, 140, 0, 'Viên nén bao tan trong ruột', 1, 3),
+(7, 'CRE2411', '2027-01-05', 15000.00, NULL, '2024-01-05', 'Dưới 30°C', NULL, 280, 0, 'Hộp 28 viên', 1, 3),
+
+-- Nhóm Merck & Stada (MaNCC = 4 & 5)
+(4, 'GLU2410', '2027-02-10', 3200.00, NULL, '2024-02-10', 'Dưới 25°C', NULL, 1000, 0, 'Thuốc tiểu đường Merck', 1, 4),
+(10, 'LOS2403', '2026-03-20', 4800.00, NULL, '2023-03-20', 'Dưới 30°C', NULL, 300, 0, 'Hộp 30 viên từ Stada', 1, 5);
 
 -- 3. Nhân Viên
 INSERT INTO NhanVien (HoTen, SoDienThoai, Email, Username, Password, MaVaiTro, MaChuyenKhoa) VALUES 
+-- Nhân viên kho--
+('Nguyen The Anh', '0989234567', 'theanh@clinic.com', 'tanh', '123456', 6, NULL),
+('Nguyen Hoang Hung', '0989234867', 'hhung@clinic.com', 'hhung', '123456', 6, NULL),
 -- Admin
-('Nguyen Van A', '0901234567', 'admin@clinic.com', 'admin', '123456', 1, NULL),
+('Nguyen Van Tuan', '0901234567', 'admin@clinic.com', 'admin', '123456', 1, NULL),
 -- Bác sĩ
-('BS. Le Van B', '0912345678', 'bsb@clinic.com', 'bsb', '123456', 2, 1),
-('BS. Tran Thi C', '0923456789', 'bsc@clinic.com', 'bsc', '123456', 2, 2),
-('BS. Pham Van D', '0934567890', 'bsd@clinic.com', 'bsd', '123456', 2, 3),
-('BS. Nguyen Thi E', '0945678901', 'bse@clinic.com', 'bse', '123456', 2, 4),
-('BS. Hoang Van F', '0956789012', 'bsf@clinic.com', 'bsf', '123456', 2, 5),
+('BS. Le Van Hai', '0912345678', 'bsb@clinic.com', 'bsb', '123456', 2, 1),
+('BS. Tran Thi Ngan', '0923456789', 'bsc@clinic.com', 'bsc', '123456', 2, 2),
+('BS. Pham Van Dong', '0934567890', 'bsd@clinic.com', 'bsd', '123456', 2, 3),
+('BS. Nguyen Thi Hoa', '0945678901', 'bse@clinic.com', 'bse', '123456', 2, 4),
+('BS. Hoang Van Kien', '0956789012', 'bsf@clinic.com', 'bsf', '123456', 2, 5),
 -- Lễ tân
-('Tran Thi G', '0967890123', 'letang@clinic.com', 'letang', '123456', 3, NULL),
-('Le Van H', '0978901234', 'letanh@clinic.com', 'letanh', '123456', 3, NULL);
+('Tran Thi Hien', '0967890123', 'letang@clinic.com', 'letang', '123456', 3, NULL),
+('Le Van Quynh', '0978901234', 'letanh@clinic.com', 'letanh', '123456', 3, NULL);
 
 -- Thêm bác sĩ cho tất cả các chuyên khoa
 INSERT INTO NhanVien (HoTen, SoDienThoai, Email, Username, Password, MaVaiTro, MaChuyenKhoa) VALUES 
@@ -265,210 +1086,13 @@ INSERT INTO NhanVien (HoTen, SoDienThoai, Email, Username, Password, MaVaiTro, M
 ('BS. Hoang Van Anh', '0887654321', 'bs.anh@clinic.com', 'bsanh', '123456', 2, 6),
 ('BS. Tran Thi Thu', '0876543210', 'bs.thu@clinic.com', 'bsthu', '123456', 2, 6);
 
--- 4. Bệnh Nhân
+
+-- Thêm 3 bản ghi mẫu vào bảng BenhNhan
+
 INSERT INTO BenhNhan (HoTen, NgaySinh, GioiTinh, DiaChi, SoDienThoai, Email) VALUES 
-('Pham Van D', '1990-05-15', 'Nam', '123 Ly Tu Trong, Da Nang', '0934567890', 'd@gmail.com'),
-('Le Thi E', '1995-10-20', 'Nu', '456 Nguyen Hue, TP HCM', '0945678901', 'e@gmail.com'),
-('Tran Van F', '1988-03-10', 'Nam', '789 Le Loi, Ha Noi', '0956789012', 'f@gmail.com'),
-('Nguyen Thi G', '1992-12-25', 'Nu', '321 Tran Phu, Da Nang', '0967890123', 'g@gmail.com'),
-('Hoang Van H', '1985-07-30', 'Nam', '654 Hai Ba Trung, TP HCM', '0978901234', 'h@gmail.com');
 
--- 5. Phòng Khám
-INSERT INTO PhongKham (TenPhong, GhiChu) VALUES 
-('Phòng 101 - Nội Tổng Quát', 'Tầng 1'),
-('Phòng 102 - Nhi Khoa', 'Tầng 1'),
-('Phòng 103 - Sản Phụ Khoa', 'Tầng 1'),
-('Phòng 201 - Da Liễu', 'Tầng 2'),
-('Phòng 202 - Tim Mạch', 'Tầng 2'),
-('Phòng 203 - Tai Mũi Họng', 'Tầng 2');
+('Nguyễn Văn An', '1995-05-15', 'Nam', '123 Đường Lê Lợi, Quận 1, TP.HCM', '0905123456', 'an.nguyen@gmail.com'),
 
--- 6. Lịch Làm Việc Bác Sĩ
-INSERT INTO LichLamViecBacSi (MaBacSi, MaPhong, NgayLam, GioBatDau, GioKetThuc) VALUES 
--- BS. Le Van B (Nội Tổng Quát)
-(2, 1, CURDATE(), '07:30:00', '11:30:00'),
-(2, 1, CURDATE(), '13:30:00', '17:30:00'),
--- BS. Tran Thi C (Nhi Khoa)
-(3, 2, CURDATE(), '07:30:00', '11:30:00'),
-(3, 2, CURDATE(), '13:30:00', '17:30:00'),
--- BS. Pham Van D (Sản Phụ Khoa)
-(4, 3, CURDATE(), '07:30:00', '11:30:00'),
-(4, 3, CURDATE(), '13:30:00', '17:30:00');
+('Trần Thị Bình', '1988-10-20', 'Nu', '456 Đường Nguyễn Huệ, Quận Hải Châu, Đà Nẵng', '0912987654', 'binhtran@gmail.com'),
 
--- Thêm lịch làm việc cho các bác sĩ mới
-INSERT INTO LichLamViecBacSi (MaBacSi, MaPhong, NgayLam, GioBatDau, GioKetThuc) 
-SELECT 
-    nv.MaNV,
-    CASE 
-        WHEN nv.MaChuyenKhoa = 1 THEN 1  -- Nội Tổng Quát - Phòng 101
-        WHEN nv.MaChuyenKhoa = 2 THEN 2  -- Nhi Khoa - Phòng 102
-        WHEN nv.MaChuyenKhoa = 3 THEN 3  -- Sản Phụ Khoa - Phòng 103
-        WHEN nv.MaChuyenKhoa = 4 THEN 4  -- Da Liễu - Phòng 201
-        WHEN nv.MaChuyenKhoa = 5 THEN 5  -- Tim Mạch - Phòng 202
-        WHEN nv.MaChuyenKhoa = 6 THEN 6  -- Tai Mũi Họng - Phòng 203
-    END AS MaPhong,
-    CURDATE() AS NgayLam,
-    '07:30:00' AS GioBatDau,
-    '11:30:00' AS GioKetThuc
-FROM NhanVien nv
-WHERE nv.MaVaiTro = 2 
-  AND nv.MaNV > 6  -- Chỉ lấy bác sĩ mới thêm (có MaNV > 6)
-UNION ALL
-SELECT 
-    nv.MaNV,
-    CASE 
-        WHEN nv.MaChuyenKhoa = 1 THEN 1
-        WHEN nv.MaChuyenKhoa = 2 THEN 2
-        WHEN nv.MaChuyenKhoa = 3 THEN 3
-        WHEN nv.MaChuyenKhoa = 4 THEN 4
-        WHEN nv.MaChuyenKhoa = 5 THEN 5
-        WHEN nv.MaChuyenKhoa = 6 THEN 6
-    END,
-    CURDATE(),
-    '13:30:00',
-    '17:30:00'
-FROM NhanVien nv
-WHERE nv.MaVaiTro = 2 
-  AND nv.MaNV > 6;benhnhan
-
--- 7. Lịch Khám
-INSERT INTO LichKham (MaBN, MaBacSi, NgayHen, GioHen, LyDoKham, TrangThai, MaLich) VALUES 
-(1, 2, CURDATE(), '08:30:00', 'Đau dạ dày', 'DaXacNhan', 1),
-(2, 3, CURDATE(), '09:00:00', 'Ho sốt', 'DaXacNhan', 3);
-
--- 8. Phiếu Khám
-INSERT INTO PhieuKham (MaBN, MaLK, MaLeTan, MaPhong, MaBacSi, MaChuyenKhoa, MaLich, STT, TrangThai) VALUES 
-(1, 1, 7, 1, 2, 1, 1, 1, 'DangKham'),
-(2, 2, 7, 2, 3, 2, 3, 2, 'ChoKham');
-
--- 9. Bệnh Án
-INSERT INTO BenhAn (MaPK, MaBacSi, TrieuChung, ChuanDoan, GhiChu) VALUES 
-(1, 2, 'Đau vùng thượng vị, ợ chua', 'Viêm loét dạ dày nhẹ', 'Kiêng ăn đồ cay nóng, uống thuốc đều đặn');
-
--- 10. Thuốc
-INSERT INTO Thuoc (TenThuoc, DonViTinh, SoLuongTon, GiaNhap, GiaBan, HanSuDung) VALUES 
-('Paracetamol 500mg', 'Viên', 1000, 500.00, 1500.00, '2027-12-31'),
-('Maalox', 'Gói', 200, 3500.00, 6000.00, '2026-05-15'),
-('Amoxicillin 500mg', 'Viên', 500, 800.00, 2000.00, '2026-08-20'),
-('Vitamin C', 'Viên', 300, 200.00, 500.00, '2026-10-30');
-
--- 11. Đơn Thuốc
-INSERT INTO DonThuoc (MaBA) VALUES (1);
-
--- 12. Chi Tiết Đơn Thuốc
-INSERT INTO ChiTietDonThuoc (MaDT, MaThuoc, SoLuong, LieuDung) VALUES 
-(1, 1, 20, 'Uống 1 viên khi đau'),
-(1, 2, 10, 'Uống 1 gói sau ăn');
-
--- 13. Dịch Vụ
-INSERT INTO DichVu (TenDichVu, Gia, Loai) VALUES 
-('Khám bệnh nội tổng quát', 150000.00, 'KhamBenh'),
-('Khám nhi khoa', 150000.00, 'KhamBenh'),
-('Siêu âm bụng', 300000.00, 'SieuAm'),
-('Xét nghiệm máu', 200000.00, 'XetNghiem');
-
--- 14. Hóa Đơn
-INSERT INTO HoaDon (MaBA, MaNhanVien, PhuongThucThanhToan, TrangThai) VALUES 
-(1, 1, 'TienMat', 'DaThanhToan');
-
--- 15. Chi Tiết Hóa Đơn
-INSERT INTO ChiTietHoaDon (MaHD, MaDichVu, SoTien) VALUES 
-(1, 1, 150000.00),
-(1, 2, 300000.00);
-
--- Sửa db
-ALTER TABLE LichKham
-ADD MaLich INT,
-ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
-
-CREATE TABLE ChiTietDonThuoc (
-    MaCTDT INT AUTO_INCREMENT PRIMARY KEY,
-    MaDT INT,
-    MaThuoc INT,
-    SoLuong INT,
-    LieuDung VARCHAR(255),
-    FOREIGN KEY (MaDT) REFERENCES DonThuoc(MaDT),
-    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc)
-);
-
-ALTER TABLE PhieuKham
-ADD MaLich INT,
-ADD FOREIGN KEY (MaLich) REFERENCES LichLamViecBacSi(MaLich);
--- fix
-ALTER TABLE PhieuKham ADD COLUMN MaBN INT NULL;
-ALTER TABLE PhieuKham ADD FOREIGN KEY (MaBN) REFERENCES BenhNhan(MaBN);
-
-SET SQL_SAFE_UPDATES = 0;
-DELETE FROM PhieuKham;
-SET SQL_SAFE_UPDATES = 1;
-
---them--
-
-INSERT INTO NhaCungCap (TenNCC, DiaChi, SoDienThoai) VALUES
-('Công ty TNHH Dược phẩm TW1 - Chi nhánh Miền Bắc', 'Số 179 Giải Phóng, Đống Đa, Hà Nội', '02438693489'),
-('Công ty Cổ phần Dược Hậu Giang (DHG Pharma)', '226 Nguyễn Văn Cừ, Quận Ninh Kiều, Cần Thơ', '02923821001'),
-('Công ty TNHH Stellapharm', 'Khu công nghiệp Việt Nam - Singapore II, Bình Dương', '02743888888'),
-('Công ty TNHH MTV Dược phẩm OPC', '208 Nguyễn Trãi, Phường 3, Quận 5, TP. Hồ Chí Minh', '02838551122'),
-('Công ty Cổ phần Pymepharco', '166 - 170 Nguyễn Huệ, TP. Huế, Thừa Thiên Huế', '02343826666'),
-('Công ty TNHH Thương mại Dược phẩm Khải Hoàn', 'Số 68 Trần Hưng Đạo, Hoàn Kiếm, Hà Nội', '02439363388'),
-('Nhà cung cấp thiết bị y tế & thuốc generic ABC', 'Tầng 5, Tòa nhà số 123 Lê Lợi, Quận 1, TP. HCM', '02838209999');
-
-CREATE TABLE LoThuoc (
-    MaLo INT AUTO_INCREMENT PRIMARY KEY,
-    MaThuoc INT,
-    SoLo VARCHAR(50),
-    HanSuDung DATE,
-    SoLuongTon INT,
-    GiaNhap DECIMAL(10,2),
-    MaCTPN INT,
-    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
-    FOREIGN KEY (MaCTPN) REFERENCES ChiTietPhieuNhap(MaCTPN)
-);
-
-
-ALTER TABLE DonThuoc
-ADD TrangThai ENUM('ChuaXuat','DaXuat') DEFAULT 'ChuaXuat';
-
-
-ALTER TABLE Thuoc
-DROP COLUMN GiaNhap,
-DROP COLUMN HanSuDung;
-
-
-ALTER TABLE ChiTietHoaDon
-ADD MaThuoc INT NULL,
-ADD FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc);
-
-
-ALTER TABLE ChiTietPhieuNhap
-DROP COLUMN SoLo;
-
-
-ALTER TABLE PhieuNhapThuoc
-ADD TongTien DECIMAL(12,2) DEFAULT 0;
-
-CREATE TABLE Thuoc_NhaCungCap (
-    MaThuoc INT,
-    MaNCC INT,
-    PRIMARY KEY (MaThuoc, MaNCC),
-    FOREIGN KEY (MaThuoc) REFERENCES Thuoc(MaThuoc),
-    FOREIGN KEY (MaNCC) REFERENCES NhaCungCap(MaNCC)
-);
-
-INSERT INTO Thuoc_NhaCungCap (MaThuoc, MaNCC) VALUES
-(1, 1),
-(1, 2),
-(2, 2),
-(2, 3);
-
-ALTER TABLE Thuoc_NhaCungCap
-ADD GiaNhap DECIMAL(10,2);
-
-INSERT INTO Thuoc (TenThuoc, DonViTinh, SoLuongTon, GiaBan) VALUES
-('Amoxicillin 500mg', 'Viên', 500, 2500.00),
-('Berberin 100mg', 'Lọ', 150, 15000.00),
-('Vitamin C 500mg', 'Viên', 800, 1000.00),
-('Decolgen Forte', 'Vỉ', 300, 18000.00),
-('Panadol Extra', 'Vỉ', 450, 22000.00),
-('Smecta 3g', 'Gói', 250, 7000.00),
-('Efferalgan 500mg', 'Viên sủi', 400, 5500.00),
-('Gaviscon', 'Gói', 180, 20000.00);
+('Lê Hoàng Long', '2002-02-02', 'Nam', '789 Đường Hùng Vương, Ba Đình, Hà Nội', '0988000111', 'longlh@gmail.com');
