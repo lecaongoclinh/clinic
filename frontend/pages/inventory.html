@@ -1,0 +1,407 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>KHO THUỐC - CLINIC</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <link href="../img/favicon.ico" rel="icon">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Inter', sans-serif !important; }
+        .card { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
+        .form-control, .form-select { height: 42px; border-radius: 8px; font-size: 14px; }
+        .filter-bar { background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+        .stat-card { border-radius: 16px; padding: 20px; height: 150px; display: flex; flex-direction: column; justify-content: space-between; position: relative; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.08); transition: 0.25s; }
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 22px rgba(0,0,0,0.12); }
+        .stat-card h6 { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; opacity: 0.85; margin: 0; }
+        .stat-card h4 { font-size: 28px; font-weight: 700; margin: 0; line-height: 1.2; }
+        .stat-card small { font-size: 13px; opacity: 0.9; }
+        .stat-content { display: flex; flex-direction: column; gap: 6px; }
+        .stat-card .icon { position: absolute; top: 16px; right: 16px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 16px; }
+        .card-blue { background: #3659f4; }
+        .card-red { background: #f12626; }
+        .card-orange { background: #ff6518; }
+        .card-sky { background: #28bbff; }
+        .row.g-4 { align-items: stretch; }
+        .table { border-collapse: separate; border-spacing: 0; }
+        .table thead th { background: #f1f3f5 !important; color: #111 !important; font-weight: 700; padding: 16px 10px; text-align: center; font-size: 14.5px; border-bottom: 2px solid #dee2e6; white-space: nowrap; }
+        .table td { padding: 14px 10px; vertical-align: middle; color: #111 !important; font-size: 14px; }
+        .table tbody tr:hover { background: #f8fbff; }
+        .table th:last-child, .table td:last-child { width: 120px; min-width: 120px; white-space: nowrap; }
+        .action-icon { width: 26px; height: 26px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; margin: 0 2px; font-size: 13.5px; border: none; transition: all 0.2s; }
+        .btn-edit { background: #E3F2FD; color: #1976D2; }
+        .btn-transfer { background: #E3F2FD; color: #1976D2; }
+        .btn-delete { background: #FFEBEE; color: #f36d64; }
+        .action-icon:hover { transform: scale(1.12); }
+        .status-badge { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #f1f3f5; color: #111; display: inline-block; }
+        .status-badge.status-danger { background: #fdeaea; color: #c62828; }
+        .status-badge.status-warning { background: #fff3e0; color: #ef6c00; }
+        .status-badge.status-info { background: #e3f2fd; color: #1565c0; }
+        .quick-btn { font-size: 14px; border-radius: 8px; padding: 8px 16px; }
+        .stat-card h6, .stat-card h4, .stat-card small, .stat-card span { color: inherit !important; }
+        .stat-card .text-muted { color: rgba(255,255,255,0.85) !important; }
+        .section-card { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .section-title { font-size: 18px; font-weight: 700; color: #111; margin: 0; }
+        .section-note { font-size: 13px; color: #6c757d; }
+        .tab-pane .table tbody tr { cursor: default; }
+        .empty-state { padding: 20px 12px; text-align: center; color: #6c757d; font-size: 14px; }
+        .audit-input { min-width: 120px; }
+        .nav-tabs .nav-link { font-weight: 600; }
+        .modal .table td, .modal .table th { padding: 10px 8px; }
+        .inventory-toolbar .form-control,
+        .inventory-toolbar .form-select,
+        .inventory-toolbar .btn { height: 42px; }
+        .inventory-toolbar .btn { border-radius: 8px; white-space: nowrap; }
+        .inventory-toolbar .row { row-gap: 12px; }
+        .inventory-modal .modal-content { border: 0; border-radius: 18px; box-shadow: 0 18px 36px rgba(15, 23, 42, 0.16); }
+        .inventory-modal .modal-header { border-bottom: 1px solid #edf2f7; padding: 18px 22px; }
+        .inventory-modal .modal-body { padding: 20px 22px; }
+        .inventory-modal .modal-footer { border-top: 1px solid #edf2f7; padding: 16px 22px; }
+        .inventory-modal .form-control, .inventory-modal .form-select { min-height: 42px; border-radius: 10px; }
+        .inventory-modal .static-box { background: #f8fbff; border: 1px solid #dbe7f3; border-radius: 12px; padding: 14px 16px; font-size: 14px; color: #111; }
+        @media (max-width: 991.98px) {
+            .inventory-toolbar .btn { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+<div class="container-xxl position-relative bg-white d-flex p-0">
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
+                <div class="ms-3"><h6 id="usernameSidebar"></h6></div>
+            </div>
+            <div class="navbar-nav w-100">
+                <a href="../index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                <a href="#" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch khám</a>
+                <a href="#" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Phiếu khám</a>
+                <a href="#" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="medicines.html" class="dropdown-item">Danh mục thuốc</a>
+                        <a href="#" class="dropdown-item">Đơn thuốc</a>
+                    </div>
+                </div>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý kho</a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="suppliers.html" class="dropdown-item">Nhà cung cấp</a>
+                        <a href="imports.html" class="dropdown-item">Nhập thuốc</a>
+                        <a href="dispense.html" class="dropdown-item">Xuất thuốc</a>
+                        <a href="inventory.html" class="dropdown-item active">Kho thuốc</a>
+                    </div>
+
+                </div>
+                <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="services.html" class="dropdown-item">Dịch vụ</a>
+                            <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
+                        </div>
+                    </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="content">
+        <nav class="navbar navbar-expand bg-white navbar-light sticky-top px-4 py-0">
+            <a href="#" class="sidebar-toggler"><i class="fa fa-bars"></i></a>
+            <div class="navbar-nav ms-auto">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
+                        <span id="usernameNavbar"></span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card-blue">
+                        <div class="icon"><i class="fa fa-dollar-sign"></i></div>
+                        <div class="stat-content"><h6>TỔNG GIÁ TRỊ</h6><h4>0 đ</h4></div>
+                        <small>Giá trị tồn kho hiện tại</small>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card-red">
+                        <div class="icon"><i class="fa fa-exclamation"></i></div>
+                        <div class="stat-content"><h6>HẾT HẠN</h6><h4>0 Lô</h4></div>
+                        <small>Cần xử lý khẩn cấp</small>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card-orange">
+                        <div class="icon"><i class="fa fa-clock"></i></div>
+                        <div class="stat-content"><h6>SẮP HẾT HẠN</h6><h4>0 Lô</h4></div>
+                        <small>Ưu tiên xuất hoặc kiểm tra</small>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card card-sky">
+                        <div class="icon"><i class="fa fa-box"></i></div>
+                        <div class="stat-content"><h6>TỒN KHO THẤP</h6><h4>0</h4></div>
+                        <small>Thuốc dưới định mức mặc định</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <ul class="nav nav-tabs" id="inventoryTabs" role="tablist">
+                    <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#current">Tồn kho hiện tại</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#warning">Cảnh báo</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#history">Thẻ kho</a></li>
+                    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#audit">Kiểm kê</a></li>
+                </ul>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary quick-btn" onclick="createImport()">Nhập kho</button>
+                    <button class="btn btn-primary quick-btn" onclick="createExport()">Xuất kho</button>
+                    <button class="btn btn-outline-secondary quick-btn" onclick="exportReport()">Xuất Excel</button>
+                </div>
+            </div>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="current">
+                    <div class="filter-bar mb-4 inventory-toolbar">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-4"><input id="searchInput" type="text" class="form-control" placeholder="Tìm theo tên thuốc, hoạt chất, số lô..."></div>
+                            <div class="col-md-2"><select id="warehouseFilter" class="form-select"><option value="">Tất cả kho</option></select></div>
+                            <div class="col-md-2"><select id="statusFilter" class="form-select"><option value="">Tất cả trạng thái</option><option value="ConHan">Còn hạn</option><option value="SapHetHan">Sắp hết hạn</option><option value="HetHan">Hết hạn</option></select></div>
+                            <div class="col-md-2"><select id="providerFilter" class="form-select"><option value="">Tất cả NCC</option></select></div>
+                            <div class="col-md-2 d-flex gap-2"><button class="btn btn-primary flex-fill" onclick="applyFilter()">Tìm kiếm</button></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded p-4 shadow-sm card">
+                        <table class="table align-middle table-hover" id="inventoryTable" data-page-size="8">
+                            <thead>
+                                <tr>
+                                    <th>Thuốc</th>
+                                    <th>Số lô</th>
+                                    <th>NSX</th>
+                                    <th>HSD</th>
+                                    <th>Tồn</th>
+                                    <th>Giá nhập</th>
+                                    <th>Kho</th>
+                                    <th>Nhà cung cấp</th>
+                                    <th>Trạng thái</th>
+                                    <th>Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="warning">
+                    <div class="filter-bar mb-4 inventory-toolbar">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-lg-5 col-md-12"><input id="warningSearchInput" type="text" class="form-control" placeholder="Tìm theo tên thuốc, số lô, kho, nhà cung cấp..."></div>
+                            <div class="col-lg-3 col-md-6"><select id="warningRangeFilter" class="form-select"><option value="3">Cận date trong 3 tháng</option><option value="6">Cận date trong 6 tháng</option><option value="9">Cận date trong 9 tháng</option></select></div>
+                            <div class="col-lg-4 col-md-6"><select id="warningStockFilter" class="form-select"><option value="">Tất cả mức tồn cảnh báo</option><option value="5">Tồn từ 5 trở xuống</option><option value="10">Tồn từ 10 trở xuống</option><option value="20">Tồn từ 20 trở xuống</option></select></div>
+                        </div>
+                    </div>
+                    <div class="section-card mb-4">
+                        <div class="section-header"><h5 class="section-title">Thuốc hết hạn</h5><span class="status-badge status-danger">Ưu tiên xử lý</span></div>
+                        <table class="table align-middle" id="expiredWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>NCC</th></tr></thead><tbody></tbody></table>
+                    </div>
+                    <div class="section-card mb-4">
+                        <div class="section-header"><h5 class="section-title">Thuốc sắp hết hạn</h5><span class="section-note">Hiển thị theo khoảng cận date đang chọn</span></div>
+                        <table class="table align-middle" id="nearWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>Còn lại</th></tr></thead><tbody></tbody></table>
+                    </div>
+                    <div class="section-card mb-4">
+                        <div class="section-header"><h5 class="section-title">Thuốc dưới định mức</h5><span class="section-note">Hiển thị theo mức tồn đang chọn ở bộ lọc</span></div>
+                        <table class="table align-middle" id="lowStockWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Tồn thực tế</th><th>Định mức tối thiểu</th></tr></thead><tbody></tbody></table>
+                    </div>
+                    <div class="section-card">
+                        <div class="section-header"><h5 class="section-title">Lô thuốc bị đình chỉ / thu hồi</h5><span class="status-badge status-warning">Theo dữ liệu hủy / thu hồi hiện có</span></div>
+                        <table class="table align-middle" id="recalledWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>Ngày xử lý</th><th>Số lượng</th><th>Lý do</th><th>Kho</th></tr></thead><tbody></tbody></table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="history">
+                    <div class="filter-bar mb-4 inventory-toolbar">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-3"><select id="historyMedicineFilter" class="form-select"><option value="">Tất cả thuốc</option></select></div>
+                            <div class="col-md-3"><select id="historyWarehouseFilter" class="form-select"><option value="">Tất cả kho</option></select></div>
+                            <div class="col-md-2"><input id="historyDateFrom" type="date" class="form-control"></div>
+                            <div class="col-md-2"><input id="historyDateTo" type="date" class="form-control"></div>
+                            <div class="col-md-2"><button class="btn btn-primary w-100" onclick="loadStockCard()">Xem thẻ kho</button></div>
+                        </div>
+                    </div>
+                    <div class="section-card">
+                        <div class="section-header"><h5 class="section-title">Biến động tồn kho</h5><span class="section-note">Theo tên thuốc, kho và khoảng thời gian</span></div>
+                        <table class="table align-middle" id="stockCardTable" data-page-size="8">
+                            <thead><tr><th>Thời gian</th><th>Số phiếu nhập</th><th>Thuốc</th><th>Nội dung</th><th>Số lượng nhập</th><th>Số lượng xuất</th><th>Tồn cuối</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="audit">
+                    <div class="filter-bar mb-4 inventory-toolbar">
+                        <div class="row g-3 align-items-center">
+                            <div class="col-lg-3 col-md-6"><select id="auditWarehouseFilter" class="form-select"><option value="">Tất cả kho</option></select></div>
+                            <div class="col-lg-3 col-md-6"><input id="auditDateFrom" type="date" class="form-control"></div>
+                            <div class="col-lg-3 col-md-6"><input id="auditDateTo" type="date" class="form-control"></div>
+                            <div class="col-lg-3 col-md-6"><button class="btn btn-primary w-100" onclick="openAuditModal()">Tạo phiếu kiểm kê mới</button></div>
+                        </div>
+                    </div>
+                    <div class="section-card">
+                        <div class="section-header"><h5 class="section-title">Lịch sử các đợt kiểm kê</h5><span class="section-note">Theo dõi kết quả cân bằng hoặc lệch</span></div>
+                        <table class="table align-middle" id="auditHistoryTable" data-page-size="8">
+                            <thead><tr><th>Mã phiếu</th><th>Ngày kiểm</th><th>Kho</th><th>Người kiểm</th><th>Kết quả</th><th>Trạng thái</th><th>Tổng chênh lệch</th><th>Hành động</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- <div class="container-fluid pt-4 px-4"><div class="bg-light rounded p-3 text-center">© Clinic 2026</div></div> -->
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/table_pagination.js"></script>
+<script src="../js/inventory.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const username = localStorage.getItem('username');
+    if (username) {
+        document.getElementById('usernameSidebar').textContent = username;
+        document.getElementById('usernameNavbar').textContent = username;
+    }
+});
+</script>
+
+<div class="modal fade" id="detailModal"><div class="modal-dialog modal-lg"><div class="modal-content p-4"><h5 class="mb-3">Chi tiết lô thuốc</h5><div id="detailContent"></div><hr><h6>Lịch sử giao dịch</h6><div id="historyContent" style="max-height:200px; overflow:auto;"></div><button class="btn btn-secondary mt-3" data-bs-dismiss="modal">Đóng</button></div></div></div>
+
+<div class="modal fade inventory-modal" id="editModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0">Sửa thông tin lô</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="static-box mb-3" id="editLotInfo">Thông tin lô</div>
+                <div class="mb-3">
+                    <label class="form-label">Hạn dùng</label>
+                    <input id="editExpiry" type="date" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Giá nhập</label>
+                    <input id="editPrice" type="number" class="form-control" min="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Đơn vị tính</label>
+                    <input id="editUnit" class="form-control" readonly>
+                </div>
+                <div>
+                    <label class="form-label">Ghi chú hiện tại</label>
+                    <textarea id="editNote" class="form-control" rows="3" readonly></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary" onclick="saveEdit()">Lưu thay đổi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade inventory-modal" id="transferModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0">Điều chuyển kho</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="static-box mb-3" id="transferLotInfo">Thông tin lô hiện tại</div>
+                <div class="mb-3">
+                    <label class="form-label">Kho đích</label>
+                    <select id="transferKho" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Số lượng chuyển</label>
+                    <input id="transferQty" type="number" class="form-control" min="1">
+                </div>
+                <div>
+                    <label class="form-label">Lý do</label>
+                    <select id="transferReason" class="form-select">
+                        <option>Cấp phát nội bộ</option>
+                        <option>Cân đối kho</option>
+                        <option>Mượn thuốc</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-primary" onclick="confirmTransfer()">Xác nhận điều chuyển</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade inventory-modal" id="deleteModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="mb-0">Hủy thuốc</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="static-box mb-3" id="deleteLotInfo">Thông tin lô</div>
+                <div class="mb-3">
+                    <label class="form-label">Lý do</label>
+                    <select id="deleteReason" class="form-select">
+                        <option>Hết hạn</option>
+                        <option>Hỏng vỡ</option>
+                        <option>Thu hồi</option>
+                        <option>Trả NCC</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Số lượng hủy</label>
+                    <input id="deleteQty" type="number" class="form-control" min="1">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Người xác nhận / Người duyệt</label>
+                    <input id="deleteApprover" class="form-control" placeholder="Nhập tên người duyệt hoặc xác nhận">
+                </div>
+                <div>
+                    <label class="form-label">Mã biên bản hủy</label>
+                    <input id="deleteDocument" class="form-control" placeholder="Nhập mã biên bản nếu có">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Xác nhận hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="auditCreateModal"><div class="modal-dialog modal-xl"><div class="modal-content p-3"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Tạo phiếu kiểm kê mới</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="table-responsive"><table class="table align-middle" id="auditTemplateTable" data-page-size="8"><thead><tr><th>Thuốc</th><th>Số lô</th><th>Kho</th><th>Tồn máy</th><th>Tồn thực tế</th><th>Chênh lệch</th><th>Lý do chênh lệch</th></tr></thead><tbody></tbody></table></div><div class="d-flex justify-content-end gap-2 mt-3"><button class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button><button class="btn btn-primary" onclick="submitAudit()">Lưu phiếu kiểm kê</button></div></div></div></div>
+
+<div class="modal fade" id="auditDetailModal"><div class="modal-dialog modal-lg"><div class="modal-content p-3"><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="mb-0">Chi tiết phiếu kiểm kê</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="table-responsive"><table class="table align-middle" id="auditDetailTable" data-page-size="8"><thead><tr><th>Thuốc</th><th>Số lô</th><th>Tồn máy</th><th>Tồn thực tế</th><th>Chênh lệch</th><th>Lý do</th></tr></thead><tbody></tbody></table></div></div></div></div>
+</body>
+</html>

@@ -36,6 +36,7 @@
         }
       }
     },
+
     "/api/auth/login": {
       "post": {
         "summary": "Đăng nhập",
@@ -58,6 +59,7 @@
         }
       }
     },
+
     "/api/appointments": {
       "get": {
         "summary": "Lấy danh sách lịch khám",
@@ -66,13 +68,11 @@
           {
             "name": "maChuyenKhoa",
             "in": "query",
-            "required": false,
             "schema": { "type": "string" }
           },
           {
             "name": "maBacSi",
             "in": "query",
-            "required": false,
             "schema": { "type": "string" }
           }
         ],
@@ -91,6 +91,7 @@
         }
       }
     },
+
     "/api/specialty": {
       "get": {
         "summary": "Lấy danh sách chuyên khoa",
@@ -110,9 +111,10 @@
         }
       }
     },
+
     "/api/doctor/doctor-by-specialty": {
       "get": {
-        "summary": "Lấy danh sách bác sĩ theo chuyên khoa",
+        "summary": "Lấy bác sĩ theo chuyên khoa",
         "tags": ["Doctor"],
         "parameters": [
           {
@@ -136,8 +138,378 @@
           }
         }
       }
+    },
+
+    "/api/medicines": {
+      "get": {
+        "summary": "Lấy danh sách thuốc",
+        "tags": ["Medicines"],
+        "responses": {
+          "200": { "description": "Thành công" }
+        }
+      },
+      "post": {
+        "summary": "Thêm thuốc",
+        "tags": ["Medicines"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Medicine"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Thêm thuốc thành công" }
+        }
+      }
+    },
+
+    "/api/medicines/{id}": {
+      "get": {
+        "summary": "Lấy thuốc theo ID",
+        "tags": ["Medicines"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Thành công" },
+          "404": { "description": "Không tìm thấy" }
+        }
+      },
+      "put": {
+        "summary": "Cập nhật thuốc",
+        "tags": ["Medicines"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Medicine"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" }
+        }
+      },
+      "delete": {
+        "summary": "Xóa thuốc",
+        "tags": ["Medicines"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Xóa thành công" }
+        }
+      }
+    },
+
+    "/api/medicines/low-stock": {
+      "get": {
+        "summary": "Thuốc sắp hết",
+        "tags": ["Medicines"],
+        "responses": {
+          "200": { "description": "Danh sách thuốc tồn thấp" }
+        }
+      }
+    },
+
+    "/api/suppliers": {
+      "get": {
+        "summary": "Lấy danh sách nhà cung cấp",
+        "tags": ["Suppliers"],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Supplier" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Thêm nhà cung cấp",
+        "tags": ["Suppliers"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Thêm thành công"
+          }
+        }
+      }
+    },
+
+    "/api/suppliers/{id}": {
+      "get": {
+        "summary": "Lấy nhà cung cấp theo ID",
+        "tags": ["Suppliers"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Supplier" }
+              }
+            }
+          },
+          "404": { "description": "Không tìm thấy" }
+        }
+      },
+      "put": {
+        "summary": "Cập nhật nhà cung cấp",
+        "tags": ["Suppliers"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SupplierInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Cập nhật thành công" }
+        }
+      },
+      "delete": {
+        "summary": "Xóa nhà cung cấp",
+        "tags": ["Suppliers"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Xóa thành công" }
+        }
+      }
+    },
+    "/api/imports": {
+      "get": {
+        "summary": "Lấy danh sách phiếu nhập",
+        "tags": ["Imports"],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Import" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo phiếu nhập",
+        "tags": ["Imports"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo thành công"
+          }
+        }
+      }
+    },
+
+    "/api/imports/{id}": {
+      "get": {
+        "summary": "Lấy phiếu nhập theo ID",
+        "tags": ["Imports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Import" }
+              }
+            }
+          },
+          "404": { "description": "Không tìm thấy" }
+        }
+      }
+    },
+
+    "/api/imports/{id}/items": {
+      "get": {
+        "summary": "Lấy chi tiết phiếu nhập",
+        "tags": ["Imports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/ImportItem" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Thêm thuốc vào phiếu nhập",
+        "tags": ["Imports"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportItemInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thêm thành công"
+          }
+        }
+      }
+    },
+    "/api/dispense/{id}": {
+  "post": {
+    "summary": "Xuất thuốc theo đơn (FIFO)",
+    "tags": ["Dispense"],
+    "parameters": [
+      {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Mã đơn thuốc (MaDT)",
+        "schema": {
+          "type": "integer"
+        }
+      }
+    ],
+    "responses": {
+      "200": {
+        "description": "Xuất thuốc thành công",
+        "content": {
+          "application/json": {
+            "example": {
+              "message": "Xuất thuốc thành công"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "Thiếu dữ liệu hoặc đơn không hợp lệ",
+        "content": {
+          "application/json": {
+            "example": {
+              "message": "Thiếu MaDT"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Lỗi server / không đủ thuốc",
+        "content": {
+          "application/json": {
+            "example": {
+              "message": "Không đủ thuốc (MaThuoc: 1)"
+            }
+          }
+        }
+      }
     }
-  },
+  }
+}
+      },
+  
   "components": {
     "securitySchemes": {
       "bearerAuth": {
@@ -171,7 +543,88 @@
           "MaNV": { "type": "integer" },
           "HoTen": { "type": "string" }
         }
+      },
+      "Medicine": {
+        "type": "object",
+        "properties": {
+          "MaThuoc": { "type": "integer", "example": 1 },
+          "TenThuoc": { "type": "string", "example": "Paracetamol 500mg" },
+          "DonViTinh": { "type": "string", "example": "Viên" },
+          "GiaBan": { "type": "number", "example": 1500 }
+        },
+        "required": ["TenThuoc", "DonViTinh", "GiaBan"]
+      },
+      "Supplier": {
+        "type": "object",
+        "properties": {
+          "MaNCC": { "type": "integer", "example": 1 },
+          "TenNCC": { "type": "string", "example": "Công ty Dược ABC" },
+          "DiaChi": { "type": "string", "example": "Hà Nội" },
+          "SoDienThoai": { "type": "string", "example": "0123456789" }
+        }
+      },
+      "SupplierInput": {
+        "type": "object",
+        "properties": {
+          "TenNCC": { "type": "string", "example": "Công ty Dược ABC" },
+          "DiaChi": { "type": "string", "example": "Hà Nội" },
+          "SoDienThoai": { "type": "string", "example": "0123456789" }
+        },
+        "required": ["TenNCC", "DiaChi", "SoDienThoai"]
+      },
+      "Import": {
+  "type": "object",
+  "properties": {
+    "MaPN": { "type": "integer", "example": 1 },
+    "MaNCC": { "type": "integer", "example": 2 },
+    "MaNhanVien": { "type": "integer", "example": 5 },
+    "TenNCC": { "type": "string", "example": "Công ty Dược ABC" }
+  }
+},
+
+"ImportInput": {
+  "type": "object",
+  "properties": {
+    "MaNCC": { "type": "integer", "example": 2 },
+    "MaNhanVien": { "type": "integer", "example": 5 }
+  },
+  "required": ["MaNCC", "MaNhanVien"]
+},
+
+"ImportItem": {
+  "type": "object",
+  "properties": {
+    "MaCTPN": { "type": "integer", "example": 1 },
+    "MaPN": { "type": "integer", "example": 1 },
+    "MaThuoc": { "type": "integer", "example": 3 },
+    "TenThuoc": { "type": "string", "example": "Paracetamol 500mg" },
+    "SoLuong": { "type": "integer", "example": 100 },
+    "GiaNhap": { "type": "number", "example": 1200 },
+    "HanSuDung": { "type": "string", "example": "2026-12-31" },
+    "SoLo": { "type": "string", "example": "LO123" }
+  }
+},
+
+"ImportItemInput": {
+  "type": "object",
+  "properties": {
+    "MaThuoc": { "type": "integer", "example": 3 },
+    "SoLuong": { "type": "integer", "example": 100 },
+    "GiaNhap": { "type": "number", "example": 1200 },
+    "HanSuDung": { "type": "string", "example": "2026-12-31" },
+    "SoLo": { "type": "string", "example": "LO123" }
+  },
+  "required": ["MaThuoc", "SoLuong", "GiaNhap"]
+},
+"DispenseResponse": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string"
+        }
       }
+    }
+
     }
   }
 }
