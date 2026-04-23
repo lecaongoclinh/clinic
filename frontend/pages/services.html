@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Quản lý dịch vụ</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <link href="../img/favicon.ico" rel="icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+<!-- 
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--warehouse-bg);
+            color: #111111;
+        }
+
+        .page-shell {
+            background: var(--warehouse-bg);
+        }
+
+        .content-card {
+            background: #fff;
+            border-radius: var(--warehouse-radius);
+            border: 1px solid var(--warehouse-border);
+            box-shadow: var(--warehouse-shadow);
+        }
+
+        .services-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 22px 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111111;
+            margin: 0;
+        }
+
+        .page-subtitle {
+            margin: 4px 0 0;
+            color: #111111;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-pill {
+            position: relative;
+            min-width: 280px;
+        }
+
+        .search-pill input {
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid var(--warehouse-border);
+            background: #fff;
+            padding-left: 42px;
+            font-size: 14px;
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .search-pill i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .btn-brand {
+            background: #009CFF;
+            border: 1px solid #009CFF;
+            color: #fff;
+            border-radius: 8px;
+            height: 42px;
+            font-weight: 700;
+            padding: 0 20px;
+        }
+
+        .btn-brand:hover {
+            background: #0087dd;
+            border-color: #0087dd;
+            color: #fff;
+        }
+
+        .kpi-grid {
+            padding: 24px;
+        }
+
+        .kpi-card {
+            background: #ffffff;
+            border: 1px solid var(--warehouse-border);
+            border-radius: var(--warehouse-radius);
+            padding: 20px;
+            height: 100%;
+            box-shadow: var(--warehouse-shadow);
+        }
+
+        .kpi-label {
+            font-size: 12px;
+            text-transform: none;
+            letter-spacing: 0;
+            color: #111111;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            line-height: 1;
+            font-weight: 700;
+            color: #111111;
+            margin-bottom: 8px;
+        }
+
+        .kpi-note {
+            font-size: 13px;
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .kpi-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #111111;
+        }
+
+        .tabs-wrap {
+            padding: 0 24px 18px;
+        }
+
+        .service-tabs {
+            display: flex;
+            gap: 28px;
+            border-bottom: 1px solid var(--warehouse-border);
+            overflow-x: auto;
+        }
+
+        .service-tab {
+            padding: 16px 0 14px;
+            font-size: 14px;
+            font-weight: 400;
+            color: #111111;
+            border: none;
+            background: transparent;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .service-tab.active {
+            color: #111111;
+            font-weight: 700;
+            border-bottom-color: #009CFF;
+        }
+
+        .filter-bar {
+            padding: 0 24px 20px;
+        }
+
+        .filter-inner {
+            display: flex;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .filter-left,
+        .filter-right {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .soft-select,
+        .soft-input {
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid var(--warehouse-border);
+            background: #fff;
+            color: #111111;
+            padding: 0 14px;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .btn-soft {
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid var(--warehouse-border);
+            background: #fff;
+            color: #111111;
+            font-weight: 700;
+            padding: 0 14px;
+        }
+
+        .btn-soft:hover {
+            background: #eef6ff;
+            border-color: #009CFF;
+            color: #111;
+        }
+
+        .table-wrap {
+            padding: 0 24px 24px;
+        }
+
+        .services-table {
+            margin-bottom: 0;
+        }
+
+        .services-table thead th {
+            background: #f1f3f5 !important;
+            color: #111111 !important;
+            font-size: 14px;
+            text-transform: none;
+            letter-spacing: 0;
+            font-weight: 700;
+            border-bottom: 2px solid var(--warehouse-border-strong);
+            padding: 16px 14px;
+            white-space: nowrap;
+        }
+
+        .services-table tbody td {
+            padding: 14px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #edf2f7;
+            color: #111111;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .service-code {
+            font-weight: 400;
+            color: #111111;
+        }
+
+        .service-name {
+            font-weight: 400;
+            margin-bottom: 4px;
+            color: #111111;
+        }
+
+        .service-sub {
+            font-size: 12px;
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .tag-blue {
+            background: #e0f2fe;
+            color: #111111;
+        }
+
+        .tag-orange {
+            background: #fff7ed;
+            color: #111111;
+        }
+
+        .tag-purple {
+            background: #f3e8ff;
+            color: #111111;
+        }
+
+        .status-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 400;
+            font-size: 13px;
+        }
+
+        .status-dot::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-active {
+            color: #111111;
+        }
+
+        .status-active::before {
+            background: #22c55e;
+        }
+
+        .status-inactive {
+            color: #111111;
+        }
+
+        .status-inactive::before {
+            background: #cbd5e1;
+        }
+
+        .action-btn {
+            border: none;
+            background: transparent;
+            color: #111111;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+        }
+
+        .action-btn:hover {
+            background: #eef6ff;
+            color: #111111;
+        }
+
+        .footer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+            color: #94a3b8;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .pager-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        .pager-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #64748b;
+            font-weight: 700;
+        }
+
+        .pager-btn.active,
+        .pager-btn:hover {
+            background: #009CFF;
+            border-color: #009CFF;
+            color: #fff;
+        }
+
+        .package-section {
+            margin-top: 24px;
+        }
+
+        .package-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .package-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin: 0;
+            color: #111111;
+        }
+
+        .view-link {
+            color: #111111;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .package-card {
+            background: #fff;
+            border: 1px solid #e8edf5;
+            border-radius: 20px;
+            padding: 18px;
+            height: 100%;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+        }
+
+        .package-image {
+            width: 96px;
+            height: 96px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #dbeafe, #eff6ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111111;
+            font-size: 30px;
+            flex-shrink: 0;
+        }
+
+        .package-price {
+            font-size: 28px;
+            font-weight: 800;
+            color: #2563eb;
+            line-height: 1.1;
+            margin-bottom: 8px;
+        }
+
+        .package-name {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 6px;
+            color: #111111;
+        }
+
+        .package-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .meta-pill {
+            display: inline-flex;
+            padding: 5px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #f1f5f9;
+            color: #111111;
+        }
+
+        .package-list {
+            margin: 0;
+            padding-left: 18px;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .package-list li {
+            margin-bottom: 8px;
+        }
+
+        .package-btn {
+            margin-top: 16px;
+            border-radius: 12px;
+            height: 42px;
+            font-weight: 700;
+        }
+
+        .modal-content {
+            border-radius: 18px;
+            border: none;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .modal-footer {
+            border-top: 1px solid #eef2f7;
+        }
+
+        @media (max-width: 768px) {
+            .search-pill {
+                min-width: 100%;
+            }
+
+            .services-topbar,
+            .kpi-grid,
+            .tabs-wrap,
+            .filter-bar,
+            .table-wrap,
+            .footer-row {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+        }
+        .package-section {
+    margin-top: 28px;
+}
+
+.package-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.package-head .d-flex {
+    align-items: center;
+    gap: 12px !important;
+    flex-wrap: wrap;
+}
+
+#packagesGrid,
+#packagesGridTab {
+    min-height: 80px;
+}
+
+#packagesGrid .text-muted,
+#packagesGridTab .text-muted {
+    background: #fff;
+    border: 1px solid #e8edf5;
+    border-radius: 16px;
+    padding: 18px 20px;
+    width: 100%;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+}
+
+.package-card {
+    height: 100%;
+    min-height: 220px;
+}
+
+.package-btn {
+    height: 38px;
+    padding: 0 14px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+}
+.action-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.action-btn {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    border-radius: 8px;
+    padding: 0;
+    font-size: 14px;
+}
+
+.action-btn:hover {
+    background: #eef6ff;
+    color: #009CFF;
+}
+
+.services-table td.action-cell {
+    min-width: 110px;
+    white-space: nowrap;
+}
+    </style> -->
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: var(--warehouse-bg);
+        color: #111111;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .page-shell {
+        background: var(--warehouse-bg);
+    }
+
+    .content-card {
+        background: #fff;
+        border-radius: var(--warehouse-radius);
+        border: 1px solid var(--warehouse-border);
+        box-shadow: var(--warehouse-shadow);
+    }
+
+    .services-topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        padding: 22px 24px 0;
+        flex-wrap: wrap;
+    }
+
+    .page-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111111;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        margin: 4px 0 0;
+        color: #111111;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .search-pill {
+        position: relative;
+        min-width: 280px;
+    }
+
+    .search-pill input {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid var(--warehouse-border);
+        background: #fff;
+        padding-left: 42px;
+        font-size: 14px;
+        color: #111111;
+        font-weight: 400;
+    }
+
+    .search-pill i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+    }
+
+    .btn-brand {
+        background: #009CFF;
+        border: 1px solid #009CFF;
+        color: #fff;
+        border-radius: 8px;
+        height: 42px;
+        font-weight: 700;
+        padding: 0 20px;
+        font-size: 14px;
+    }
+
+    .btn-brand:hover {
+        background: #0087dd;
+        border-color: #0087dd;
+        color: #fff;
+    }
+
+    .kpi-grid {
+        padding: 24px;
+    }
+
+    .kpi-card {
+        border-radius: 16px;
+        padding: 20px;
+        height: 160px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        color: #fff;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        transition: 0.25s;
+        border: none;
+        overflow: hidden;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+    }
+
+    .kpi-head {
+        margin-bottom: 10px;
+    }
+
+    .kpi-icon {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        color: #fff;
+    }
+
+    .kpi-grid .col-md-6.col-xl-3:nth-child(1) .kpi-card {
+        background: #3659f4;
+    }
+
+    .kpi-grid .col-md-6.col-xl-3:nth-child(2) .kpi-card {
+        background: #f12626;
+    }
+
+    .kpi-grid .col-md-6.col-xl-3:nth-child(3) .kpi-card {
+        background: #ff6518;
+    }
+
+    .kpi-grid .col-md-6.col-xl-3:nth-child(4) .kpi-card {
+        background: #28bbff;
+    }
+
+    .kpi-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-bottom: 10px;
+        line-height: 1.4;
+        padding-right: 58px;
+    }
+
+    .kpi-value {
+        font-size: 24px;
+        line-height: 1.2;
+        font-weight: 800;
+        margin-bottom: 8px;
+        color: #fff;
+        word-break: normal;
+        overflow-wrap: anywhere;
+        padding-right: 58px;
+    }
+
+    .kpi-note {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 600;
+        line-height: 1.5;
+        padding-right: 58px;
+    }
+
+    .kpi-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.22);
+        color: #ffffff;
+    }
+
+    #topGroup {
+        font-size: 18px !important;
+        line-height: 1.35 !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        padding-right: 58px !important;
+    }
+
+    #avgPrice {
+        font-size: 24px !important;
+        line-height: 1.2 !important;
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        padding-right: 58px !important;
+    }
+
+    .tabs-wrap {
+        padding: 0 24px 18px;
+    }
+
+    .service-tabs {
+        display: flex;
+        gap: 28px;
+        border-bottom: 1px solid var(--warehouse-border);
+        overflow-x: auto;
+    }
+
+    .service-tab {
+        padding: 16px 0 14px;
+        font-size: 14px;
+        font-weight: 400;
+        color: #111111;
+        border: none;
+        background: transparent;
+        border-bottom: 3px solid transparent;
+        white-space: nowrap;
+    }
+
+    .service-tab.active {
+        color: #111111;
+        font-weight: 700;
+        border-bottom-color: #009CFF;
+    }
+
+    .filter-bar {
+        padding: 0 24px 20px;
+    }
+
+    .filter-inner {
+        display: flex;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .filter-left,
+    .filter-right {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .soft-select,
+    .soft-input {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid var(--warehouse-border);
+        background: #fff;
+        color: #111111;
+        padding: 0 14px;
+        font-size: 14px;
+        font-weight: 400;
+    }
+
+    .btn-soft {
+        height: 42px;
+        border-radius: 8px;
+        border: 1px solid var(--warehouse-border);
+        background: #fff;
+        color: #111111;
+        font-weight: 700;
+        padding: 0 14px;
+        font-size: 14px;
+    }
+
+    .btn-soft:hover {
+        background: #eef6ff;
+        border-color: #009CFF;
+        color: #111;
+    }
+
+    .table-wrap {
+        padding: 0 24px 24px;
+    }
+
+    .services-table {
+        margin-bottom: 0;
+    }
+
+    .services-table thead th {
+        background: #f1f3f5 !important;
+        color: #111111 !important;
+        font-size: 14px;
+        text-transform: none;
+        letter-spacing: 0;
+        font-weight: 700;
+        border-bottom: 2px solid var(--warehouse-border-strong);
+        padding: 16px 14px;
+        white-space: nowrap;
+    }
+
+    .services-table tbody td {
+        padding: 14px 14px;
+        vertical-align: middle;
+        border-bottom: 1px solid #edf2f7;
+        color: #111111 !important;
+        font-size: 14px;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .service-code {
+        font-weight: 400;
+        color: #111111;
+    }
+
+    .service-name {
+        font-weight: 400;
+        margin-bottom: 4px;
+        color: #111111;
+    }
+
+    .service-sub {
+        font-size: 12px;
+        color: #111111;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .tag-pill {
+        display: inline;
+        padding: 0;
+        border-radius: 0;
+        font-size: 14px;
+        font-weight: 400;
+        background: transparent !important;
+        color: #111111 !important;
+    }
+
+    .tag-blue,
+    .tag-orange,
+    .tag-purple {
+        background: transparent !important;
+        color: #111111 !important;
+    }
+
+    .status-dot {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 400;
+        font-size: 13px;
+        color: #111111;
+    }
+
+    .status-dot::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-active {
+        color: #111111;
+    }
+
+    .status-active::before {
+        background: #22c55e;
+    }
+
+    .status-inactive {
+        color: #111111;
+    }
+
+    .status-inactive::before {
+        background: #cbd5e1;
+    }
+
+    .action-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+        white-space: nowrap;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        border: none;
+        background: #eef4fb;
+        color: #64748b;
+        border-radius: 10px;
+        padding: 0;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .action-btn:hover {
+        background: #dbeafe;
+        color: #009CFF;
+    }
+
+    .action-group .action-btn:nth-child(1) {
+        background: #e0f2fe;
+        color: #009CFF;
+    }
+
+    .action-group .action-btn:nth-child(2) {
+        background: #fee2e2;
+        color: #ef4444;
+    }
+
+    .action-group .action-btn:nth-child(3) {
+        background: #e0f2fe;
+        color: #2563eb;
+    }
+
+    .footer-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 24px 24px;
+        gap: 12px;
+        flex-wrap: wrap;
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .pager-box {
+        display: flex;
+        gap: 8px;
+    }
+
+    .pager-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        color: #64748b;
+        font-weight: 700;
+    }
+
+    .pager-btn.active,
+    .pager-btn:hover {
+        background: #009CFF;
+        border-color: #009CFF;
+        color: #fff;
+    }
+
+    .package-section {
+        margin-top: 28px;
+    }
+
+    .package-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+    .package-head .d-flex {
+        align-items: center;
+        gap: 12px !important;
+        flex-wrap: wrap;
+    }
+
+    .package-title {
+        font-size: 17px;
+        font-weight: 700;
+        margin: 0;
+        color: #111111;
+        line-height: 1.4;
+    }
+
+    .view-link {
+        color: #111111;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .package-card {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 20px;
+        padding: 18px;
+        height: 100%;
+        min-height: 200px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .package-image {
+        width: 78px;
+        height: 78px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #111111;
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .package-price {
+        font-size: 20px;
+        font-weight: 700;
+        color: #2563eb;
+        line-height: 1.2;
+        margin-bottom: 8px;
+    }
+
+    .package-name {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #111111;
+        line-height: 1.4;
+    }
+
+    .package-meta {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+    }
+
+    .meta-pill {
+        display: inline-flex;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #f1f5f9;
+        color: #111111;
+    }
+
+    .package-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #475569;
+        font-size: 13px;
+        font-weight: 400;
+        line-height: 1.5;
+    }
+
+    .package-list li {
+        margin-bottom: 6px;
+    }
+
+    .package-btn {
+        margin-top: 14px;
+        border-radius: 10px;
+        height: 38px;
+        padding: 0 14px;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    #packagesGrid,
+    #packagesGridTab {
+        min-height: 80px;
+    }
+
+    #packagesGrid .text-muted,
+    #packagesGridTab .text-muted {
+        background: #fff;
+        border: 1px solid #e8edf5;
+        border-radius: 16px;
+        padding: 18px 20px;
+        width: 100%;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+    }
+
+    .services-table td.action-cell {
+        min-width: 120px;
+        white-space: nowrap;
+    }
+
+    .services-table tbody td:nth-child(3),
+    .services-table tbody td:nth-child(4),
+    .services-table tbody td.fw-bold {
+        color: #111111 !important;
+        font-weight: 400 !important;
+    }
+
+    .modal-content {
+        border-radius: 18px;
+        border: none;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #eef2f7;
+    }
+
+    @media (max-width: 768px) {
+        .search-pill {
+            min-width: 100%;
+        }
+
+        .services-topbar,
+        .kpi-grid,
+        .tabs-wrap,
+        .filter-bar,
+        .table-wrap,
+        .footer-row {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container-xxl position-relative bg-white d-flex p-0 page-shell">
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <img class="rounded-circle" src="../img/user.jpg" style="width:40px;height:40px;">
+                <div class="ms-3">
+                    <h6 class="mb-0" id="usernameSidebar"></h6>
+                </div>
+            </div>
+
+            <div class="navbar-nav w-100">
+                <a href="../index.html" class="nav-item nav-link">
+                    <i class="fa fa-tachometer-alt me-2"></i>Thống kê
+                </a>
+                <a href="../schedule.html" class="nav-item nav-link">
+                    <i class="fa fa-th me-2"></i>Lịch làm việc
+                </a>
+                <a href="../LichKham.html" class="nav-item nav-link">
+                    <i class="fa fa-keyboard me-2"></i>Lịch khám
+                </a>
+                <a href="../BenhAn.html" class="nav-item nav-link">
+                    <i class="fa fa-table me-2"></i>Bệnh án
+                </a>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown">
+                        <i class="far fa-file-alt me-2"></i>Thuốc
+                    </a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="./medicines.html" class="dropdown-item">Danh mục thuốc</a>
+                        <a href="#" class="dropdown-item">Đơn thuốc</a>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="far fa-file-alt me-2"></i>Quản lý kho
+                    </a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="./suppliers.html" class="dropdown-item">Nhà cung cấp</a>
+                        <a href="./imports.html" class="dropdown-item">Nhập thuốc</a>
+                        <a href="./dispense.html" class="dropdown-item">Xuất thuốc</a>
+                        <a href="./inventory.html" class="dropdown-item">Kho thuốc</a>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="services.html" class="dropdown-item">Dịch vụ</a>
+                            <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
+                        </div>
+                    </div>
+            </div>
+        </nav>
+    </div>
+
+    <div class="content">
+        <nav class="navbar navbar-expand bg-white navbar-light sticky-top px-4 py-0">
+            <a href="#" class="sidebar-toggler flex-shrink-0">
+                <i class="fa fa-bars"></i>
+            </a>
+            <div class="navbar-nav align-items-center ms-auto">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="../img/user.jpg" alt="" style="width:40px;height:40px;">
+                        <span class="d-none d-lg-inline-flex" id="usernameNavbar"></span>
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+<div class="container-fluid pt-4 px-4">
+    <div class="content-card">
+        <div class="services-topbar">
+            <div>
+                <!-- <h2 class="page-title">Quản lý dịch vụ</h2> -->
+            </div>
+
+            <div class="top-actions">
+                <div class="search-pill">
+                    <i class="fa fa-search"></i>
+                    <input type="text" id="headerSearchInput" class="form-control" placeholder="Tìm kiếm dịch vụ...">
+                </div>
+            </div>
+        </div>
+
+<div class="kpi-grid">
+    <div class="row g-3">
+        <div class="col-md-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-head">
+                    <div class="kpi-icon">
+                        <i class="fa fa-notes-medical"></i>
+                    </div>
+                </div>
+                <div class="kpi-label">Tổng số dịch vụ</div>
+                <div class="kpi-value" id="totalServices">0</div>
+                <div class="kpi-note">
+                    <span class="kpi-badge">Danh mục hiện có</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-head">
+                    <div class="kpi-icon">
+                        <i class="fa fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="kpi-label">Dịch vụ đang áp dụng</div>
+                <div class="kpi-value" id="activeServices">0</div>
+                <div class="kpi-note">Số dịch vụ đang hoạt động</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-head">
+                    <div class="kpi-icon">
+                        <i class="fa fa-star"></i>
+                    </div>
+                </div>
+                <div class="kpi-label">Nhóm dịch vụ nổi bật</div>
+                <div class="kpi-value" id="topGroup">-</div>
+                <div class="kpi-note" id="topGroupNote">Chưa có dữ liệu</div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="kpi-card">
+                <div class="kpi-head">
+                    <div class="kpi-icon">
+                        <i class="fa fa-wallet"></i>
+                    </div>
+                </div>
+                <div class="kpi-label">Giá trung bình</div>
+                <div class="kpi-value" id="avgPrice">0 đ</div>
+                <div class="kpi-note">Mức giá trung bình của dịch vụ</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="tabs-wrap">
+            <div class="service-tabs">
+                <button class="service-tab active" data-tab="services">Danh sách dịch vụ</button>
+                <button class="service-tab" data-tab="packages">Gói dịch vụ</button>
+                <button class="service-tab" data-tab="configs">Cấu hình dịch vụ</button>
+            </div>
+        </div>
+
+        <!-- TAB 1: DANH SÁCH DỊCH VỤ -->
+        <div id="servicesSection">
+            <div class="filter-bar">
+                <div class="filter-inner">
+                    <div class="filter-left">
+                        <select id="typeFilter" class="soft-select">
+                            <option value="">Tất cả loại</option>
+                            <option value="KhamBenh">Khám bệnh</option>
+                            <option value="XetNghiem">Xét nghiệm</option>
+                            <option value="SieuAm">Siêu âm</option>
+                        </select>
+
+                        <select id="statusFilter" class="soft-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="1">Đang áp dụng</option>
+                            <option value="0">Ngừng áp dụng</option>
+                        </select>
+
+                        <button class="btn btn-soft" id="advancedFilterBtn">
+                            <i class="fa fa-sliders-h me-2"></i>Lọc nâng cao
+                        </button>
+                    </div>
+
+                    <div class="filter-right">
+                        <input id="tableSearchInput" class="soft-input" placeholder="Tìm theo mã, tên, mô tả..." style="min-width:260px;">
+                        <button class="btn btn-brand" id="createServiceBtn">
+                            <i class="fa fa-plus me-2"></i>Thêm dịch vụ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <div class="table-responsive">
+                    <table class="table services-table align-middle" id="servicesTable">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên dịch vụ</th>
+                                <th>Loại</th>
+                                <th>Giá</th>
+                                <th>Mô tả</th>
+                                <th>Trạng thái</th>
+                                <th class="text-center">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="servicesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="footer-row">
+                <div id="tableSummary">Đang tải dữ liệu dịch vụ...</div>
+                <div class="pager-box">
+                    <button class="pager-btn"><i class="fa fa-angle-left"></i></button>
+                    <button class="pager-btn active">1</button>
+                    <button class="pager-btn">2</button>
+                    <button class="pager-btn">3</button>
+                    <button class="pager-btn"><i class="fa fa-angle-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KHỐI GÓI DỊCH VỤ Ở CUỐI, CHỈ HIỆN KHI TAB DỊCH VỤ -->
+    <div class="package-section" id="packagePreviewSection">
+        <div class="package-head">
+            <h3 class="package-title">Gói dịch vụ</h3>
+            <div class="d-flex gap-2">
+                <!-- <a href="#" class="view-link" onclick="return false;">Xem tất cả gói dịch vụ</a> -->
+                <button class="btn btn-brand" id="createPackageBtn">
+                    <i class="fa fa-plus me-2"></i>Thêm gói dịch vụ
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4" id="packagesGrid"></div>
+    </div>
+
+    <!-- TAB 2: GÓI DỊCH VỤ -->
+    <div class="content-card mt-4" id="packagesSection" style="display:none;">
+        <div class="table-wrap">
+            <div class="package-head">
+                <h3 class="package-title">Danh sách gói dịch vụ</h3>
+                <button class="btn btn-brand" id="createPackageBtnSecondary">
+                    <i class="fa fa-plus me-2"></i>Thêm gói dịch vụ
+                </button>
+            </div>
+
+            <div class="row g-4" id="packagesGridTab"></div>
+        </div>
+    </div>
+
+    <!-- TAB 3: CẤU HÌNH DỊCH VỤ -->
+    <div class="content-card mt-4" id="configsSection" style="display:none;">
+        <div class="table-wrap">
+            <div class="package-head">
+                <h3 class="package-title">Cấu hình dịch vụ</h3>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table services-table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên dịch vụ</th>
+                            <th>Thời lượng</th>
+                            <th>Cần đặt trước</th>
+                            <th>Cần bác sĩ chỉ định</th>
+                            <th>Chuyên khoa</th>
+                            <th class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="configsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+        <div class="modal fade" id="serviceModal" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header px-4 py-3">
+                        <h5 class="modal-title fw-bold" id="serviceModalTitle">Thêm dịch vụ</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body px-4 py-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Tên dịch vụ</label>
+                                <input type="text" id="TenDichVu" class="form-control" placeholder="Nhập tên dịch vụ">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Loại dịch vụ</label>
+                                <select id="Loai" class="form-select">
+                                    <option value="KhamBenh">Khám bệnh</option>
+                                    <option value="XetNghiem">Xét nghiệm</option>
+                                    <option value="SieuAm">Siêu âm</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Giá dịch vụ</label>
+                                <input type="number" id="Gia" class="form-control" placeholder="Nhập giá">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Trạng thái</label>
+                                <select id="TrangThai" class="form-select">
+                                    <option value="1">Đang áp dụng</option>
+                                    <option value="0">Ngừng áp dụng</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Mô tả</label>
+                                <textarea id="MoTa" class="form-control" rows="4" placeholder="Nhập mô tả ngắn cho dịch vụ"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer px-4 py-3">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-brand" id="saveServiceBtn">Lưu dịch vụ</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="advancedFilterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lọc nâng cao</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Giá từ</label>
+                    <input type="number" id="advGiaTu" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Giá đến</label>
+                    <input type="number" id="advGiaDen" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Chuyên khoa</label>
+                    <select id="advMaChuyenKhoa" class="form-select"></select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cần đặt trước</label>
+                    <select id="advCanDatTruoc" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Cần bác sĩ chỉ định</label>
+                    <select id="advCanChiDinhBacSi" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="resetAdvancedFilterBtn" class="btn btn-outline-secondary">Xóa lọc</button>
+                <button type="button" id="applyAdvancedFilterBtn" class="btn btn-brand">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="packageModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="packageModalTitle">Thêm gói dịch vụ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Tên gói</label>
+                        <input type="text" id="TenGoi" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Giá gói</label>
+                        <input type="number" id="GiaGoi" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Trạng thái</label>
+                        <select id="TrangThaiGoi" class="form-select">
+                            <option value="1">Đang áp dụng</option>
+                            <option value="0">Ngừng áp dụng</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Biểu tượng Font Awesome</label>
+                        <input type="text" id="BieuTuong" class="form-control" placeholder="fa-heartbeat">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Màu hiển thị</label>
+                        <input type="text" id="MauHienThi" class="form-control" placeholder="#009CFF">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea id="MoTaGoi" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Chọn dịch vụ trong gói</label>
+                        <div id="packageServiceOptions" class="border rounded p-3" style="max-height:240px;overflow:auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="savePackageBtn" class="btn btn-brand">Lưu gói dịch vụ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="configModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cấu hình dịch vụ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="configServiceId">
+                <div class="mb-3 fw-bold" id="configServiceName"></div>
+
+                <div class="mb-3">
+                    <label class="form-label">Thời lượng (phút)</label>
+                    <input type="number" id="ConfigThoiLuongPhut" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cần đặt trước</label>
+                    <select id="ConfigCanDatTruoc" class="form-select">
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cần bác sĩ chỉ định</label>
+                    <select id="ConfigCanChiDinhBacSi" class="form-select">
+                        <option value="1">Có</option>
+                        <option value="0">Không</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Chuyên khoa</label>
+                    <select id="ConfigMaChuyenKhoa" class="form-select"></select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Thứ tự hiển thị</label>
+                    <input type="number" id="ConfigThuTuHienThi" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Màu nhãn</label>
+                    <input type="text" id="ConfigMauNhan" class="form-control" placeholder="#009CFF">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Hướng dẫn trước khám</label>
+                    <textarea id="ConfigHuongDanTruocKham" class="form-control" rows="3"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="saveConfigBtn" class="btn btn-brand">Lưu cấu hình</button>
+            </div>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/services.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const username = localStorage.getItem('username') || 'Nguyen The Anh';
+    document.getElementById('usernameSidebar').textContent = username;
+    document.getElementById('usernameNavbar').textContent = username;
+});
+</script>
+</body>
+</html>

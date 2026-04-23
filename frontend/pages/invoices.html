@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8">
+    <title>Quản lý hóa đơn</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+    <link href="../img/favicon.ico" rel="icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--warehouse-bg);
+            color: #111111;
+        }
+
+        .content {
+            width: 100%;
+        }
+
+        .content-shell {
+            padding: 8px 10px 12px;
+        }
+
+        .invoice-page {
+            background: #f8fbff;
+            border-radius: var(--warehouse-radius);
+            padding: 18px;
+            border: 1px solid var(--warehouse-border);
+            box-shadow: var(--warehouse-shadow-soft);
+            width: 100%;
+            max-width: none;
+        }
+
+        .topbar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+
+        .brand-mini {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0ea5ff, #2563eb);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 2px;
+            color: #111111;
+        }
+
+        .brand-subtitle {
+            font-size: 12px;
+            color: #111111;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .header-tools {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-header {
+            min-width: 280px;
+            max-width: 360px;
+            position: relative;
+        }
+
+        .search-header i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-header input {
+            height: 42px;
+            border-radius: 8px;
+            padding-left: 40px;
+            border: 1px solid var(--warehouse-border);
+            background: #fff;
+            box-shadow: none;
+            color: #111111;
+            font-size: 14px;
+        }
+
+        .icon-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #111111;
+        }
+
+        .create-btn {
+            height: 42px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #0ea5ff, #2563eb);
+            color: #fff;
+            font-weight: 800;
+            padding: 0 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+        }
+
+        .create-btn:hover {
+            color: #fff;
+            opacity: 0.95;
+        }
+
+        .kpi-card {
+            border-radius: 16px;
+            padding: 20px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            transition: 0.25s;
+            border: none;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+        }
+
+        .kpi-head {
+            margin-bottom: 10px;
+        }
+
+        .kpi-icon {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            color: #fff;
+        }
+
+        .kpi-card.card-blue {
+            background: #3659f4;
+        }
+
+        .kpi-card.card-red {
+            background: #f12626;
+        }
+
+        .kpi-card.card-orange {
+            background: #ff6518;
+        }
+
+        .kpi-card.card-sky {
+            background: #28bbff;
+        }
+
+        .kpi-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 10px;
+            line-height: 1.4;
+            padding-right: 58px;
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            line-height: 1.2;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: #fff;
+            word-break: normal;
+            overflow-wrap: anywhere;
+            padding-right: 58px;
+        }
+
+        .kpi-note {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.92);
+            font-weight: 600;
+            line-height: 1.5;
+            padding-right: 58px;
+        }
+
+        .filter-panel {
+            background: #fff;
+            border-radius: var(--warehouse-radius);
+            border: 1px solid var(--warehouse-border);
+            padding: 16px;
+            margin-top: 20px;
+            margin-bottom: 18px;
+            box-shadow: var(--warehouse-shadow);
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 12px;
+        }
+
+        .soft-input,
+        .soft-select {
+            height: 42px;
+            border-radius: 8px;
+            border: 1px solid var(--warehouse-border);
+            background: #fff;
+            padding: 0 14px;
+            color: #111111;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .soft-input:focus,
+        .soft-select:focus {
+            outline: none;
+            background: #fff;
+            border-color: #009CFF;
+        }
+
+        .search-inline {
+            position: relative;
+        }
+
+        .search-inline i {
+            position: absolute;
+            top: 50%;
+            left: 14px;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        .search-inline .soft-input {
+            padding-left: 40px;
+        }
+
+        .filter-action-btn {
+            height: 44px;
+            min-width: 56px;
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+            background: #0EA5FF;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 800;
+            transition: all 0.2s ease;
+        }
+
+        .filter-action-btn i {
+            pointer-events: none;
+        }
+
+        .table-card {
+            background: #fff;
+            border-radius: var(--warehouse-radius);
+            border: 1px solid var(--warehouse-border);
+            overflow: hidden;
+            box-shadow: var(--warehouse-shadow);
+        }
+
+        .invoice-table {
+            margin-bottom: 0;
+        }
+
+        .invoice-table thead th {
+            font-size: 14px;
+            letter-spacing: 0;
+            color: #111111;
+            font-weight: 700;
+            background: #f1f3f5;
+            border-bottom: 2px solid var(--warehouse-border-strong);
+            padding: 16px 14px;
+            white-space: nowrap;
+            text-transform: none;
+        }
+
+        .invoice-table tbody td {
+            padding: 14px 14px;
+            vertical-align: middle;
+            border-bottom: 1px solid #eef2f7;
+            color: #111111;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .invoice-id {
+            color: #111111;
+            font-weight: 400;
+            text-decoration: none;
+        }
+
+        .patient-main {
+            font-weight: 400;
+            margin-bottom: 2px;
+            color: #111111;
+        }
+
+        .patient-sub {
+            font-size: 12px;
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .money-strong {
+            font-weight: 400;
+        }
+
+        .money-discount {
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .status-paid {
+            background: #dbeafe;
+            color: #111111;
+        }
+
+        .status-pending {
+            background: #ffedd5;
+            color: #111111;
+        }
+
+        .status-overdue {
+            background: #fee2e2;
+            color: #111111;
+        }
+
+        .status-partial {
+            background: #fef3c7;
+            color: #111111;
+        }
+
+        .status-cancelled {
+            background: #e2e8f0;
+            color: #111111;
+        }
+
+        .action-stack {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            white-space: nowrap;
+        }
+
+        .action-btn {
+            width: 34px;
+            height: 34px;
+            border: none;
+            background: #eef4fb;
+            color: #64748b;
+            border-radius: 10px;
+            padding: 0;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: .2s;
+        }
+
+        .action-btn:hover {
+            background: #dbeafe;
+            color: #009CFF;
+        }
+
+        .action-stack .action-btn:nth-child(1) {
+            background: #e0f2fe;
+            color: #009CFF;
+        }
+
+        .action-stack .action-btn:nth-child(2) {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .action-stack .action-btn:nth-child(3) {
+            background: #fee2e2;
+            color: #ef4444;
+        }
+
+        .table-footer {
+            padding: 16px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .table-summary {
+            color: #111111;
+            font-weight: 400;
+            font-size: 13px;
+        }
+
+        .pager-box {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pager-btn {
+            width: 42px;
+            height: 42px;
+            border: 1px solid #dbe3ef;
+            background: #fff;
+            color: #111111;
+            border-radius: 14px;
+            font-weight: 700;
+        }
+
+        .pager-btn.active {
+            background: #0ea5ff;
+            border-color: #0ea5ff;
+            color: #111111;
+        }
+
+        .floating-create {
+            display: none !important;
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modal-title {
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .detail-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .form-block {
+            background: #f8fbff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .form-block-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 12px;
+        }
+
+        .summary-preview {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 16px;
+        }
+
+        .summary-preview-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .summary-preview-row .label {
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .summary-preview-row .value {
+            color: #0f172a;
+            font-weight: 800;
+            text-align: right;
+        }
+
+        .summary-preview-row.total {
+            padding-top: 12px;
+            margin-top: 8px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .summary-preview-row.total .label,
+        .summary-preview-row.total .value {
+            font-size: 16px;
+        }
+
+        .helper-note {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 8px;
+        }
+
+        .sidebar .dropdown-menu {
+            position: static !important;
+            transform: none !important;
+            margin-top: 0;
+        }
+
+        @media (max-width: 1200px) {
+            .filter-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .content-shell {
+                padding: 12px;
+            }
+
+            .invoice-page {
+                padding: 14px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-header {
+                min-width: 100%;
+                max-width: 100%;
+            }
+        }
+
+        /* imports-aligned refresh */
+        body {
+            background: #eef1f5;
+            color: #111111;
+        }
+
+        .invoice-page,
+        .filter-panel,
+        .table-card,
+        .modal-content,
+        .detail-box,
+        .form-block,
+        .summary-preview {
+            background: #ffffff;
+            border-color: #d9dee7;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+        }
+
+        .brand-title,
+        .kpi-label,
+        .invoice-table thead th,
+        .modal-title,
+        .detail-value,
+        .form-block-title,
+        .summary-preview-row .label,
+        .summary-preview-row .value {
+            color: #111111;
+        }
+
+        .invoice-table tbody td,
+        .patient-main,
+        .patient-sub,
+        .table-summary,
+        .brand-subtitle,
+        .detail-label,
+        .helper-note,
+        .money-strong,
+        .money-discount {
+            color: #111111;
+            font-weight: 400;
+        }
+
+        .brand-title,
+        .invoice-table thead th,
+        .modal-title,
+        .form-block-title {
+            font-weight: 600;
+        }
+
+        .kpi-card {
+            border-radius: 12px;
+        }
+
+        .create-btn,
+        .filter-action-btn,
+        .pager-btn.active,
+        .btn-primary {
+            background: #0EA5FF;
+            border-color: #0EA5FF;
+            color: #ffffff;
+            box-shadow: none;
+        }
+
+        .create-btn:hover,
+        .filter-action-btn:hover,
+        .pager-btn.active:hover,
+        .btn-primary:hover {
+            background: #0891e6;
+            border-color: #0891e6;
+            color: #ffffff;
+        }
+
+        .action-btn:hover,
+        .action-stack .action-btn:nth-child(1) {
+            color: #0EA5FF;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-xxl position-relative bg-white d-flex p-0">
+        <div class="sidebar pe-4 pb-3">
+            <nav class="navbar bg-light navbar-light">
+                <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
+
+                <div class="d-flex align-items-center ms-4 mb-4">
+                    <img class="rounded-circle" src="../img/user.jpg" style="width:40px; height:40px;">
+                    <div class="ms-3">
+                        <h6 class="mb-0" id="usernameSidebar"></h6>
+                    </div>
+                </div>
+
+                <div class="navbar-nav w-100">
+                    <a href="../index.html" class="nav-item nav-link">
+                        <i class="fa fa-tachometer-alt me-2"></i>Thống kê
+                    </a>
+
+                    <a href="../schedule.html" class="nav-item nav-link">
+                        <i class="fa fa-th me-2"></i>Lịch làm việc
+                    </a>
+
+                    <a href="../LichKham.html" class="nav-item nav-link">
+                        <i class="fa fa-keyboard me-2"></i>Lịch khám
+                    </a>
+
+                    <a href="../BenhAn.html" class="nav-item nav-link">
+                        <i class="fa fa-table me-2"></i>Bệnh án
+                    </a>
+
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="far fa-file-alt me-2"></i>Thuốc
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="medicines.html" class="dropdown-item">Danh mục thuốc</a>
+                            <a href="#" class="dropdown-item">Đơn thuốc</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="far fa-file-alt me-2"></i>Quản lý kho
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="suppliers.html" class="dropdown-item">Nhà cung cấp</a>
+                            <a href="imports.html" class="dropdown-item">Nhập thuốc</a>
+                            <a href="dispense.html" class="dropdown-item">Xuất thuốc</a>
+                            <a href="inventory.html" class="dropdown-item">Kho thuốc</a>
+                        </div>
+                    </div>
+
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="services.html" class="dropdown-item">Dịch vụ</a>
+                            <a href="invoices.html" class="dropdown-item active">Hóa đơn</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div class="content">
+            <nav class="navbar navbar-expand bg-white navbar-light sticky-top px-4 py-0">
+                <a href="#" class="sidebar-toggler flex-shrink-0">
+                    <i class="fa fa-bars"></i>
+                </a>
+
+                <div class="navbar-nav ms-auto">
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <img class="rounded-circle me-lg-2" src="../img/user.jpg" style="width:40px; height:40px;">
+                            <span id="usernameNavbar"></span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="container-fluid content-shell">
+                <div class="invoice-page">
+                    <div class="topbar-row">
+                        <div class="brand-mini">
+                            <!-- <div class="brand-icon">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div> -->
+                            <div>
+                                <!-- <div class="brand-title">Quản lý hóa đơn</div>
+                                <div class="brand-subtitle">Danh sách hóa đơn, thanh toán và theo dõi công nợ</div> -->
+                            </div>
+                        </div>
+
+                        <div class="header-tools">
+                            <div class="search-header">
+                                <i class="fa fa-search"></i>
+                                <input id="headerSearchInput" type="text" class="form-control"
+                                    placeholder="Tìm hóa đơn, bệnh nhân...">
+                            </div>
+                            <button class="icon-circle" type="button">
+                                <i class="fa fa-bell"></i>
+                            </button>
+                            <button class="icon-circle" type="button">
+                                <i class="fa fa-question-circle"></i>
+                            </button>
+                            <button class="create-btn" type="button" id="createInvoiceBtn">
+                                <i class="fa fa-plus"></i>
+                                Tạo hóa đơn
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6 col-xl-3">
+                            <div class="kpi-card card-blue">
+                                <div class="kpi-head">
+                                    <div class="kpi-icon">
+                                        <i class="fa fa-wallet"></i>
+                                    </div>
+                                </div>
+                                <div class="kpi-label">Tổng doanh thu</div>
+                                <div class="kpi-value" id="totalRevenue">0 đ</div>
+                                <div class="kpi-note">Tổng giá trị hóa đơn đã tạo</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <div class="kpi-card card-red">
+                                <div class="kpi-head">
+                                    <div class="kpi-icon">
+                                        <i class="fa fa-file-invoice"></i>
+                                    </div>
+                                </div>
+                                <div class="kpi-label">Chờ thanh toán</div>
+                                <div class="kpi-value" id="pendingAmount">0 đ</div>
+                                <div class="kpi-note" id="pendingInvoicesChip">0 hóa đơn</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <div class="kpi-card card-orange">
+                                <div class="kpi-head">
+                                    <div class="kpi-icon">
+                                        <i class="fa fa-check-circle"></i>
+                                    </div>
+                                </div>
+                                <div class="kpi-label">Đã thanh toán</div>
+                                <div class="kpi-value" id="paidInvoices">0</div>
+                                <div class="kpi-note">Số hóa đơn đã hoàn tất thanh toán</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 col-xl-3">
+                            <div class="kpi-card card-sky">
+                                <div class="kpi-head">
+                                    <div class="kpi-icon">
+                                        <i class="fa fa-exclamation-triangle"></i>
+                                    </div>
+                                </div>
+                                <div class="kpi-label">Quá hạn</div>
+                                <div class="kpi-value" id="overdueAmount">0 đ</div>
+                                <div class="kpi-note">Tổng tiền hóa đơn quá hạn</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-panel">
+                        <div class="filter-grid">
+                            <div class="search-inline">
+                                <i class="fa fa-search"></i>
+                                <input id="tableSearchInput" class="soft-input"
+                                    placeholder="Bệnh nhân, mã hóa đơn, số điện thoại...">
+                            </div>
+
+                            <input id="dateFilter" type="date" class="soft-input">
+
+                            <select id="statusFilter" class="soft-select">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="ChuaThanhToan">Chưa thanh toán</option>
+                                <option value="ThanhToanMotPhan">Thanh toán một phần</option>
+                                <option value="DaThanhToan">Đã thanh toán</option>
+                                <option value="QuaHan">Quá hạn</option>
+                                <option value="DaHuy">Đã hủy</option>
+                            </select>
+
+                            <select id="doctorFilter" class="soft-select">
+                                <option value="">Tất cả bác sĩ</option>
+                            </select>
+
+                            <button class="filter-action-btn" id="quickCreateBtn" title="Tạo hóa đơn">
+                                <i class="fa fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-card">
+                        <div class="table-responsive">
+                            <table class="table invoice-table align-middle" id="invoiceTable">
+                                <thead>
+                                    <tr>
+                                        <th>Mã hóa đơn</th>
+                                        <th>Bệnh nhân</th>
+                                        <th>Ngày tạo</th>
+                                        <th>Tổng tiền</th>
+                                        <th>Giảm trừ</th>
+                                        <th>Thực thu</th>
+                                        <th>Trạng thái</th>
+                                        <th class="text-center">Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoiceTableBody">
+                                    <tr>
+                                        <td colspan="8" class="text-center text-muted py-4">Đang tải dữ liệu hóa đơn...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="table-footer">
+                            <div class="table-summary" id="tableSummary">Đang tải dữ liệu...</div>
+                            <div class="pager-box" id="pagerBox"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="floating-create" id="floatingCreateBtn" title="Tạo hóa đơn">
+            <i class="fa fa-plus"></i>
+        </button>
+    </div>
+
+    <!-- MODAL TẠO / CẬP NHẬT HÓA ĐƠN -->
+    <div class="modal fade" id="invoiceModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="invoiceModalTitle">Tạo hóa đơn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <input type="hidden" id="invoiceId">
+
+                    <div class="row g-3">
+                        <div class="col-lg-7">
+                            <div class="form-block mb-3">
+                                <div class="form-block-title">Thông tin nguồn hóa đơn</div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Mã bệnh án</label>
+                                        <input id="invoiceMaBA" class="form-control" placeholder="Nhập mã bệnh án">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Mã nhân viên lập</label>
+                                        <input id="invoiceMaNhanVien" class="form-control" placeholder="Nhập mã nhân viên">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Hạn thanh toán</label>
+                                        <input id="invoiceDueDate" type="date" class="form-control">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Phương thức thanh toán mặc định</label>
+                                        <select id="invoicePaymentMethod" class="form-select">
+                                            <option value="TienMat">Tiền mặt</option>
+                                            <option value="ChuyenKhoan">Chuyển khoản</option>
+                                            <option value="QRPay">QR Pay</option>
+                                            <option value="The">Quẹt thẻ</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-12">
+                                        <label class="form-label fw-bold">Ghi chú hóa đơn</label>
+                                        <textarea id="invoiceNote" class="form-control" rows="3"
+                                            placeholder="Nhập ghi chú nếu có"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="helper-note">
+                                    Khi tạo mới, hóa đơn sẽ mặc định ở trạng thái <b>Chưa thanh toán</b>. Việc thu tiền thực hiện ở trang chi tiết hóa đơn.
+                                </div>
+                            </div>
+
+                            <div class="form-block">
+                                <div class="form-block-title">Điều chỉnh tài chính</div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Tổng tiền</label>
+                                        <input id="invoiceTongTien" type="number" min="0" class="form-control" placeholder="0">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">BHYT chi trả</label>
+                                        <input id="invoiceBHYTChiTra" type="number" min="0" class="form-control" placeholder="0">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Giảm giá / voucher</label>
+                                        <input id="invoiceDiscount" type="number" min="0" class="form-control" placeholder="0">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Tạm ứng</label>
+                                        <input id="invoiceTamUng" type="number" min="0" class="form-control" placeholder="0">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Phụ thu</label>
+                                        <input id="invoicePhuThu" type="number" min="0" class="form-control" placeholder="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-5">
+                            <div class="summary-preview">
+                                <div class="form-block-title mb-2">Tổng hợp hóa đơn</div>
+
+                                <div class="summary-preview-row">
+                                    <div class="label">Tổng tiền</div>
+                                    <div class="value" id="previewTongTien">0 đ</div>
+                                </div>
+
+                                <div class="summary-preview-row">
+                                    <div class="label">BHYT chi trả (-)</div>
+                                    <div class="value" id="previewBHYT">0 đ</div>
+                                </div>
+
+                                <div class="summary-preview-row">
+                                    <div class="label">Giảm giá (-)</div>
+                                    <div class="value" id="previewDiscount">0 đ</div>
+                                </div>
+
+                                <div class="summary-preview-row">
+                                    <div class="label">Tạm ứng (-)</div>
+                                    <div class="value" id="previewTamUng">0 đ</div>
+                                </div>
+
+                                <div class="summary-preview-row">
+                                    <div class="label">Phụ thu (+)</div>
+                                    <div class="value" id="previewPhuThu">0 đ</div>
+                                </div>
+
+                                <div class="summary-preview-row total">
+                                    <div class="label">Bệnh nhân phải trả</div>
+                                    <div class="value" id="previewFinalAmount">0 đ</div>
+                                </div>
+
+                                <div class="helper-note">
+                                    Sau khi tạo, bạn có thể chuyển sang trang chi tiết để thanh toán từng phần hoặc thanh toán hết.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                    <button class="btn btn-primary" id="saveInvoiceBtn">Lưu hóa đơn</button>
+                    <button class="btn btn-success" id="saveAndOpenInvoiceBtn">Lưu và mở chi tiết</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHI TIẾT NHANH -->
+    <div class="modal fade" id="invoiceDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi tiết hóa đơn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <div class="detail-box">
+                                <div class="detail-label">Mã hóa đơn</div>
+                                <div class="detail-value" id="detailMaHD">-</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="detail-box">
+                                <div class="detail-label">Bệnh nhân</div>
+                                <div class="detail-value" id="detailPatient">-</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="detail-box">
+                                <div class="detail-label">Trạng thái</div>
+                                <div class="detail-value" id="detailStatus">-</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="detail-box">
+                                <div class="detail-label">Thực thu</div>
+                                <div class="detail-value" id="detailFinalAmount">0 đ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table invoice-table align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Loại mục</th>
+                                    <th>Tên mục</th>
+                                    <th>Số lượng</th>
+                                    <th>Đơn giá</th>
+                                    <th>Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoiceDetailTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Chưa có dữ liệu chi tiết</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
+                    <button class="btn btn-primary" id="openDetailPageBtn">Mở trang chi tiết</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/invoices.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const username = localStorage.getItem('username') || 'Nguyen The Anh';
+            const sidebarUser = document.getElementById('usernameSidebar');
+            const navbarUser = document.getElementById('usernameNavbar');
+
+            if (sidebarUser) sidebarUser.textContent = username;
+            if (navbarUser) navbarUser.textContent = username;
+        });
+    </script>
+</body>
+
+</html>

@@ -18,63 +18,82 @@
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/style.css" rel="stylesheet">
     <style>
-         /* TABLE đẹp hơn */
+        body {
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        .card {
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .form-control, .form-select {
+            height: 42px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .filter-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+        }
+
+        /* ================= TABLE ================= */
         .table {
-            border: 2px solid #dee2e6;
+            border-collapse: separate;
+            border-spacing: 0;
         }
 
         .table thead th {
-            background: #009CFF;
-            color: white;
-            border: 2px solid #dee2e6;
+            background: #f1f3f5 !important;
+            color: #111 !important;
+            font-weight: 700;
+            padding: 16px 10px;
             text-align: center;
-            font-weight: 600;
+            font-size: 14.5px;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
         }
 
         .table td {
-            border: 1px solid #dee2e6;
-            color: #333;
-            font-weight: 500;
+            padding: 14px 10px;
+            vertical-align: middle;
+            color: #111 !important;
+            font-size: 14px;
         }
 
         .table tbody tr:hover {
-            background: #f1f5ff;
+            background: #f8fbff;
         }
 
-        /* BUTTON đẹp */
-        .btn {
-            border-radius: 8px;
-            font-weight: 500;
+        /* Cột Hành động */
+        .table th:last-child,
+        .table td:last-child {
+            width: 110px;
+            min-width: 110px;
         }
 
-        .btn-primary {
-            background: #009CFF;
-            border: none;
-            
-
-        }
-
-        .btn-warning {
-            background: #ffc107;
-            border: none;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            border: none;
-        }
-
-        /* BADGE */
-        .badge-success {
-            background: #28a745;
-            padding: 5px 10px;
+        /* Icon hành động */
+        .action-icon {
+            width: 30px;
+            height: 30px;
             border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 3px;
+            font-size: 15px;
+            border: none;
+            transition: all 0.2s;
         }
 
-        .badge-danger {
-            background: #dc3545;
-            padding: 5px 10px;
-            border-radius: 6px;
+        .btn-view   { background: #E3F2FD; color: #2196F3; }
+        .btn-edit   { background: #E3F2FD; color: #1976D2; }
+        .btn-delete { background: #FFEBEE; color: #f36d64; }
+
+        .action-icon:hover {
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -86,7 +105,7 @@
     <div class="sidebar pe-4 pb-3">
         <nav class="navbar bg-light navbar-light">
             <a href="../index.html" class="navbar-brand mx-4 mb-3">
-                <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>CLINIC</h3>
+                <!-- <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>CLINIC</h3> -->
             </a>
 
             <div class="d-flex align-items-center ms-4 mb-4">
@@ -113,22 +132,31 @@
                     <i class="fa fa-table me-2"></i>Bệnh án
                 </a>
 
-                <!-- <div class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown">
-                        <i class="far fa-file-alt me-2"></i>Quản lý thuốc
-                    </a>
-                    <div class="dropdown-menu bg-transparent border-0">
-                        <a href="medicines.html" class="dropdown-item active">Danh mục thuốc</a>
-                    </div>
-                </div> -->
-                <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý thuốc</a>
+                 <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                         <div class="dropdown-menu bg-transparent border-0">
                             <a href="medicines.html" class="dropdown-item">Danh mục thuốc</a>
+                            <a href="#" class="dropdown-item">Đơn thuốc</a>
+                        </div>
+                    </div>
+                <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý kho</a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                           
                             <a href="suppliers.html" class="dropdown-item">Nhà cung cấp</a>
                             <a href="imports.html" class="dropdown-item">Nhập thuốc</a>
-                            <a href="inventory.html" class="dropdown-item">Kho thuốc</a>
                             <a href="dispense.html" class="dropdown-item">Xuất thuốc</a>
+                            <a href="inventory.html" class="dropdown-item">Kho thuốc</a>
+                            
+                        </div>
+                    </div>
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="services.html" class="dropdown-item">Dịch vụ</a>
+                            <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
                         </div>
                     </div>
             </div>
@@ -154,51 +182,71 @@
             </div>
         </nav>
 
-        <!-- Main -->
+        <!-- MAIN -->
         <div class="container-fluid pt-4 px-4">
-            <div class="bg-light rounded p-4 shadow-sm">
 
-                <div class="d-flex justify-content-between mb-3">
-                    <h4>Quản lý nhà cung cấp</h4>
-                    <button class="btn btn-primary px-4" onclick="openAddModal()">
-                        Thêm NCC
-                    </button>
-                </div>
+            <div class="d-flex justify-content-end align-items-center mb-3"></div>
 
-                <div class="d-flex mb-3 gap-2">
-                    <input type="text" id="searchInput" class="form-control w-25" placeholder="Tìm nhà cung cấp...">
-                    <button class="btn btn-secondary" onclick="loadSuppliers()">Reload</button>
-                </div>
+<div class="filter-bar mb-4">
+    <div class="d-flex align-items-center gap-2">
 
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
+    <!-- Search chiếm hết -->
+    <div class="flex-grow-1">
+        <input id="searchInput" type="text" class="form-control" placeholder="Tìm nhà cung cấp...">
+    </div>
+
+    <!-- Sort nằm sát nút -->
+    <div style="width: 180px;">
+        <select id="sortFilter" class="form-select">
+            
+        </select>
+    </div>
+
+    <!-- Buttons -->
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary px-3" onclick="applyFilter()">
+            Áp dụng
+        </button>
+        <button class="btn btn-primary px-3" onclick="openAddModal()">
+            Thêm mới
+        </button>
+    </div>
+
+</div>
+</div>
+
+            <!-- Table -->
+            <div class="bg-white rounded p-4 shadow-sm card">
+                <table class="table align-middle table-hover" id="supplierTable">
+                    <thead>
                         <tr>
                             <th>ID</th>
                             <th>Tên NCC</th>
-                            <th>Địa chỉ</th>
                             <th>SĐT</th>
-                            <th class="text-center">Hành động</th>
+                            <th>Email</th>
+                            <th>Số lần nhập</th>
+                            <th>Tổng tiền</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
-                    <tbody id="supplierTable"></tbody>
+                    <tbody></tbody>
                 </table>
-
             </div>
         </div>
 
         <!-- Footer -->
-        <div class="container-fluid pt-4 px-4">
+        <!-- <div class="container-fluid pt-4 px-4">
             <div class="bg-light rounded p-3 text-center">
                 © Clinic 2026
             </div>
-        </div>
+        </div> -->
 
     </div>
 </div>
 
-<!-- Modal -->
+<!-- MODAL -->
 <div class="modal fade" id="supplierModal">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
 
             <div class="modal-header">
@@ -207,22 +255,48 @@
             </div>
 
             <div class="modal-body">
+
                 <input type="hidden" id="MaNCC">
 
-                <div class="mb-3">
-                    <label>Tên NCC</label>
-                    <input class="form-control" id="TenNCC">
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label>Tên NCC *</label>
+                        <input class="form-control" id="TenNCC">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>SĐT *</label>
+                        <input class="form-control" id="SoDienThoai">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Email</label>
+                        <input class="form-control" id="Email">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Mã số thuế</label>
+                        <input class="form-control" id="MaSoThue">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Người liên hệ</label>
+                        <input class="form-control" id="NguoiLienHe">
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label>Địa chỉ *</label>
+                        <input class="form-control" id="DiaChi">
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label>Điều khoản thanh toán</label>
+                        <textarea class="form-control" id="DieuKhoanThanhToan"></textarea>
+                    </div>
+
                 </div>
 
-                <div class="mb-3">
-                    <label>Địa chỉ</label>
-                    <input class="form-control" id="DiaChi">
-                </div>
-
-                <div class="mb-3">
-                    <label>SĐT</label>
-                    <input class="form-control" id="SoDienThoai">
-                </div>
             </div>
 
             <div class="modal-footer">
@@ -234,11 +308,41 @@
     </div>
 </div>
 
+<!-- 🔥 Modal xem thuốc
+<div class="modal fade" id="supplierMedicineModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Thuốc của nhà cung cấp</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <table class="table text-center">
+                    <thead>
+                        <tr>
+                            <th>Tên thuốc</th>
+                            <th>Đơn vị</th>
+                            <th>Giá nhập</th>
+                            <th>Tồn kho</th>
+                        </tr>
+                    </thead>
+                    <tbody id="supplierMedicineTable"></tbody>
+                </table>
+
+            </div>
+
+        </div>
+    </div>
+</div> -->
 <!-- JS -->
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script src="../js/main.js"></script>
+<script src="../js/table_pagination.js"></script>
 <script src="../js/suppliers.js"></script>
 
 <script>
