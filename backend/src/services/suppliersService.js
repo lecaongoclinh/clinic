@@ -10,8 +10,12 @@ const SuppliersService = {
         return await SuppliersModel.getById(id);
     },
 
+    // 🔥 NEW
+    getMedicinesBySupplier: async (MaNCC) => {
+        return await SuppliersModel.getMedicinesBySupplier(MaNCC);
+    },
+
     createSupplier: async (data) => {
-        // Có thể validate ở đây nếu cần
         return await SuppliersModel.create(data);
     },
 
@@ -21,7 +25,10 @@ const SuppliersService = {
 
     deleteSupplier: async (id) => {
         return await SuppliersModel.delete(id);
-    }
+    },
+    getImportsBySupplier: async (MaNCC) => {
+    return await SuppliersModel.getImportsBySupplier(MaNCC);
+}
 
 };
 

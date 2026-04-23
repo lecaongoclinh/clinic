@@ -9,86 +9,124 @@ const ImportsService = {
 
     getItems: async (id) => await ImportsModel.getItems(id),
 
-    //CORE LOGIC
+    // ================= CREATE IMPORT =================
     createImport: async (data) => {
         const connection = await db.getConnection();
-        if (!MaThuoc || !SoLuong || !GiaNhap) {
-            throw new Error("Thiếu dữ liệu thuốc");
-        }
+
         try {
             await connection.beginTransaction();
 
-            const { MaNCC, MaNhanVien = 1, items } = data;
+            const {
+                MaNCC,
+                MaKho,
+                LoaiPhieu = "NhapMua",
+                GhiChu = "",
+                MaNhanVien,
+                details
+            } = data;
 
-            if (!items || items.length === 0) {
+            // ===== VALIDATE =====
+            if (!MaNhanVien) {
+                throw new Error("Thiếu MaNhanVien");
+            }
+
+            if (!details || details.length === 0) {
                 throw new Error("Phiếu nhập phải có ít nhất 1 thuốc");
             }
 
-            // 1. tạo phiếu
+            // ===== 1. TẠO PHIẾU =====
             const [pn] = await connection.query(
-                `INSERT INTO PhieuNhapThuoc (MaNCC, MaNhanVien)
-                 VALUES (?, ?)`,
-                [MaNCC, MaNhanVien]
+                `INSERT INTO PhieuNhapThuoc 
+                (MaNCC, MaNhanVien, MaKho, LoaiPhieu, GhiChu)
+                VALUES (?, ?, ?, ?, ?)`,
+                [MaNCC, MaNhanVien, MaKho, LoaiPhieu, GhiChu]
             );
 
             const MaPN = pn.insertId;
             let tongTien = 0;
 
-            // 2. loop thuốc
-            for (let item of items) {
+            // ===== 2. XỬ LÝ CHI TIẾT =====
+            for (let item of details) {
 
-                const { MaThuoc, SoLuong, GiaNhap, HanSuDung, SoLo } = item;
+                const {
+                    MaThuoc,
+                    SoLuong,        // đơn vị cơ bản (viên)
+                    GiaNhap,        // giá / đơn vị cơ bản
+                    DonViNhap,
+                    SoLuongNhap,
+                    HeSoQuyDoi,
+                    SoLo,
+                    HanSuDung,
+                    NgaySanXuat
+                } = item;
 
-                if (!SoLo || !HanSuDung) {
-                    throw new Error("Thiếu số lô hoặc hạn sử dụng");
+                // ===== VALIDATE =====
+                if (!MaThuoc || !SoLuong || !GiaNhap) {
+                    throw new Error("Thiếu dữ liệu thuốc");
+                }
+
+                if (!SoLo || !HanSuDung || !NgaySanXuat) {
+                    throw new Error("Thiếu thông tin lô");
+                }
+
+                if (SoLuong <= 0 || GiaNhap <= 0) {
+                    throw new Error("Số lượng hoặc giá không hợp lệ");
                 }
 
                 tongTien += SoLuong * GiaNhap;
 
-                // insert chi tiết
+                // ===== 2.1 INSERT CHI TIẾT =====
                 const [ctpn] = await connection.query(
-                    `INSERT INTO ChiTietPhieuNhap 
-                    (MaPN, MaThuoc, SoLuong, GiaNhap)
-                    VALUES (?, ?, ?, ?)`,
-                    [MaPN, MaThuoc, SoLuong, GiaNhap]
+                    `INSERT INTO ChiTietPhieuNhap
+                    (MaPN, MaThuoc, SoLuong, GiaNhap, DonViNhap, SoLuongNhap, HeSoQuyDoi)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        MaPN,
+                        MaThuoc,
+                        SoLuong,
+                        GiaNhap,
+                        DonViNhap,
+                        SoLuongNhap,
+                        HeSoQuyDoi
+                    ]
                 );
 
-                // kiểm tra lô
+                const MaCTPN = ctpn.insertId;
+
+                // ===== 2.2 INSERT LÔ + TỒN KHO =====
                 const [lo] = await connection.query(
-                    `SELECT * FROM LoThuoc 
-                     WHERE MaThuoc = ? AND SoLo = ?`,
-                    [MaThuoc, SoLo]
+                    `INSERT INTO LoThuoc
+                    (MaThuoc, SoLo, HanSuDung, NgaySanXuat,
+                     GiaNhap, MaCTPN, MaKho, MaNCC, SoLuongNhap, SoLuongDaXuat)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+                    [
+                        MaThuoc,
+                        SoLo,
+                        HanSuDung,
+                        NgaySanXuat,
+                        GiaNhap,
+                        MaCTPN,
+                        MaKho,
+                        MaNCC,
+                        SoLuong   // 🔥 tồn kho set trực tiếp
+                    ]
                 );
 
-                if (lo.length > 0) {
-                    await connection.query(
-                        `UPDATE LoThuoc
-                         SET SoLuongTon = SoLuongTon + ?
-                         WHERE MaThuoc = ? AND SoLo = ?`,
-                        [SoLuong, MaThuoc, SoLo]
-                    );
-                } else {
-                    await connection.query(
-                        `INSERT INTO LoThuoc 
-                        (MaThuoc, SoLo, HanSuDung, SoLuongTon, GiaNhap, MaCTPN)
-                        VALUES (?, ?, ?, ?, ?, ?)`,
-                        [MaThuoc, SoLo, HanSuDung, SoLuong, GiaNhap, ctpn.insertId]
-                    );
-                }
+                const MaLo = lo.insertId;
 
-                // update tồn tổng
+                // ===== 2.3 LỊCH SỬ KHO =====
                 await connection.query(
-                    `UPDATE Thuoc
-                     SET SoLuongTon = SoLuongTon + ?
-                     WHERE MaThuoc = ?`,
-                    [SoLuong, MaThuoc]
+                    `INSERT INTO LichSuKho
+                    (MaThuoc, MaLo, Loai, SoLuong, ThamChieuID)
+                    VALUES (?, ?, 'Nhap', ?, ?)`,
+                    [MaThuoc, MaLo, SoLuong, MaPN]
                 );
             }
 
-            // update tổng tiền
+            // ===== 3. UPDATE TỔNG TIỀN =====
             await connection.query(
                 `UPDATE PhieuNhapThuoc 
-                 SET TongTien = ?
+                 SET TongTien = ? 
                  WHERE MaPN = ?`,
                 [tongTien, MaPN]
             );

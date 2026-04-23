@@ -34,6 +34,23 @@ const SuppliersController = {
         }
     },
 
+    // 🔥 NEW: lấy thuốc theo NCC
+    getMedicines: async (req, res) => {
+        try {
+            const { id } = req.params;
+
+            const data = await SuppliersService.getMedicinesBySupplier(id);
+
+            res.json(data);
+
+        } catch (err) {
+            res.status(500).json({
+                message: "Lỗi lấy thuốc theo nhà cung cấp",
+                error: err.message
+            });
+        }
+    },
+
     create: async (req, res) => {
         try {
             const { TenNCC, DiaChi, SoDienThoai } = req.body;
@@ -102,7 +119,19 @@ const SuppliersController = {
                 error: err.message
             });
         }
+    },
+    getImports: async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = await SuppliersService.getImportsBySupplier(id);
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({
+            message: "Lỗi lấy lịch sử nhập",
+            error: err.message
+        });
     }
+}
 
 };
 

@@ -6,8 +6,16 @@ const BatchService = {
         return await BatchModel.getAll();
     },
 
+    getBatchesByMedicine: async (MaThuoc) => {
+        return await BatchModel.getByMedicine(MaThuoc);
+    },
+
     getExpiredBatches: async () => {
         return await BatchModel.getExpired();
+    },
+
+    getNearExpiryBatches: async () => {
+        return await BatchModel.getNearExpiry();
     }
 
 };

@@ -1,3 +1,4 @@
+import db from "../config/db.js";
 import MedicinesModel from "../models/medicinesModel.js";
 
 const MedicinesService = {
@@ -26,10 +27,30 @@ const MedicinesService = {
         return await MedicinesModel.lowStock();
     },
 
-    // ================= NEW =================
-     getMedicinesBySupplier: async (MaNCC) => {
-        if (!MaNCC) throw new Error("Thiếu MaNCC");
-        return await MedicinesModel.getBySupplier(MaNCC);
+    // ✅ FIX CHUẨN
+    getMedicinesBySupplier: async (MaNCC) => {
+        const [rows] = await db.query(`
+            SELECT 
+                t.MaThuoc,
+                t.TenThuoc,
+                t.DonViCoBan,
+                t.HoatChat,
+                t.HamLuong,
+                t.DangBaoChe,
+                tncc.GiaNhap,
+
+                COALESCE(SUM(l.SoLuongNhap - l.SoLuongDaXuat),0) AS TongTon
+
+            FROM Thuoc_NhaCungCap tncc
+            JOIN Thuoc t ON t.MaThuoc = tncc.MaThuoc
+            LEFT JOIN LoThuoc l ON l.MaThuoc = t.MaThuoc
+
+            WHERE tncc.MaNCC = ?
+
+            GROUP BY t.MaThuoc
+        `, [MaNCC]);
+
+        return rows;
     }
 
 };

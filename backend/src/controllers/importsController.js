@@ -37,10 +37,16 @@ const ImportsController = {
     getBySupplier: async (req, res) => {
         try {
             const { MaNCC } = req.query;
+
+            if (!MaNCC) {
+                return res.status(400).json({ message: "Thiếu MaNCC" });
+            }
+
             const data = await MedicinesService.getMedicinesBySupplier(MaNCC);
             res.json(data);
+
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ message: err.message });
         }
     },
 
@@ -57,18 +63,6 @@ const ImportsController = {
             res.status(500).json({
                 message: err.message
             });
-        }
-    },
-
-    addItem: async (req, res) => {
-        try {
-            const result = await ImportsService.addItem(
-                req.params.id,
-                req.body
-            );
-            res.json(result);
-        } catch (err) {
-            res.status(500).json({ message: err.message });
         }
     }
 

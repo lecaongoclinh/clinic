@@ -28,11 +28,11 @@ const MedicinesController = {
 
     create: async (req, res) => {
         try {
-            const { TenThuoc, DonViTinh, GiaBan } = req.body;
+            const { TenThuoc, GiaBan } = req.body;
 
-            if (!TenThuoc || !DonViTinh || !GiaBan) {
+            if (!TenThuoc || !GiaBan) {
                 return res.status(400).json({
-                    message: "Thiếu dữ liệu (TenThuoc, DonViTinh, GiaBan)"
+                    message: "Thiếu dữ liệu (TenThuoc, GiaBan)"
                 });
             }
 
@@ -51,13 +51,6 @@ const MedicinesController = {
     update: async (req, res) => {
         try {
             const { id } = req.params;
-            const { TenThuoc, DonViTinh, GiaBan } = req.body;
-
-            if (!TenThuoc || !DonViTinh || !GiaBan) {
-                return res.status(400).json({
-                    message: "Thiếu dữ liệu cập nhật"
-                });
-            }
 
             const result = await MedicinesService.updateMedicine(id, req.body);
 
@@ -93,37 +86,40 @@ const MedicinesController = {
 
             res.json({
                 message: "Danh sách thuốc sắp hết",
-                data: data
+                data
             });
 
         } catch (err) {
             res.status(500).json({ message: "Lỗi kiểm tra tồn kho", error: err.message });
         }
     },
-
-    
     getBySupplier: async (req, res) => {
-        try {
-            const { MaNCC } = req.query;
+    try {
+        const { MaNCC } = req.query;
 
-            if (!MaNCC) {
-                return res.status(400).json({
-                    message: "Thiếu MaNCC"
-                });
-            }
-
-            const data = await MedicinesService.getBySupplier(MaNCC);
-
-            res.json(data);
-
-        } catch (err) {
-            res.status(500).json({
-                message: "Lỗi lấy thuốc theo nhà cung cấp",
-                error: err.message
+        if (!MaNCC) {
+            return res.status(400).json({
+                message: "Thiếu MaNCC"
             });
         }
+
+        // ✅ FIX ĐÚNG TÊN HÀM
+        const data = await MedicinesService.getMedicinesBySupplier(MaNCC);
+
+        res.json(data);
+
+    } catch (err) {
+        res.status(500).json({
+            message: "Lỗi lấy thuốc theo nhà cung cấp",
+            error: err.message
+        });
     }
+}
+
 
 };
 
 export default MedicinesController;
+
+
+

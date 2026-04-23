@@ -46,4 +46,22 @@ app.use("/api/dispense", (await import('./routes/dispenseRoutes.js')).default);
 app.use("/api/batches", (await import('./routes/batchRoutes.js')).default);
 app.use("/api/prescriptions", (await import('./routes/prescriptionRoutes.js')).default);
 
+import quyDoiRoutes from "./routes/quyDoiRoutes.js";
+
+app.use("/api/quy-doi", quyDoiRoutes);
+
+import khoRoutes from "./routes/khoRoutes.js";
+
+app.use("/api/kho", khoRoutes);
+app.use("/api/inventory", (await import('./routes/inventoryRouter.js')).default);
+
+import servicesRoutes from "./routes/servicesRoutes.js";
+
+app.use("/api/services", servicesRoutes);
+app.use("/api/invoices", (await import("./routes/invoicesRoutes.js")).default);
+
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+
+
+app.use("/api/dashboard", dashboardRoutes);
 export default app;
