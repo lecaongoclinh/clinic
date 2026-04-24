@@ -292,7 +292,16 @@ async function loadStockCard() {
         const dateFrom = document.getElementById('historyDateFrom').value;
         const dateTo = document.getElementById('historyDateTo').value;
 
-        if (MaThuoc) params.set('MaThuoc', MaThuoc);
+        if (!MaThuoc) {
+            stockCardData = [];
+            renderStockCard();
+            const tbody = document.querySelector('#stockCardTable tbody');
+            tbody.innerHTML = renderEmptyRow(7, 'Vui lòng chọn thuốc để xem thẻ kho và cột tồn cuối chính xác');
+            resetAndAttachPager('#stockCardTable');
+            return;
+        }
+
+        params.set('MaThuoc', MaThuoc);
         if (MaKho) params.set('MaKho', MaKho);
         if (dateFrom) params.set('dateFrom', dateFrom);
         if (dateTo) params.set('dateTo', dateTo);
@@ -632,6 +641,9 @@ function bindRealtimeFilters() {
     document.getElementById('warningRangeFilter')?.addEventListener('change', renderWarnings);
     document.getElementById('warningStockFilter')?.addEventListener('change', async () => {
         await loadWarnings();
+    });
+    ['historyMedicineFilter', 'historyWarehouseFilter', 'historyDateFrom', 'historyDateTo'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('change', () => loadStockCard());
     });
     ['auditWarehouseFilter', 'auditDateFrom', 'auditDateTo'].forEach((id) => {
         document.getElementById(id)?.addEventListener('change', () => loadAudits());
