@@ -1,22 +1,15 @@
 import express from 'express';
-import { getPatients, getPatientById } from '../controllers/patientController.js';
+import patientController from '../controllers/patientController.js';
 
 const router = express.Router();
 
-router.get('/', authenticateToken, getPatients);
-router.get('/:id', authenticateToken, getPatientById);
-
-import patientController from '../controllers/patientController.js';
-
-const patientRoutes = express.Router();
-
-// Tìm kiếm bệnh nhân theo tên
-patientRoutes.get('/search', patientController.searchByName);
+// Tìm kiếm bệnh nhân
+router.get('/search', patientController.searchByName);
 
 // Lấy thông tin bệnh nhân
-patientRoutes.get('/:maBN', patientController.getById);
+router.get('/:maBN', patientController.getById);
 
-// Tạo bệnh nhân mới
-patientRoutes.post('', patientController.create);
+// Tạo bệnh nhân
+router.post('/', patientController.create);
 
-export default patientRoutes;
+export default router;

@@ -47,6 +47,23 @@ function getMovementQuantity(row) {
     return -qty;
 }
 
+function getStockCardBalanceKey(row) {
+    return `${row.MaThuoc || ""}:${row.MaKho || ""}`;
+}
+
+function toDateOnly(value) {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toISOString().slice(0, 10);
+}
+
+function isLotActiveAtDate(lot, dateOnly) {
+    if (!lot || !dateOnly) return false;
+    if (!lot.HanSuDung) return true;
+    return String(lot.HanSuDung).slice(0, 10) > dateOnly;
+}
+
 const InventoryModel = {
     getAll: async (filters = {}) => {
         const { where, params } = buildInventoryFilters(filters);
@@ -233,28 +250,47 @@ const InventoryModel = {
             baseParams.push(filters.MaKho);
         }
 
-        const baseWhere = baseConditions.length ? `WHERE ${baseConditions.join(" AND ")}` : "";
-
-        const openingConditions = [...baseConditions];
-        const openingParams = [...baseParams];
-        if (dateFrom) {
-            openingConditions.push("ls.ThoiGian < ?");
-            openingParams.push(dateFrom);
+        const lotConditions = [];
+        const lotParams = [];
+        if (filters.MaThuoc) {
+            lotConditions.push("l.MaThuoc = ?");
+            lotParams.push(filters.MaThuoc);
+        }
+        if (filters.MaKho) {
+            lotConditions.push("l.MaKho = ?");
+            lotParams.push(filters.MaKho);
         }
 
-        const openingWhere = openingConditions.length ? `WHERE ${openingConditions.join(" AND ")}` : "";
-        const [openingRows] = await db.query(`
-            SELECT ls.Loai, ls.SoLuong
-            FROM LichSuKho ls
-            LEFT JOIN LoThuoc l ON ls.MaLo = l.MaLo
-            ${openingWhere}
-            ORDER BY ls.ThoiGian ASC, ls.MaLS ASC
-        `, openingParams);
+        const lotWhere = lotConditions.length ? `WHERE ${lotConditions.join(" AND ")}` : "";
+        const [lotRows] = await db.query(`
+            SELECT l.MaLo, l.HanSuDung, l.MaThuoc, l.MaKho
+            FROM LoThuoc l
+            ${lotWhere}
+        `, lotParams);
 
-        let openingBalance = 0;
-        openingRows.forEach(row => {
-            openingBalance += getMovementQuantity(row);
+        const lotMap = new Map();
+        lotRows.forEach((lot) => {
+            lotMap.set(Number(lot.MaLo), lot);
         });
+
+        const lotBalances = new Map();
+        if (dateFrom) {
+            const openingConditions = [...baseConditions, "ls.ThoiGian < ?"];
+            const openingParams = [...baseParams, dateFrom];
+            const openingWhere = `WHERE ${openingConditions.join(" AND ")}`;
+            const [openingRows] = await db.query(`
+                SELECT ls.Loai, ls.SoLuong, ls.MaThuoc, ls.MaLo, l.MaKho
+                FROM LichSuKho ls
+                LEFT JOIN LoThuoc l ON ls.MaLo = l.MaLo
+                ${openingWhere}
+                ORDER BY ls.ThoiGian ASC, ls.MaLS ASC
+            `, openingParams);
+
+            openingRows.forEach(row => {
+                const lotId = Number(row.MaLo);
+                lotBalances.set(lotId, (lotBalances.get(lotId) || 0) + getMovementQuantity(row));
+            });
+        }
 
         const detailConditions = [...baseConditions];
         const detailParams = [...baseParams];
@@ -276,6 +312,8 @@ const InventoryModel = {
                 ls.SoLuong,
                 ls.GhiChu,
                 ls.MaThuoc,
+                ls.MaLo,
+                l.MaKho,
                 t.TenThuoc,
                 k.TenKho,
                 CASE
@@ -305,12 +343,23 @@ const InventoryModel = {
             ORDER BY ls.ThoiGian ASC, ls.MaLS ASC
         `, detailParams);
 
-        let running = openingBalance;
         return rows.map(row => {
+            const lotId = Number(row.MaLo);
             const delta = getMovementQuantity(row);
             const nhap = delta > 0 ? delta : 0;
             const xuat = delta < 0 ? Math.abs(delta) : 0;
-            running += delta;
+            lotBalances.set(lotId, (lotBalances.get(lotId) || 0) + delta);
+
+            const movementDate = toDateOnly(row.NgayThang);
+            let running = 0;
+
+            lotBalances.forEach((qty, currentLotId) => {
+                if (qty <= 0) return;
+                const lot = lotMap.get(Number(currentLotId));
+                if (isLotActiveAtDate(lot, movementDate)) {
+                    running += qty;
+                }
+            });
 
             return {
                 ...row,
