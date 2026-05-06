@@ -14,7 +14,7 @@ const Schedule = {
     // Check if doctor exists
     checkDoctorExists: async (maBacSi, connection = db, forUpdate = false) => {
         const query = `
-            SELECT MaNV, HoTen, MaVaiTro
+            SELECT MaNV, HoTen, MaVaiTro, MaChuyenKhoa
             FROM NhanVien
             WHERE MaNV = ? AND MaVaiTro = (SELECT MaVaiTro FROM VaiTro WHERE TenVaiTro = 'Bac Si')
             ${forUpdate ? 'FOR UPDATE' : ''}
@@ -25,19 +25,33 @@ const Schedule = {
 
     // Check if room exists
     checkRoomExists: async (maPhong, connection = db, forUpdate = false) => {
-        const query = `SELECT MaPhong, TenPhong FROM PhongKham WHERE MaPhong = ? ${forUpdate ? 'FOR UPDATE' : ''}`;
+        const query = `
+            SELECT MaPhong, TenPhong, MaChuyenKhoa
+            FROM PhongKham
+            WHERE MaPhong = ?
+            ${forUpdate ? 'FOR UPDATE' : ''}
+        `;
         const [rows] = await connection.execute(query, [maPhong]);
         return rows.length > 0 ? rows[0] : null;
     },
 
     // Get all clinic rooms
-    getAllRooms: async () => {
-        const query = `
-            SELECT MaPhong, TenPhong, GhiChu
-            FROM PhongKham
-            ORDER BY TenPhong ASC
+    getAllRooms: async (maChuyenKhoa = null) => {
+        let query = `
+            SELECT p.MaPhong, p.TenPhong, p.GhiChu, p.MaChuyenKhoa, c.TenChuyenKhoa
+            FROM PhongKham p
+            LEFT JOIN ChuyenKhoa c ON p.MaChuyenKhoa = c.MaChuyenKhoa
         `;
-        const [rows] = await db.execute(query);
+        const params = [];
+
+        if (maChuyenKhoa) {
+            query += ` WHERE p.MaChuyenKhoa = ?`;
+            params.push(maChuyenKhoa);
+        }
+
+        query += ` ORDER BY p.TenPhong ASC`;
+
+        const [rows] = await db.execute(query, params);
         return rows;
     },
 
@@ -88,10 +102,11 @@ const Schedule = {
     },
 
     // Get rooms that are free in a given time range
-    getAvailableRooms: async (ngayLam, gioBatDau, gioKetThuc) => {
-        const query = `
-            SELECT p.MaPhong, p.TenPhong, p.GhiChu
+    getAvailableRooms: async (ngayLam, gioBatDau, gioKetThuc, maChuyenKhoa = null) => {
+        let query = `
+            SELECT p.MaPhong, p.TenPhong, p.GhiChu, p.MaChuyenKhoa, c.TenChuyenKhoa
             FROM PhongKham p
+            LEFT JOIN ChuyenKhoa c ON p.MaChuyenKhoa = c.MaChuyenKhoa
             WHERE NOT EXISTS (
                 SELECT 1
                 FROM LichLamViecBacSi l
@@ -99,9 +114,17 @@ const Schedule = {
                 AND DATE(l.NgayLam) = DATE(?)
                 AND (? < l.GioKetThuc AND ? > l.GioBatDau)
             )
-            ORDER BY p.TenPhong ASC
         `;
-        const [rows] = await db.execute(query, [ngayLam, gioBatDau, gioKetThuc]);
+        const params = [ngayLam, gioBatDau, gioKetThuc];
+
+        if (maChuyenKhoa) {
+            query += ` AND p.MaChuyenKhoa = ?`;
+            params.push(maChuyenKhoa);
+        }
+
+        query += ` ORDER BY p.TenPhong ASC`;
+
+        const [rows] = await db.execute(query, params);
         return rows;
     },
 

@@ -31,6 +31,20 @@
     <link href="css/style.css" rel="stylesheet">
 
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/dist/tippy.css" />
+    <style>
+        .appointment-filter-row {
+            --bs-gutter-y: 0.5rem;
+        }
+
+        .appointment-page-heading {
+            margin-bottom: 0.25rem !important;
+        }
+
+        .appointment-page-heading h5,
+        .appointment-page-heading .btn {
+            margin-bottom: 0 !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -125,7 +139,7 @@
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
                             <img class="rounded-circle me-lg-2" src="img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                            <span class="d-none d-lg-inline-flex"></span>
+                            <span class="d-none d-lg-inline-flex" id="usernameNavbar"></span>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
                             <a href="#" class="dropdown-item">My Profile</a>
@@ -139,10 +153,10 @@
 
             <!-- Main Content -->
             <div class="container-fluid pt-4 px-4">
-                <div class="row g-4">
-                    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+                <div class="row g-4 appointment-filter-row">
+                    <div class="col-12 d-flex justify-content-between align-items-center appointment-page-heading">
                         <h5>Quản lý lịch đặt khám</h5>
-                        <button id="btnCreateAppointment" class="btn btn-primary mb-3">Tạo lịch khám</button>
+                        <button id="btnCreateAppointment" class="btn btn-primary">Tạo lịch khám</button>
                     </div>
                     <div class="col-sm-12 col-xl-4" style="padding: 0px;">
                         <input 
@@ -406,7 +420,6 @@
     <script src="js/main.js"></script>
     <!-- <script src="js/schedule.js"></script> -->
      <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
-     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
     
@@ -421,7 +434,10 @@
             const username = localStorage.getItem('username');
             console.log("Username from localStorage:", username);
             if (username) {
-                document.getElementById('username').textContent = username;
+                const usernameSidebar = document.getElementById('usernameSidebar');
+                const usernameNavbar = document.getElementById('usernameNavbar');
+                if (usernameSidebar) usernameSidebar.textContent = username;
+                if (usernameNavbar) usernameNavbar.textContent = username;
             }
         });
         document.addEventListener('DOMContentLoaded', function() {
@@ -455,7 +471,8 @@
                         });
 
                         // form edit
-                        const editSelect = document.getElementById('editMaBacSi');
+                        const editSelect = document.getElementById('editMaBacSiStep');
+                        if (!editSelect) return;
                         editSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
                         data.forEach(bs => {
                             const option = new Option(`${bs.HoTen} (${bs.TenChuyenKhoa || 'Chưa xác định'})`, bs.MaNV);
@@ -1465,9 +1482,12 @@
             document.getElementById('appointmentTabs').addEventListener('shown.bs.tab', (e) => {
                 if (e.target.id === 'table-tab') {
                     loadPendingAppointments();
+                } else if (e.target.id === 'calendar-tab') {
+                    calendar.refetchEvents();
                 }
             });
 
+            /*
                     fetch(`/api/appointments?maChuyenKhoa=${maChuyenKhoa}&maBacSi=${maBacSi}`)
                         .then(res => {
                             if (res.status === 401) {
@@ -1489,10 +1509,10 @@
                 },
             ),
 
-            calendar.render();
+            */
 
             // Load danh sách khoa
-            fetch('/api/specialty')
+            fetch('http://localhost:3000/api/specialty')
                 .then(res => {
                     if (res.status === 401) {
                         localStorage.removeItem('token');
@@ -1524,7 +1544,7 @@
                 if (maKhoa) {
                     selectBacSi.disabled = false;
                     try {
-                        const res = await fetch(`/api/doctor/doctor-by-specialty?maChuyenKhoa=${maKhoa}`);
+                        const res = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maKhoa}`);
                         if (res.status === 401) {
                             localStorage.removeItem('token');
                             window.location.href = '/signin';
@@ -1556,6 +1576,7 @@
                 calendar.refetchEvents();
                 loadPendingAppointments();
             });
+        });
         
     </script>
 

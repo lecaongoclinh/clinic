@@ -1,6 +1,42 @@
 import MedicalRecordsModel from '../models/medicalRecordsModel.js';
 
 class MedicalRecordsService {
+    static async getMedicalRecords(tenBN = '', fromDate = null, toDate = null, limit = 10, offset = 0) {
+        try {
+            const result = await MedicalRecordsModel.getMedicalRecords(tenBN, fromDate, toDate, limit, offset);
+            return {
+                success: true,
+                data: {
+                    data: result.data,
+                    total: result.total
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    static async getEligibleExamTickets(filters = {}) {
+        try {
+            const result = await MedicalRecordsModel.getEligibleExamTickets(filters);
+            return {
+                success: true,
+                data: {
+                    data: result.data,
+                    total: result.total
+                }
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     static async getPatientsBySpecialty(maChuyenKhoa, tenBN = '', fromDate = null, toDate = null, limit = 10, offset = 0) {
         try {
             const result = await MedicalRecordsModel.getPatientsBySpecialty(maChuyenKhoa, tenBN, fromDate, toDate, limit, offset);
@@ -21,6 +57,11 @@ class MedicalRecordsService {
 
     static async getMedicalHistory(maBN) {
         try {
+            const patient = await MedicalRecordsModel.getPatientById(maBN);
+            if (!patient) {
+                throw new Error('Bệnh nhân không tồn tại');
+            }
+
             const history = await MedicalRecordsModel.getMedicalHistory(maBN);
             return {
                 success: true,
@@ -37,6 +78,10 @@ class MedicalRecordsService {
     static async getMedicalRecordDetail(maBA) {
         try {
             const detail = await MedicalRecordsModel.getMedicalRecordDetail(maBA);
+            if (!detail.medicalRecord) {
+                throw new Error('Không tìm thấy bệnh án');
+            }
+
             return {
                 success: true,
                 data: detail
@@ -54,6 +99,23 @@ class MedicalRecordsService {
             // Validation
             if (!maBA) {
                 throw new Error('Mã bệnh án không hợp lệ');
+            }
+            if (!data.trieuChung || !String(data.trieuChung).trim()) {
+                throw new Error('Vui lòng nhập triệu chứng');
+            }
+            if (!data.chuanDoan || !String(data.chuanDoan).trim()) {
+                throw new Error('Vui lòng nhập chẩn đoán');
+            }
+
+            const detail = await MedicalRecordsModel.getMedicalRecordDetail(maBA);
+            if (!detail.medicalRecord) {
+                throw new Error('Không tìm thấy bệnh án');
+            }
+            if (data.maBacSi && Number(data.maBacSi) !== Number(detail.medicalRecord.MaBacSi)) {
+                throw new Error('Bác sĩ không có quyền sửa bệnh án');
+            }
+            if (detail.invoice && detail.invoice.TrangThai === 'DaThanhToan') {
+                throw new Error('Bệnh án đã khóa/thanh toán, không thể cập nhật');
             }
 
             const result = await MedicalRecordsModel.updateMedicalRecord(maBA, data);
@@ -80,8 +142,18 @@ class MedicalRecordsService {
             if (!maPK || !maBacSi) {
                 throw new Error('Thông tin không hợp lệ');
             }
+            if (!data.trieuChung || !String(data.trieuChung).trim()) {
+                throw new Error('Vui lòng nhập triệu chứng');
+            }
+            if (!data.chuanDoan || !String(data.chuanDoan).trim()) {
+                throw new Error('Vui lòng nhập chẩn đoán');
+            }
 
-            const result = await MedicalRecordsModel.createMedicalRecord(maPK, maBacSi, data);
+            const result = await MedicalRecordsModel.createMedicalRecordWithTicketUpdate(maPK, maBacSi, {
+                trieuChung: String(data.trieuChung).trim(),
+                chuanDoan: String(data.chuanDoan).trim(),
+                ghiChu: data.ghiChu ? String(data.ghiChu).trim() : null
+            });
             
             return {
                 success: true,

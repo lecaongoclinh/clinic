@@ -116,7 +116,7 @@ async function loadRooms() {
 
         const result = await res.json();
         rooms = Array.isArray(result) ? result : (result.data || []);
-        populateRoomSelect([], '-- Chọn ngày và ca để xem phòng trống --', true);
+        populateRoomSelect([], '-- Chọn chuyên khoa trước --', true);
     } catch (error) {
         console.error('Error loading rooms:', error);
         populateRoomSelect([], '-- Không tải được danh sách phòng --', true);
@@ -177,6 +177,13 @@ function normalizeDateString(dateValue) {
     return dateValue ? String(dateValue).substring(0, 10) : '';
 }
 
+function getRoomsBySelectedSpecialty() {
+    const selectedSpecialty = chuyenKhoaSelect.value;
+    if (!selectedSpecialty) return [];
+
+    return rooms.filter(room => String(room.MaChuyenKhoa) === String(selectedSpecialty));
+}
+
 function populateRoomSelect(roomList, placeholder = '-- Chọn Phòng --', disabled = false) {
     const selectedRoom = phongKhamIdSelect.value;
 
@@ -203,16 +210,29 @@ async function fetchAvailableRoomsForShift(dateString, shiftTimes) {
         gioKetThuc: shiftTimes.end
     });
 
-    const res = await fetch(`${API_BASE_URL}/schedules/available-rooms?${params.toString()}`);
-    if (!res.ok) throw new Error('Failed to load available rooms');
+    const selectedSpecialty = chuyenKhoaSelect.value;
+    if (selectedSpecialty) {
+        params.append('maChuyenKhoa', selectedSpecialty);
+    }
 
+    const res = await fetch(`${API_BASE_URL}/schedules/available-rooms?${params.toString()}`);
     const result = await res.json();
+    if (!res.ok) {
+        throw new Error(result.error || 'Failed to load available rooms');
+    }
+
     return Array.isArray(result) ? result : (result.data || []);
 }
 
 async function updateAvailableRooms() {
     const startDate = ngayLamViecInput.value;
     const selectedShifts = getSelectedShifts();
+    const selectedSpecialty = chuyenKhoaSelect.value;
+
+    if (!selectedSpecialty) {
+        populateRoomSelect([], '-- Chọn chuyên khoa trước --', true);
+        return;
+    }
 
     if (!startDate || selectedShifts.length === 0) {
         populateRoomSelect([], '-- Chọn ngày và ca để xem phòng trống --', true);
@@ -237,7 +257,8 @@ async function updateAvailableRooms() {
             });
         });
 
-        const availableRooms = rooms.filter(room => availableRoomIds.has(String(room.MaPhong)));
+        const availableRooms = getRoomsBySelectedSpecialty()
+            .filter(room => availableRoomIds.has(String(room.MaPhong)));
         if (availableRooms.length === 0) {
             populateRoomSelect([], '-- Không có phòng trống cho ca đã chọn --', true);
             return;
@@ -618,6 +639,12 @@ function validateForm() {
     if (!phongKhamIdSelect.value) {
         showFieldError('phongKhamId', 'Vui lòng chọn phòng khám');
         isValid = false;
+    } else {
+        const selectedRoom = rooms.find(room => String(room.MaPhong) === String(phongKhamIdSelect.value));
+        if (selectedRoom && String(selectedRoom.MaChuyenKhoa) !== String(chuyenKhoaSelect.value)) {
+            showFieldError('phongKhamId', 'Phòng khám không thuộc chuyên khoa đã chọn');
+            isValid = false;
+        }
     }
 
     // Validate date
@@ -871,6 +898,8 @@ filterDoctorSelect.addEventListener('change', function() {
  */
 chuyenKhoaSelect.addEventListener('change', function() {
     updateDoctorsBySpecialty();
+    phongKhamIdSelect.value = '';
+    updateAvailableRooms();
 });
 
 ngayLamViecInput.addEventListener('change', function() {

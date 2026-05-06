@@ -53,11 +53,23 @@ const scheduleController = {
     // Get all clinic rooms
     getRooms: async (req, res) => {
         try {
-            const rooms = await scheduleService.getRooms();
+            const { maChuyenKhoa } = req.query;
+            const parsedMaChuyenKhoa = maChuyenKhoa && !isNaN(maChuyenKhoa) ? parseInt(maChuyenKhoa) : null;
+
+            if (maChuyenKhoa && !parsedMaChuyenKhoa) {
+                return res.status(400).json({
+                    error: "maChuyenKhoa phải là một số"
+                });
+            }
+
+            const rooms = await scheduleService.getRooms(parsedMaChuyenKhoa);
             res.status(200).json({
                 success: true,
                 data: rooms,
-                total: rooms.length
+                total: rooms.length,
+                filters: {
+                    maChuyenKhoa: parsedMaChuyenKhoa
+                }
             });
         } catch (error) {
             res.status(500).json({
@@ -69,7 +81,8 @@ const scheduleController = {
     // Get rooms that are free for a specific date/time range
     getAvailableRooms: async (req, res) => {
         try {
-            const { ngayLam, gioBatDau, gioKetThuc } = req.query;
+            const { ngayLam, gioBatDau, gioKetThuc, maChuyenKhoa } = req.query;
+            const parsedMaChuyenKhoa = maChuyenKhoa && !isNaN(maChuyenKhoa) ? parseInt(maChuyenKhoa) : null;
 
             if (!ngayLam || !gioBatDau || !gioKetThuc) {
                 return res.status(400).json({
@@ -80,6 +93,12 @@ const scheduleController = {
             if (!/^\d{4}-\d{2}-\d{2}$/.test(ngayLam)) {
                 return res.status(400).json({
                     error: "ngayLam không hợp lệ. Định dạng: YYYY-MM-DD"
+                });
+            }
+
+            if (maChuyenKhoa && !parsedMaChuyenKhoa) {
+                return res.status(400).json({
+                    error: "maChuyenKhoa phải là một số"
                 });
             }
 
@@ -95,7 +114,7 @@ const scheduleController = {
                 });
             }
 
-            const rooms = await scheduleService.getAvailableRooms(ngayLam, gioBatDau, gioKetThuc);
+            const rooms = await scheduleService.getAvailableRooms(ngayLam, gioBatDau, gioKetThuc, parsedMaChuyenKhoa);
             res.status(200).json({
                 success: true,
                 data: rooms,
@@ -103,7 +122,8 @@ const scheduleController = {
                 filters: {
                     ngayLam,
                     gioBatDau,
-                    gioKetThuc
+                    gioKetThuc,
+                    maChuyenKhoa: parsedMaChuyenKhoa
                 }
             });
         } catch (error) {

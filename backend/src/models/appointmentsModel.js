@@ -7,6 +7,7 @@ const Appointment = {
             SELECT 
                 lk.MaLK as id,
                 lk.MaBN,
+                lk.MaBacSi,
                 bn.HoTen as title,
                 CONCAT(lk.NgayHen, 'T', lk.GioHen) as start,
                 lk.LyDoKham,

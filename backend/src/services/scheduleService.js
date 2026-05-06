@@ -22,6 +22,10 @@ const scheduleService = {
                 throw new Error("Phòng khám không tồn tại");
             }
 
+            if (!room.MaChuyenKhoa || Number(room.MaChuyenKhoa) !== Number(doctor.MaChuyenKhoa)) {
+                throw new Error("Phòng khám không thuộc chuyên khoa của bác sĩ");
+            }
+
             // Validate start time < end time
             if (gioBatDau >= gioKetThuc) {
                 throw new Error("Giờ bắt đầu phải nhỏ hơn giờ kết thúc");
@@ -78,18 +82,18 @@ const scheduleService = {
         }
     },
     // Get all rooms
-    getRooms: async () => {
+    getRooms: async (maChuyenKhoa = null) => {
         try {
-            return await Schedule.getAllRooms();
+            return await Schedule.getAllRooms(maChuyenKhoa);
         } catch (error) {
             throw new Error(error.message);
         }
     },
 
     // Get available rooms for a date/time range
-    getAvailableRooms: async (ngayLam, gioBatDau, gioKetThuc) => {
+    getAvailableRooms: async (ngayLam, gioBatDau, gioKetThuc, maChuyenKhoa = null) => {
         try {
-            return await Schedule.getAvailableRooms(ngayLam, gioBatDau, gioKetThuc);
+            return await Schedule.getAvailableRooms(ngayLam, gioBatDau, gioKetThuc, maChuyenKhoa);
         } catch (error) {
             throw new Error(error.message);
         }
