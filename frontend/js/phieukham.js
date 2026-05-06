@@ -1,28 +1,34 @@
-
 const API_BASE_URL = 'http://localhost:3000/api';
+
 let selectedPatient = null;
 let selectedAppointment = null;
-let searchTimeout;
-let currentTicketType = '';
+let currentTicket = null;
+let searchTimeout = null;
+let doctorRequestId = 0;
 
-function showLoading() {
-    console.log('Loading...');
-}
+const role = Number(localStorage.getItem('role'));
+const canManageTickets = role === 1 || role === 3;
 
-function hideLoading() { 
-    const spinner = document.getElementById('spinner');
-    if (spinner) {
-        spinner.style.display = 'none'; 
-    }
-}
+const authHeaders = () => ({
+    Authorization: `Bearer ${localStorage.getItem('token') || ''}`
+});
+
+const jsonHeaders = () => ({
+    'Content-Type': 'application/json',
+    ...authHeaders()
+});
 
 function showToast(type, message, duration = 3000) {
-    let container = document.querySelector('.toast-container') || document.createElement('div');
-    container.className = 'toast-container position-fixed top-0 end-0 p-3';
-    document.body.appendChild(container);
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        document.body.appendChild(container);
+    }
 
     const toast = document.createElement('div');
-    toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'warning'} border-0`;
+    const bg = type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger';
+    toast.className = `toast align-items-center text-white bg-${bg} border-0`;
     toast.innerHTML = `
         <div class="d-flex">
             <div class="toast-body">${message}</div>
@@ -34,268 +40,279 @@ function showToast(type, message, duration = 3000) {
 }
 
 function formatPhoneNumber(phone) {
-    if (!phone) return 'Chưa có SĐT';
-    return phone.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3');
+    return phone || '';
 }
 
-function formatDate(dateString) {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleDateString('vi-VN');
+function formatDateTime(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
 }
 
-function formatDateTime(dateString, timeString) {
-    const date = new Date(dateString);
-    return `${date.toLocaleDateString('vi-VN')} ${timeString?.substring(0,5)}`;
+function formatAppointmentDateTime(ngayHen, gioHen) {
+    if (!ngayHen) return '';
+    const datePart = String(ngayHen).split('T')[0];
+    const timePart = String(gioHen || '00:00:00').slice(0, 8);
+    return formatDateTime(`${datePart}T${timePart}`);
 }
 
+function ticketStatusText(status) {
+    const map = {
+        WAITING: 'Đang chờ',
+        IN_PROGRESS: 'Đang khám',
+        DONE: 'Đã khám',
+        CANCELLED: 'Đã hủy'
+    };
+    return map[status] || status || '';
+}
+
+function ticketTypeText(type) {
+    return type === 'APPOINTMENT' ? 'Theo lịch hẹn' : 'Khám tại chỗ';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded');
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!localStorage.getItem('token')) {
         window.location.href = '/signin';
         return;
     }
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    document.querySelectorAll('#userName, #navbarUserName').forEach(el => {
-        if (el) el.textContent = user.HoTen || 'Lễ tân';
+    const username = localStorage.getItem('username') || 'Lễ tân';
+    document.querySelectorAll('#usernameSidebar, #navbarUserName').forEach((el) => {
+        if (el) el.textContent = username;
     });
 
-    loadWaitingList();
-    setInterval(loadWaitingList, 10000);
-    
+    ensurePrintModal();
     setupSearchListeners();
+    loadSpecialtiesToModal();
+    loadWaitingList();
+
+    if (!canManageTickets) {
+        const createButton = document.querySelector('[onclick="openCreateTicketModal()"]');
+        if (createButton) createButton.style.display = 'none';
+    }
 });
 
-// Danh sách phiếu khám chờ
-async function loadWaitingList() {
-    try {
-        const res = await fetch(`${API_BASE_URL}/tickets/waiting`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        if (res.status === 401) {
-            localStorage.removeItem('token');
-            window.location.href = '/frontend/signin';
-            return;
-        }
-        const data = await res.json();
-        if (!data.success) throw new Error();
+function ensurePrintModal() {
+    if (document.getElementById('printTicketModal')) return;
 
-        const list = document.getElementById('waitingList');
-        if (!list) return;
-        
-        list.innerHTML = '';
-        document.getElementById('waitingCount').textContent = data.total || 0;
-
-        if (data.total === 0) {
-            list.innerHTML = '<p class="text-center text-muted py-4">Chưa có bệnh nhân nào trong danh sách chờ hôm nay</p>';
-            return;
-        }
-
-        data.data.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'd-flex align-items-center p-3 border-bottom';
-            
-            const badgeClass = item.LoaiKham === 'appointment' ? 'badge-appointment' : 'badge-walk-in';
-            const badgeText = item.LoaiKham === 'appointment' ? 'Hẹn trước' : 'Tại chỗ';
-            
-            div.innerHTML = `
-                <div class="waiting-number me-3">${item.STT ? item.STT.toString().padStart(2,'0') : 'Hẹn trước'}</div>
-                <div class="flex-grow-1">
-                    <strong>${item.TenBenhNhan}</strong><br>
-                    <small class="text-muted">${formatPhoneNumber(item.SoDienThoai)} • ${item.DisplayInfo || ''}</small>
-                    ${item.TenBacSi ? `<small class="d-block text-primary">Bác sĩ: ${item.TenBacSi}</small>` : ''}
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = `
+        <div class="modal fade" id="printTicketModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-md">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Phiếu khám bệnh</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="printTicketArea" class="ticket-print-area"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="button" class="btn btn-primary" onclick="printCurrentTicket()">
+                            <i class="fa fa-print me-2"></i>In phiếu khám
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <span class="${badgeClass} me-2">${badgeText}</span>
-                    <small class="text-muted">${new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</small>
-                </div>
-            `;
-            list.appendChild(div);
-        });
-    } catch (err) {
-        console.error(err);
-    }
+            </div>
+        </div>`;
+    document.body.appendChild(wrapper.firstElementChild);
+
+    document.getElementById('printTicketModal').addEventListener('hidden.bs.modal', loadWaitingList);
 }
 
-//  loại phiếu khám
-function selectTicketType(type) {
-    currentTicketType = type;
-    document.getElementById('selectedTicketType').value = type;
-    
-    // Xóa class selected của cả 2
-    document.getElementById('typeWalkIn').classList.remove('selected');
-    document.getElementById('typeAppointment').classList.remove('selected');
-    
-    // Thêm class selected cho loại được chọn
-    if (type === 'WALK_IN') {
-        document.getElementById('typeWalkIn').classList.add('selected');
-        document.getElementById('appointmentSection').style.display = 'none';
-        document.getElementById('specialtySection').style.display = 'block';
-    } else {
-        document.getElementById('typeAppointment').classList.add('selected');
-        document.getElementById('appointmentSection').style.display = 'block';
-        document.getElementById('specialtySection').style.display = 'none';
+function setupSearchListeners() {
+    const input = document.getElementById('modalSearchInput');
+    const button = document.getElementById('modalSearchBtn');
+
+    if (input) {
+        input.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(modalSearchPatients, 300);
+        });
     }
-    
-    clearSelectedPatient();
-    selectedAppointment = null;
+    if (button) button.addEventListener('click', modalSearchPatients);
 }
 
-// tạo phiếu
 function openCreateTicketModal() {
-    const modalEl = document.getElementById('createTicketModal');
-    if (!modalEl) return;
-    
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
+    if (!canManageTickets) {
+        showToast('warning', 'Chỉ ADMIN và lễ tân được tạo phiếu khám');
+        return;
+    }
 
-    loadSpecialtiesToModal();
     resetModalForm();
+    selectTicketType('WALK_IN');
+    loadSpecialtiesToModal();
+    new bootstrap.Modal(document.getElementById('createTicketModal')).show();
+}
+
+function selectTicketType(type) {
+    const isWalkIn = type === 'WALK_IN';
+    document.getElementById('selectedTicketType').value = isWalkIn ? 'WALK_IN' : 'APPOINTMENT';
+    document.getElementById('typeWalkIn')?.classList.toggle('selected', isWalkIn);
+    document.getElementById('typeAppointment')?.classList.toggle('selected', !isWalkIn);
+    document.getElementById('appointmentSection').style.display = isWalkIn ? 'none' : 'block';
+    document.getElementById('specialtySection').style.display = isWalkIn ? 'block' : 'none';
+    clearSelectedPatient();
 }
 
 async function loadSpecialtiesToModal() {
     try {
-        const res = await fetch(`${API_BASE_URL}/specialties`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
+        const res = await fetch(`${API_BASE_URL}/specialties`, { headers: authHeaders() });
         const data = await res.json();
         const select = document.getElementById('modalSpecialtySelect');
         if (!select) return;
-        
-        select.innerHTML = '<option value="">Chọn chuyên khoa</option>';
-        (data.data || []).forEach(sp => {
+
+        select.innerHTML = '<option value="">-- Chọn chuyên khoa --</option>';
+        (data.data || []).forEach((sp) => {
             select.innerHTML += `<option value="${sp.MaChuyenKhoa}">${sp.TenChuyenKhoa}</option>`;
         });
-    } catch (err) {
-        showToast('error', 'Không tải được danh sách chuyên khoa');
+    } catch {
+        showToast('error', 'Không tải được chuyên khoa');
     }
 }
 
-// Hàm xử lý khi chọn chuyên khoa
 async function handleSpecialtyChange(select) {
     const specialtyId = select.value;
-    console.log('Chọn chuyên khoa:', specialtyId);
-    
     const doctorSelect = document.getElementById('modalDoctorSelect');
     if (!doctorSelect) return;
-    
-    // Nếu chưa chọn chuyên khoa
+    const requestId = ++doctorRequestId;
+
+    doctorSelect.disabled = true;
+    doctorSelect.innerHTML = '<option value="">Đang tải bác sĩ...</option>';
+
     if (!specialtyId) {
-        doctorSelect.innerHTML = '<option value="">Chọn chuyên khoa trước</option>';
-        doctorSelect.disabled = true;
+        doctorSelect.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
         return;
     }
-    
-    // Đang tải
-    doctorSelect.innerHTML = '<option value="">Đang tải danh sách bác sĩ</option>';
-    doctorSelect.disabled = true;
-    
+
     try {
-        console.log('Đang gọi API:', `${API_BASE_URL}/doctors/specialty/${specialtyId}`);
-        
-        const res = await fetch(`${API_BASE_URL}/doctors/specialty/${specialtyId}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        
+        const res = await fetch(`${API_BASE_URL}/doctors/specialty/${specialtyId}`, { headers: authHeaders() });
         const data = await res.json();
-        console.log('Danh sách bác sĩ:', data);
-        
-        // Reset dropdown
-        doctorSelect.innerHTML = '<option value="">Hệ thống tự động xếp</option>';
-        
-        if (data.data && data.data.length > 0) {
-            // Thêm từng bác sĩ vào dropdown
-            data.data.forEach(doc => {
-                const option = document.createElement('option');
-                option.value = doc.MaNV;
-                
-                // Format hiển thị
-                let displayText = doc.HoTen;
-                if (doc.GioBatDau && doc.GioKetThuc) {
-                    displayText += ` (${doc.GioBatDau.substring(0,5)}-${doc.GioKetThuc.substring(0,5)})`;
-                }
-                if (doc.TenPhong) {
-                    displayText += ` - ${doc.TenPhong}`;
-                }
-                option.textContent = displayText;
-                
-                doctorSelect.appendChild(option);
-            });
-            doctorSelect.disabled = false;
-            console.log(`Đã tải ${data.data.length} bác sĩ`);
-        } else {
-            doctorSelect.innerHTML = '<option value="">Không có bác sĩ làm việc hôm nay</option>';
-            doctorSelect.disabled = true;
-        }
-        
-    } catch (err) {
-        console.error('Lỗi tải bác sĩ:', err);
-        doctorSelect.innerHTML = '<option value="">Lỗi tải dữ liệu</option>';
-        doctorSelect.disabled = true;
-        showToast('error', 'Không thể tải danh sách bác sĩ');
-    }
-}
+        if (requestId !== doctorRequestId) return;
 
-// Tìm kiếm bệnh nhân
-function setupSearchListeners() {
-    const searchInput = document.getElementById('modalSearchInput');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(modalSearchPatients, 400);
+        doctorSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+        const doctors = (data.data || []).filter((doctor) => String(doctor.MaChuyenKhoa) === String(specialtyId));
+        doctors.forEach((doctor) => {
+            const option = document.createElement('option');
+            option.value = doctor.MaNV;
+            option.dataset.room = doctor.TenPhong || '';
+            option.dataset.roomId = doctor.MaPhong || '';
+            const time = doctor.GioBatDau && doctor.GioKetThuc
+                ? ` (${doctor.GioBatDau.slice(0, 5)}-${doctor.GioKetThuc.slice(0, 5)})`
+                : '';
+            const room = doctor.TenPhong ? ` - ${doctor.TenPhong}` : '';
+            option.textContent = `${doctor.HoTen} - ${doctor.TenChuyenKhoa || ''}${time}${room}`;
+            doctorSelect.appendChild(option);
         });
-    }
 
-    const searchBtn = document.getElementById('modalSearchBtn');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', modalSearchPatients);
+        doctorSelect.disabled = !doctors.length;
+        if (doctorSelect.disabled) {
+            doctorSelect.innerHTML = '<option value="">Không có bác sĩ đang trong ca làm việc</option>';
+        }
+    } catch {
+        doctorSelect.innerHTML = '<option value="">Lỗi tải bác sĩ</option>';
+        showToast('error', 'Không tải được bác sĩ');
     }
 }
 
 async function modalSearchPatients() {
-    const searchInput = document.getElementById('modalSearchInput');
-    if (!searchInput) return;
-    
-    const keyword = searchInput.value.trim();
-    if (keyword.length < 2) {
-        const resultsDiv = document.getElementById('modalSearchResults');
-        if (resultsDiv) resultsDiv.style.display = 'none';
+    const input = document.getElementById('modalSearchInput');
+    const results = document.getElementById('modalSearchResults');
+    if (!input || !results) return;
+
+    const keyword = input.value.trim();
+    results.style.display = 'block';
+
+    if (keyword.length < 6) {
+        results.innerHTML = '<div class="text-muted p-2">Nhập ít nhất 6 chữ số CCCD để tìm bệnh nhân</div>';
         return;
     }
 
     try {
         const res = await fetch(`${API_BASE_URL}/patients/search?keyword=${encodeURIComponent(keyword)}`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            headers: authHeaders()
         });
         const data = await res.json();
+        results.innerHTML = '';
 
-        const resultsDiv = document.getElementById('modalSearchResults');
-        if (!resultsDiv) return;
-        
-        resultsDiv.innerHTML = '';
-        resultsDiv.style.display = 'block';
+        (data.data || []).forEach((patient) => {
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'list-group-item list-group-item-action border-0 border-bottom';
+            item.innerHTML = `
+                <div class="fw-bold">${patient.HoTen}</div>
+                <small class="text-muted">CCCD: ${patient.SoCCCD || ''} - SĐT: ${formatPhoneNumber(patient.SoDienThoai)}</small>`;
+            item.onclick = () => selectPatientInModal(patient);
+            results.appendChild(item);
+        });
 
-        if (data.data?.length > 0) {
-            data.data.forEach(p => {
-                const item = document.createElement('div');
-                item.className = 'p-2 border-bottom hover-bg-light cursor-pointer';
-                item.style.cursor = 'pointer';
-                item.innerHTML = `
-                    <div class="fw-bold">${p.HoTen}</div>
-                    <small class="text-muted">
-                        ${formatPhoneNumber(p.SoDienThoai)} • ${p.NgaySinh ? formatDate(p.NgaySinh) : 'Chưa có ngày sinh'}
-                    </small>
-                `;
-                item.onclick = () => selectPatientInModal(p);
-                resultsDiv.appendChild(item);
-            });
-        } else {
-            resultsDiv.innerHTML = '<p class="text-center text-muted py-3">Không tìm thấy bệnh nhân</p>';
+        if (document.getElementById('selectedTicketType').value === 'WALK_IN') {
+            const createBox = document.createElement('div');
+            createBox.className = 'p-3';
+            createBox.innerHTML = `
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <input class="form-control" id="quickPatientName" placeholder="Họ tên bệnh nhân">
+                    </div>
+                    <div class="col-md-3">
+                        <input class="form-control" id="quickPatientDob" type="date" title="Ngày sinh">
+                    </div>
+                    <div class="col-md-3">
+                        <input class="form-control" id="quickPatientPhone" placeholder="Số điện thoại">
+                    </div>
+                    <div class="col-md-2">
+                        <input class="form-control" id="quickPatientCCCD" placeholder="Số CCCD" value="${keyword.replace(/"/g, '&quot;')}">
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-outline-primary w-100" onclick="createPatientFromModal()">Thêm bệnh nhân mới</button>
+                    </div>
+                </div>`;
+            results.appendChild(createBox);
         }
-    } catch (err) {
-        showToast('error', 'Lỗi khi tìm kiếm bệnh nhân');
+
+        if (!(data.data || []).length) {
+            const message = document.getElementById('selectedTicketType').value === 'APPOINTMENT'
+                ? 'Không tìm thấy bệnh nhân có lịch hẹn với CCCD này.'
+                : 'Không tìm thấy bệnh nhân. Có thể thêm mới bên dưới.';
+            results.insertAdjacentHTML('afterbegin', `<div class="text-muted p-2">${message}</div>`);
+        }
+    } catch {
+        showToast('error', 'Lỗi tìm bệnh nhân');
+    }
+}
+
+async function createPatientFromModal() {
+    const hoTen = (document.getElementById('quickPatientName')?.value || '').trim();
+    const ngaySinh = (document.getElementById('quickPatientDob')?.value || '').trim();
+    const soDienThoai = (document.getElementById('quickPatientPhone')?.value || '').trim();
+    const soCCCD = (document.getElementById('quickPatientCCCD')?.value || '').trim();
+
+    if (!hoTen || !ngaySinh || !soDienThoai || !soCCCD) {
+        showToast('warning', 'Nhập họ tên, ngày sinh, số điện thoại và số CCCD');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/patients`, {
+            method: 'POST',
+            headers: jsonHeaders(),
+            body: JSON.stringify({ hoTen, ngaySinh, soDienThoai, soCCCD })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không tạo được bệnh nhân');
+
+        selectPatientInModal(data.data);
+        showToast('success', 'Đã thêm bệnh nhân mới');
+    } catch (error) {
+        showToast('error', error.message);
     }
 }
 
@@ -303,255 +320,290 @@ function selectPatientInModal(patient) {
     selectedPatient = patient;
     document.getElementById('selectedPatientInModal').style.display = 'block';
     document.getElementById('selectedPatientNameModal').textContent = patient.HoTen;
-    document.getElementById('selectedPatientInfoModal').innerHTML = 
-        `${formatPhoneNumber(patient.SoDienThoai)} • ${patient.GioiTinh || ''} • ${patient.NgaySinh ? formatDate(patient.NgaySinh) : 'Chưa có ngày sinh'}`;
+    document.getElementById('selectedPatientInfoModal').textContent = `CCCD: ${patient.SoCCCD || ''} - SĐT: ${formatPhoneNumber(patient.SoDienThoai)}`;
     document.getElementById('modalSearchResults').style.display = 'none';
     document.getElementById('modalSearchInput').value = '';
-    
-    // Nếu là appointment, load lịch hẹn của bệnh nhân
-    if (currentTicketType === 'APPOINTMENT') {
+
+    if (document.getElementById('selectedTicketType').value === 'APPOINTMENT') {
         loadPatientAppointments(patient.MaBN);
     }
-}
-
-async function loadPatientAppointments(patientId) {
-    try {
-        const res = await fetch(`${API_BASE_URL}/patients/${patientId}/appointments`, {
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-        });
-        const data = await res.json();
-        
-        const appointmentList = document.getElementById('appointmentList');
-        appointmentList.innerHTML = '';
-        
-        if (data.data && data.data.length > 0) {
-            data.data.forEach(apt => {
-                const div = document.createElement('div');
-                div.className = 'appointment-item p-2 border-bottom cursor-pointer';
-                div.onclick = () => selectAppointment(apt);
-                div.innerHTML = `
-                    <div class="d-flex justify-content-between">
-                        <strong>${formatDateTime(apt.NgayHen, apt.GioHen)}</strong>
-                        <span class="badge bg-info">${apt.TrangThai}</span>
-                    </div>
-                    <small>Bác sĩ: ${apt.TenBacSi || 'Chưa phân công'}</small><br>
-                    <small>Lý do: ${apt.LyDoKham || 'Không có'}</small>
-                `;
-                appointmentList.appendChild(div);
-            });
-        } else {
-            appointmentList.innerHTML = '<p class="text-center text-muted py-3">Bệnh nhân không có lịch hẹn</p>';
-        }
-    } catch (err) {
-        console.error(err);
-        showToast('error', 'Lỗi tải lịch hẹn');
-    }
-}
-
-function selectAppointment(appointment) {
-    selectedAppointment = appointment;
-    
-    // Highlight item được chọn
-    document.querySelectorAll('.appointment-item').forEach(el => {
-        el.classList.remove('selected');
-    });
-    event.currentTarget.classList.add('selected');
-    
-    showToast('success', `Đã chọn lịch hẹn ngày ${formatDateTime(appointment.NgayHen, appointment.GioHen)}`);
 }
 
 function clearSelectedPatient() {
     selectedPatient = null;
     selectedAppointment = null;
     document.getElementById('selectedPatientInModal').style.display = 'none';
+    const appointmentList = document.getElementById('appointmentList');
+    if (appointmentList) appointmentList.innerHTML = '';
 }
 
-// tạo phiếu khám
-async function createTicket() {
-    console.log('Bắt đầu tạo phiếu...');
-    
-    // Kiểm tra loại phiếu
-    if (!currentTicketType) {
-        showToast('warning', 'Vui lòng chọn loại phiếu khám');
-        return;
-    }
-    
-    // Kiểm tra bệnh nhân
-    if (!selectedPatient) {
-        showToast('warning', 'Vui lòng chọn bệnh nhân');
-        return;
-    }
-    
-    const MaBN = selectedPatient.MaBN;
-    
-    let requestData = {
-        MaBN,
-        LoaiKham: currentTicketType
-    };
-    
-    // Xử lý theo từng loại
-    if (currentTicketType === 'WALK_IN') {
-        const MaChuyenKhoa = document.getElementById('modalSpecialtySelect').value;
-        if (!MaChuyenKhoa) {
-            showToast('warning', 'Vui lòng chọn chuyên khoa');
-            return;
-        }
-        requestData.MaChuyenKhoa = MaChuyenKhoa;
-        
-        // Lấy mã bác sĩ từ dropdown (nếu có chọn)
-        const doctorSelect = document.getElementById('modalDoctorSelect');
-        if (doctorSelect && doctorSelect.value) {
-            requestData.MaBacSi = doctorSelect.value;
-            console.log('Bệnh nhân chọn bác sĩ:', doctorSelect.value);
-        } else {
-            console.log('Bệnh nhân không chọn bác sĩ, hệ thống sẽ tự động xếp');
-        }
-        
-    } else if (currentTicketType === 'APPOINTMENT') {
-        if (!selectedAppointment) {
-            showToast('warning', 'Vui lòng chọn lịch hẹn');
-            return;
-        }
-        requestData.MaLK = selectedAppointment.MaLK;
-    }
+async function loadPatientAppointments(patientId) {
+    const appointmentList = document.getElementById('appointmentList');
+    if (!appointmentList) return;
 
-    console.log('Dữ liệu gửi:', requestData);
-    showLoading();
+    appointmentList.innerHTML = '<div class="text-muted p-2">Đang tải lịch hẹn...</div>';
 
     try {
-        const token = localStorage.getItem('token');
-        
-        const apiUrl = currentTicketType === 'WALK_IN' 
-            ? `${API_BASE_URL}/tickets/walk-in`
-            : `${API_BASE_URL}/tickets/appointment`;
-
-        const res = await fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(requestData)
-        });
-
-        console.log('Response status:', res.status);
-        
+        const res = await fetch(`${API_BASE_URL}/patients/${patientId}/appointments`, { headers: authHeaders() });
         const data = await res.json();
-        console.log('Response data:', data);
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không tải được lịch hẹn');
 
-        if (!res.ok) {
-            if (data.message?.includes('đã có phiếu khám hôm nay')) {
-                showToast('warning', data.message);
-            } else {
-                throw new Error(data.message || 'Không thể tạo phiếu');
-            }
+        const appointments = data.data || [];
+        if (!appointments.length) {
+            appointmentList.innerHTML = '<div class="text-muted p-2">Bệnh nhân không có lịch hẹn hợp lệ.</div>';
             return;
         }
 
-        const ticketTypeText = currentTicketType === 'WALK_IN' ? 'tại chỗ' : 'hẹn trước';
-        showToast('success', `Tạo phiếu ${ticketTypeText} thành công! Số thứ tự: #${data.ticket?.STT?.toString().padStart(2,'0') || '—'}`);
+        appointmentList.innerHTML = appointments.map((appointment) => `
+            <button type="button" class="list-group-item list-group-item-action appointment-item"
+                onclick='selectAppointment(${JSON.stringify(appointment).replace(/'/g, '&apos;')})'>
+                <div class="fw-bold">${formatAppointmentDateTime(appointment.NgayHen, appointment.GioHen)}</div>
+                <small class="text-muted">
+                    ${appointment.TenChuyenKhoa || ''} - ${appointment.TenBacSi || ''} - ${appointment.TenPhong || ''}
+                </small>
+            </button>
+        `).join('');
+    } catch (error) {
+        appointmentList.innerHTML = `<div class="text-danger p-2">${error.message}</div>`;
+    }
+}
 
-        // Đóng modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('createTicketModal'));
-        if (modal) modal.hide();
-        
-        // Reset form
-        resetModalForm();
-        
-        // Reload danh sách
-        loadWaitingList();
+function selectAppointment(appointment) {
+    selectedAppointment = appointment;
+    document.querySelectorAll('.appointment-item').forEach((item) => item.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+}
 
-        // In phiếu
-        if (confirm('Bạn có muốn in phiếu khám ngay không?')) {
-            printTicket(data.ticket || { 
-                STT: data.ticket?.STT, 
-                TenBenhNhan: selectedPatient.HoTen, 
-                SoDienThoai: selectedPatient.SoDienThoai,
-                TenBacSi: data.ticket?.TenBacSi,
-                LoaiKham: currentTicketType
-            });
+async function createTicket() {
+    if (!canManageTickets) {
+        showToast('warning', 'Chỉ ADMIN và lễ tân được tạo phiếu khám');
+        return;
+    }
+    if (!selectedPatient) {
+        showToast('warning', 'Chọn hoặc thêm bệnh nhân trước');
+        return;
+    }
+
+    const ticketType = document.getElementById('selectedTicketType').value;
+
+    try {
+        let url = `${API_BASE_URL}/tickets/walk-in`;
+        let payload = null;
+
+        if (ticketType === 'APPOINTMENT') {
+            if (!selectedAppointment) {
+                showToast('warning', 'Chọn lịch hẹn trước khi tạo phiếu');
+                return;
+            }
+            url = `${API_BASE_URL}/tickets/appointment`;
+            payload = {
+                MaBN: selectedPatient.MaBN,
+                MaLK: selectedAppointment.MaLK
+            };
+        } else {
+            const specialtySelect = document.getElementById('modalSpecialtySelect');
+            const doctorSelect = document.getElementById('modalDoctorSelect');
+            const maChuyenKhoa = specialtySelect?.value;
+            const maBacSi = doctorSelect?.value;
+
+            if (!maChuyenKhoa) {
+                showToast('warning', 'Chọn chuyên khoa khám');
+                return;
+            }
+            if (!maBacSi) {
+                showToast('warning', 'Chọn bác sĩ khám');
+                return;
+            }
+
+            payload = {
+                MaBN: selectedPatient.MaBN,
+                MaChuyenKhoa: Number(maChuyenKhoa),
+                MaBacSi: Number(maBacSi)
+            };
         }
 
-    } catch (err) {
-        console.error('Lỗi:', err);
-        showToast('error', err.message || 'Lỗi hệ thống');
-    } finally {
-        hideLoading();
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: jsonHeaders(),
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không tạo được phiếu khám');
+
+        bootstrap.Modal.getInstance(document.getElementById('createTicketModal'))?.hide();
+        resetModalForm();
+        openPrintTicketModal(data.ticket);
+    } catch (error) {
+        showToast('error', error.message);
     }
 }
 
-// Reset form
+async function loadWaitingList() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/tickets/waiting`, { headers: authHeaders() });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'Không tải được danh sách');
+
+        const list = document.getElementById('waitingList');
+        const count = document.getElementById('waitingCount');
+        if (!list) return;
+
+        const rows = data.data || [];
+        if (count) count.textContent = rows.length;
+
+        if (!rows.length) {
+            list.innerHTML = '<p class="text-center text-muted py-4">Chưa có phiếu khám hôm nay</p>';
+            return;
+        }
+
+        list.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã phiếu</th>
+                            <th>Bệnh nhân</th>
+                            <th>CCCD</th>
+                            <th>SĐT</th>
+                            <th>Chuyên khoa</th>
+                            <th>Bác sĩ</th>
+                            <th>Phòng</th>
+                            <th>Thời gian</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(renderTicketRow).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+    } catch (error) {
+        showToast('error', error.message);
+    }
+}
+
+function renderTicketRow(ticket) {
+    const waiting = ticket.TrangThai === 'WAITING';
+    const cancelled = ticket.TrangThai === 'CANCELLED';
+    const disabled = canManageTickets ? '' : 'disabled';
+    const printDisabled = !canManageTickets || cancelled ? 'disabled' : '';
+    return `
+        <tr>
+            <td><span class="waiting-number waiting-number-sm">${String(ticket.STT || '').padStart(2, '0')}</span></td>
+            <td>${ticket.MaPhieu || ticket.MaPK}</td>
+            <td>${ticket.TenBenhNhan || ''}</td>
+            <td>${ticket.SoCCCD || ''}</td>
+            <td>${formatPhoneNumber(ticket.SoDienThoai)}</td>
+            <td>${ticket.TenChuyenKhoa || ''}</td>
+            <td>${ticket.TenBacSi || ''}</td>
+            <td>${ticket.TenPhong || ''}</td>
+            <td>${formatDateTime(ticket.ThoiGianTaoHienThi || ticket.ThoiGianTao)}</td>
+            <td><span class="badge bg-${waiting ? 'primary' : ticket.TrangThai === 'CANCELLED' ? 'secondary' : 'info'}">${ticketStatusText(ticket.TrangThai)}</span></td>
+            <td class="text-end">
+                <button class="btn btn-sm btn-outline-primary" ${printDisabled} onclick="reloadAndPrintTicket(${ticket.MaPK})">
+                    <i class="fa fa-print"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" ${disabled} ${waiting ? '' : 'disabled'} onclick="cancelTicket(${ticket.MaPK})">
+                    <i class="fa fa-times"></i>
+                </button>
+            </td>
+        </tr>`;
+}
+
+async function reloadAndPrintTicket(ticketId) {
+    try {
+        const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}`, { headers: authHeaders() });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không tải được phiếu');
+        openPrintTicketModal(data.ticket);
+    } catch (error) {
+        showToast('error', error.message);
+    }
+}
+
+async function cancelTicket(ticketId) {
+    if (!confirm('Xóa phiếu khám này?')) return;
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/tickets/${ticketId}/cancel`, {
+            method: 'PATCH',
+            headers: authHeaders()
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không xóa được phiếu');
+        showToast('success', 'Đã xóa phiếu khám');
+        loadWaitingList();
+    } catch (error) {
+        showToast('error', error.message);
+    }
+}
+
+function openPrintTicketModal(ticket) {
+    currentTicket = ticket;
+    document.getElementById('printTicketArea').innerHTML = renderPrintTicket(ticket);
+    new bootstrap.Modal(document.getElementById('printTicketModal')).show();
+}
+
+function renderPrintTicket(ticket) {
+    return `
+        <div class="text-center">
+            <h4 class="mb-1">PHÒNG KHÁM CLINIC</h4>
+            <h5 class="mb-3">PHIẾU KHÁM BỆNH</h5>
+            <div class="display-3 fw-bold text-primary">${String(ticket.STT || '').padStart(2, '0')}</div>
+        </div>
+        <table class="table table-borderless mt-3">
+            <tr><td class="fw-bold">Mã phiếu</td><td>${ticket.MaPhieu || ticket.MaPK}</td></tr>
+            <tr><td class="fw-bold">Họ tên</td><td>${ticket.TenBenhNhan || ''}</td></tr>
+            <tr><td class="fw-bold">CCCD</td><td>${ticket.SoCCCD || ''}</td></tr>
+            <tr><td class="fw-bold">Số điện thoại</td><td>${formatPhoneNumber(ticket.SoDienThoai)}</td></tr>
+            <tr><td class="fw-bold">Chuyên khoa</td><td>${ticket.TenChuyenKhoa || ''}</td></tr>
+            <tr><td class="fw-bold">Bác sĩ</td><td>${ticket.TenBacSi || ''}</td></tr>
+            <tr><td class="fw-bold">Phòng khám</td><td>${ticket.TenPhong || ''}</td></tr>
+            <tr><td class="fw-bold">Thời gian</td><td>${formatDateTime(ticket.ThoiGianTaoHienThi || ticket.ThoiGianTao)}</td></tr>
+        </table>`;
+}
+
+function printCurrentTicket() {
+    if (!currentTicket) return;
+    window.print();
+    setTimeout(loadWaitingList, 500);
+}
+
 function resetModalForm() {
-    // Reset loại phiếu
-    currentTicketType = '';
-    document.getElementById('selectedTicketType').value = '';
-    document.getElementById('typeWalkIn').classList.remove('selected');
-    document.getElementById('typeAppointment').classList.remove('selected');
+    selectedPatient = null;
+    selectedAppointment = null;
+    document.getElementById('selectedTicketType').value = 'WALK_IN';
     document.getElementById('appointmentSection').style.display = 'none';
     document.getElementById('specialtySection').style.display = 'block';
-    
-    // Reset bệnh nhân
-    clearSelectedPatient();
-    
-    // Reset chuyên khoa
-    const specialtySelect = document.getElementById('modalSpecialtySelect');
-    if (specialtySelect) {
-        specialtySelect.value = '';
-    }
-    
-    // Reset bác sĩ
+    document.getElementById('selectedPatientInModal').style.display = 'none';
+    document.getElementById('modalSearchInput').value = '';
+    document.getElementById('modalSearchResults').style.display = 'none';
+    document.getElementById('modalSearchResults').innerHTML = '';
+    document.getElementById('appointmentList').innerHTML = '';
+    document.getElementById('modalSpecialtySelect').value = '';
     const doctorSelect = document.getElementById('modalDoctorSelect');
-    if (doctorSelect) {
-        doctorSelect.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
-        doctorSelect.disabled = true;
-    }
-    
-    // Reset lịch hẹn
-    const appointmentList = document.getElementById('appointmentList');
-    if (appointmentList) {
-        appointmentList.innerHTML = '';
-    }
-    
-    selectedAppointment = null;
+    doctorSelect.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
+    doctorSelect.disabled = true;
 }
 
-// In phiếu
-function printTicket(ticket) {
-    const printWindow = window.open('', '_blank');
-    const now = new Date();
-    const ticketType = ticket.LoaiKham === 'APPOINTMENT' ? 'Hẹn trước' : 'Tại chỗ';
-    
-    printWindow.document.write(`
-        <html>
-        <head><title>Phiếu khám</title></head>
-        <body style="font-family: Arial; text-align: center; padding: 20px;">
-            <h2>PHÒNG KHÁM CLINIC</h2>
-            <h3>PHIẾU KHÁM BỆNH</h3>
-            <hr>
-            <h1 style="font-size: 60px; color: #0066cc;">#${(ticket.STT || '').toString().padStart(2, '0')}</h1>
-            <p><strong>Loại:</strong> ${ticketType}</p>
-            <p><strong>Bệnh nhân:</strong> ${ticket.TenBenhNhan || ''}</p>
-            <p><strong>SĐT:</strong> ${formatPhoneNumber(ticket.SoDienThoai || '')}</p>
-            <p><strong>Bác sĩ:</strong> ${ticket.TenBacSi || 'Hệ thống tự động xếp'}</p>
-            <p><strong>Ngày:</strong> ${now.toLocaleDateString('vi-VN')}</p>
-            <p><strong>Giờ:</strong> ${now.toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}</p>
-            <hr>
-            <p>Vui lòng chờ đến lượt khám</p>
-            <script>window.onload = () => window.print();</script>
-        </body>
-        </html>
-    `);
-    printWindow.document.close();
-}
-
-// Đăng xuất
 function logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    localStorage.removeItem('role');
     localStorage.removeItem('user');
     window.location.href = '/signin';
 }
 
-// Reset khi đóng modal
-document.getElementById('createTicketModal')?.addEventListener('hidden.bs.modal', function () {
-    resetModalForm();
-});
+window.openCreateTicketModal = openCreateTicketModal;
+window.selectTicketType = selectTicketType;
+window.handleSpecialtyChange = handleSpecialtyChange;
+window.createPatientFromModal = createPatientFromModal;
+window.selectPatientInModal = selectPatientInModal;
+window.clearSelectedPatient = clearSelectedPatient;
+window.createTicket = createTicket;
+window.reloadAndPrintTicket = reloadAndPrintTicket;
+window.cancelTicket = cancelTicket;
+window.printCurrentTicket = printCurrentTicket;
+window.logout = logout;

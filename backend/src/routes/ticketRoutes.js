@@ -1,33 +1,36 @@
 import express from 'express';
 import {
     searchPatients,
+    createPatient,
     getSpecialties,
     getDoctorsBySpecialty,
+    getRooms,
     getPatientAppointments,
+    createTicket,
     createWalkInTicket,
+    createAppointmentTicket,
     getWaitingTickets,
+    getTicketById,
+    cancelTicket,
     callNextPatient
 } from '../controllers/ticketController.js';
 
 const router = express.Router();
 
-// Tìm kiếm bệnh nhân
 router.get('/patients/search', searchPatients);
-
-// Lấy danh sách chuyên khoa
-router.get('/specialties', getSpecialties);
-
-// Lấy danh sách bác sĩ theo chuyên khoa
-router.get('/doctors/specialty/:specialtyId', getDoctorsBySpecialty);
-
-// Lấy danh sách lịch hẹn của bệnh nhân 
+router.post('/patients', createPatient);
 router.get('/patients/:patientId/appointments', getPatientAppointments);
 
-// Tạo phiếu khám tại chỗ
+router.get('/specialties', getSpecialties);
+router.get('/doctors/specialty/:specialtyId', getDoctorsBySpecialty);
+router.get('/rooms', getRooms);
+
+router.post('/tickets', createTicket);
 router.post('/tickets/walk-in', createWalkInTicket);
-
-// Lấy danh sách phiếu khám đang chờ
+router.post('/tickets/appointment', createAppointmentTicket);
 router.get('/tickets/waiting', getWaitingTickets);
-
+router.get('/tickets/:ticketId', getTicketById);
+router.patch('/tickets/:ticketId/cancel', cancelTicket);
+router.post('/tickets/call-next', callNextPatient);
 
 export default router;

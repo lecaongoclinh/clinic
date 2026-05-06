@@ -4,9 +4,9 @@ const authController = {
     register: async (req, res) => {
         try {
             const userId = await userService.register(req.body);
-            res.status(201).json({ message: 'Đăng ký thành công', userId });
+            res.status(201).json({ message: 'Dang ky thanh cong', userId });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(400).json({ message: error.message });
         }
     },
     login: async (req, res) => {
@@ -16,7 +16,7 @@ const authController = {
             res.status(200).json(data);
         } catch (error) {
             res.status(401).json({ error: error.message });
-        }   
+        }
     }
 };
 

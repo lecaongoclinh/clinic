@@ -2,10 +2,59 @@ import User from '../models/userModel.js';
 import { hash, compare } from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+const normalizeRegisterData = (userData) => ({
+  HoTen: String(userData.hoTen ?? userData.HoTen ?? '').trim(),
+  SoDienThoai: String(userData.soDienThoai ?? userData.SoDienThoai ?? '').trim(),
+  Email: String(userData.email ?? userData.Email ?? '').trim(),
+  Username: String(userData.username ?? userData.Username ?? '').trim(),
+  Password: String(userData.password ?? userData.Password ?? ''),
+  MaVaiTro: Number(userData.maVaiTro ?? userData.MaVaiTro),
+  MaChuyenKhoa: userData.maChuyenKhoa ?? userData.MaChuyenKhoa ?? null
+});
+
 const userService = {
   register: async (userData) => {
-    const hashedPassword = await hash(userData.Password, 10);
-    return await User.create({ ...userData, Password: hashedPassword });
+    const user = normalizeRegisterData(userData);
+    user.MaChuyenKhoa = user.MaChuyenKhoa ? Number(user.MaChuyenKhoa) : null;
+
+    if (!user.HoTen || !user.SoDienThoai || !user.Email || !user.Username || !user.Password || !user.MaVaiTro) {
+      throw new Error('Vui long nhap day du thong tin bat buoc');
+    }
+
+    if (user.Password.length < 6) {
+      throw new Error('Mat khau phai co it nhat 6 ky tu');
+    }
+
+    if (user.MaVaiTro === 2 && !user.MaChuyenKhoa) {
+      throw new Error('Vui long chon chuyen khoa cho bac si');
+    }
+
+    if (user.MaVaiTro !== 2) {
+      user.MaChuyenKhoa = null;
+    }
+
+    if (!(await User.roleExists(user.MaVaiTro))) {
+      throw new Error('Vai tro khong hop le');
+    }
+
+    if (user.MaChuyenKhoa && !(await User.specialtyExists(user.MaChuyenKhoa))) {
+      throw new Error('Chuyen khoa khong hop le');
+    }
+
+    if (await User.findByUsername(user.Username)) {
+      throw new Error('Ten dang nhap da ton tai');
+    }
+
+    if (await User.findByEmail(user.Email)) {
+      throw new Error('Email da ton tai');
+    }
+
+    if (await User.findByPhone(user.SoDienThoai)) {
+      throw new Error('So dien thoai da ton tai');
+    }
+
+    const hashedPassword = await hash(user.Password, 10);
+    return await User.create({ ...user, Password: hashedPassword });
   },
   login: async (username, password) => {
     const user = await User.findByUsername(username);

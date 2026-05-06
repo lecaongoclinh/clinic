@@ -53,9 +53,19 @@
                     <a href="LichKham.html" class="nav-item nav-link">
                         <i class="fa fa-keyboard me-2"></i>Lịch khám
                     </a>
-                    <a href="BenhAn.html" class="nav-item nav-link">
-                        <i class="fa fa-table me-2"></i>Bệnh án
+                    <a href="phieukham.html" class="nav-item nav-link active">
+                        <i class="fa fa-ticket-alt me-2"></i>Phiếu khám
                     </a>
+                    
+                    <div class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fa fa-table me-2"></i>Bệnh án
+                        </a>
+                        <div class="dropdown-menu bg-transparent border-0">
+                            <a href="BenhAn.html" class="dropdown-item">Danh sách bệnh án</a>
+                            <a href="CreateBenhAn.html" class="dropdown-item">Tạo bệnh án mới</a>
+                        </div>
+                    </div>
 
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -97,9 +107,14 @@
         <div class="content">
             <!-- Navbar Start -->
             <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+                <a href="index.html" class="navbar-brand d-flex d-lg-none me-4">
+                    <h2 class="text-primary mb-0"><i class="fa fa-hashtag"></i></h2>
+                </a>
                 <a href="#" class="sidebar-toggler flex-shrink-0">
                     <i class="fa fa-bars"></i>
                 </a>
+                <form class="d-none d-md-flex ms-4">
+                </form>
                 <div class="navbar-nav align-items-center ms-auto">
                     <div class="nav-item dropdown">
                         <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -174,7 +189,7 @@
                             <div class="mb-4">
                                 <label class="form-label fw-bold">Tìm bệnh nhân <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="modalSearchInput" placeholder="Nhập tên, SĐT hoặc mã bệnh nhân...">
+                                    <input type="text" class="form-control" id="modalSearchInput" placeholder="Nhập số căn cước công dân...">
                                     <button class="btn btn-primary" type="button" id="modalSearchBtn"><i class="fa fa-search"></i></button>
                                 </div>
                                 <div id="modalSearchResults" class="mt-3 border rounded p-2" style="max-height: 220px; overflow-y: auto; display: none;"></div>
