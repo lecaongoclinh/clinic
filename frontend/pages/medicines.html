@@ -109,14 +109,15 @@
     <!-- Sidebar giữ nguyên -->
     <div class="sidebar pe-4 pb-3">
         <nav class="navbar bg-light navbar-light">
-            <a href="../index.html" class="navbar-brand mx-4 mb-3">
-                <!-- <h3 class="text-primary"><i class="fa fa-hashtag me-2"></i>CLINIC</h3> -->
-            </a>
+            <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
 
             <div class="d-flex align-items-center ms-4 mb-4">
-                <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
                 <div class="ms-3">
-                    <h6 id="usernameSidebar"></h6>
+                    <h6 class="mb-0" id="usernameSidebar"></h6>
                 </div>
             </div>
 
@@ -125,44 +126,42 @@
                     <i class="fa fa-tachometer-alt me-2"></i>Thống kê
                 </a>
 
-                <a href="#" class="nav-item nav-link">
-                    <i class="fa fa-th me-2"></i>Lịch khám
+                <a href="../schedule.html" class="nav-item nav-link">
+                    <i class="fa fa-th me-2"></i>Lịch làm việc
                 </a>
 
-                <a href="#" class="nav-item nav-link">
-                    <i class="fa fa-keyboard me-2"></i>Phiếu khám
+                <a href="../LichKham.html" class="nav-item nav-link">
+                    <i class="fa fa-keyboard me-2"></i>Lịch khám
                 </a>
 
-                <a href="#" class="nav-item nav-link">
+                <a href="../BenhAn.html" class="nav-item nav-link">
                     <i class="fa fa-table me-2"></i>Bệnh án
                 </a>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="medicines.html" class="dropdown-item">Danh mục thuốc</a>
-                            <a href="#" class="dropdown-item">Đơn thuốc</a>
-                        </div>
-                    </div>
                 <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý kho</a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <!-- <a href="medicines.html" class="dropdown-item">Danh mục thuốc</a> -->
-                            <a href="suppliers.html" class="dropdown-item">Nhà cung cấp</a>
-                            <a href="imports.html" class="dropdown-item">Nhập thuốc</a>
-                            <a href="dispense.html" class="dropdown-item">Xuất thuốc</a>
-                            <a href="inventory.html" class="dropdown-item">Kho thuốc</a>
-                            
-                        </div>
+                    <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="medicines.html" class="dropdown-item active">Danh mục thuốc</a>
+                        <a href="#" class="dropdown-item">Đơn thuốc</a>
                     </div>
-                    <div class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                            <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
-                        </a>
-                        <div class="dropdown-menu bg-transparent border-0">
-                            <a href="services.html" class="dropdown-item">Dịch vụ</a>
-                            <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
-                        </div>
+                </div>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Quản lý kho</a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="suppliers.html" class="dropdown-item">Nhà cung cấp</a>
+                        <a href="imports.html" class="dropdown-item">Nhập thuốc</a>
+                        <a href="dispense.html" class="dropdown-item">Xuất thuốc</a>
+                        <a href="inventory.html" class="dropdown-item">Kho thuốc</a>
                     </div>
+                </div>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
+                    </a>
+                    <div class="dropdown-menu bg-transparent border-0">
+                        <a href="services.html" class="dropdown-item">Dịch vụ</a>
+                        <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
+                    </div>
+                </div>
             </div>
         </nav>
     </div>
