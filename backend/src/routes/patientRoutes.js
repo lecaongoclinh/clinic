@@ -6,10 +6,8 @@ const router = express.Router();
 // router.get('/', patientController.getPatients);
 // router.get('/:id', patientController.getPatientById);
 
-const patientRoutes = express.Router();
-
 // Tìm kiếm bệnh nhân theo tên
-patientRoutes.get('/search', patientController.searchByName);
+router.get('/search', patientController.searchByName);
 
 // Lấy thông tin bệnh nhân
 router.get('/:maBN', patientController.getById);

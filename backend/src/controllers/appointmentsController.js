@@ -20,7 +20,7 @@ const appointmentsController = {
             const appointmentId = await appointmentsService.createAppointment(maBN, maBacSi, ngayHen, gioHen, lyDoKham);
             res.status(201).json({ message: 'Đặt lịch khám thành công', id: appointmentId });
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(400).json({ error: error.message });
         }
     },
 
@@ -38,7 +38,7 @@ const appointmentsController = {
                 res.status(404).json({ error: 'Không tìm thấy lịch khám' });
             }
         } catch (error) {
-            res.status(500).json({ error: error.message });
+            res.status(400).json({ error: error.message });
         }
     },
 
@@ -59,4 +59,4 @@ const appointmentsController = {
         }
     }
 }
-export default appointmentsController;    
+export default appointmentsController;

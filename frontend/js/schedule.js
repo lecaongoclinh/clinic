@@ -111,25 +111,15 @@ async function loadDoctorsBySpecialty(maChuyenKhoa) {
  */
 async function loadRooms() {
     try {
-        // Currently we hardcode rooms since there's no API endpoint
-        // In real scenario, we'd have a /api/rooms endpoint
-        const sampleRooms = [
-            { MaPhong: 1, TenPhong: 'Phong 101' },
-            { MaPhong: 2, TenPhong: 'Phong 102' }
-        ];
+        const res = await fetch(`${API_BASE_URL}/schedules/rooms`);
+        if (!res.ok) throw new Error('Failed to load rooms');
 
-        rooms = sampleRooms;
-
-        // Populate room select
-        phongKhamIdSelect.innerHTML = '<option value="">-- Chọn Phòng --</option>';
-        rooms.forEach(room => {
-            const option = document.createElement('option');
-            option.value = room.MaPhong;
-            option.textContent = room.TenPhong;
-            phongKhamIdSelect.appendChild(option);
-        });
+        const result = await res.json();
+        rooms = Array.isArray(result) ? result : (result.data || []);
+        populateRoomSelect([], '-- Chọn ngày và ca để xem phòng trống --', true);
     } catch (error) {
         console.error('Error loading rooms:', error);
+        populateRoomSelect([], '-- Không tải được danh sách phòng --', true);
         showAlert('Lỗi khi tải danh sách phòng', 'danger');
     }
 }
@@ -175,6 +165,90 @@ function setMinDate() {
     const mm = String(today.getMonth() + 1).padStart(2, '0');
     const dd = String(today.getDate()).padStart(2, '0');
     ngayLamViecInput.value = `${yyyy}-${mm}-${dd}`;
+}
+
+function addDaysToDateString(dateString, dayOffset) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day + dayOffset));
+    return date.toISOString().slice(0, 10);
+}
+
+function normalizeDateString(dateValue) {
+    return dateValue ? String(dateValue).substring(0, 10) : '';
+}
+
+function populateRoomSelect(roomList, placeholder = '-- Chọn Phòng --', disabled = false) {
+    const selectedRoom = phongKhamIdSelect.value;
+
+    phongKhamIdSelect.innerHTML = '';
+    phongKhamIdSelect.appendChild(new Option(placeholder, ''));
+
+    roomList.forEach(room => {
+        const label = room.GhiChu ? `${room.TenPhong} (${room.GhiChu})` : room.TenPhong;
+        phongKhamIdSelect.appendChild(new Option(label, room.MaPhong));
+    });
+
+    const stillAvailable = roomList.some(room => String(room.MaPhong) === String(selectedRoom));
+    if (stillAvailable) {
+        phongKhamIdSelect.value = selectedRoom;
+    }
+
+    phongKhamIdSelect.disabled = disabled;
+}
+
+async function fetchAvailableRoomsForShift(dateString, shiftTimes) {
+    const params = new URLSearchParams({
+        ngayLam: dateString,
+        gioBatDau: shiftTimes.start,
+        gioKetThuc: shiftTimes.end
+    });
+
+    const res = await fetch(`${API_BASE_URL}/schedules/available-rooms?${params.toString()}`);
+    if (!res.ok) throw new Error('Failed to load available rooms');
+
+    const result = await res.json();
+    return Array.isArray(result) ? result : (result.data || []);
+}
+
+async function updateAvailableRooms() {
+    const startDate = ngayLamViecInput.value;
+    const selectedShifts = getSelectedShifts();
+
+    if (!startDate || selectedShifts.length === 0) {
+        populateRoomSelect([], '-- Chọn ngày và ca để xem phòng trống --', true);
+        return;
+    }
+
+    try {
+        populateRoomSelect([], '-- Đang kiểm tra phòng trống --', true);
+
+        const roomLists = await Promise.all(selectedShifts.map(({ day, shift }) => {
+            const dateString = addDaysToDateString(startDate, day);
+            return fetchAvailableRoomsForShift(dateString, shiftsConfig[shift]);
+        }));
+
+        const availableRoomIds = new Set(roomLists[0].map(room => String(room.MaPhong)));
+        roomLists.slice(1).forEach(roomList => {
+            const currentIds = new Set(roomList.map(room => String(room.MaPhong)));
+            [...availableRoomIds].forEach(roomId => {
+                if (!currentIds.has(roomId)) {
+                    availableRoomIds.delete(roomId);
+                }
+            });
+        });
+
+        const availableRooms = rooms.filter(room => availableRoomIds.has(String(room.MaPhong)));
+        if (availableRooms.length === 0) {
+            populateRoomSelect([], '-- Không có phòng trống cho ca đã chọn --', true);
+            return;
+        }
+
+        populateRoomSelect(availableRooms, '-- Chọn Phòng Trống --', false);
+    } catch (error) {
+        console.error('Error loading available rooms:', error);
+        populateRoomSelect([], '-- Lỗi kiểm tra phòng trống --', true);
+        showAlert('Lỗi khi kiểm tra phòng trống. Vui lòng thử lại.', 'danger');
+    }
 }
 /**
  * Load all schedules from API
@@ -596,15 +670,13 @@ async function checkRoomConflict(phongId, bacSiId, startDate, selectedShifts) {
 
             // Check if any schedule conflicts
             for (const {day, shift} of selectedShifts) {
-                const date = new Date(startDate);
-                date.setDate(date.getDate() + day);
-                const dateString = date.toISOString().split('T')[0];
-
+                const dateString = addDaysToDateString(startDate, day);
                 const shiftTimes = shiftsConfig[shift];
 
                 for (const schedule of schedules) {
+                    const scheduleDate = normalizeDateString(schedule.NgayLam);
                     // Check if same room and same date
-                    if (schedule.MaPhong === phongId && schedule.NgayLam === dateString) {
+                    if (String(schedule.MaPhong) === String(phongId) && scheduleDate === dateString) {
                         // Check time overlap
                         const existStart = schedule.GioBatDau.substring(0, 5);
                         const existEnd = schedule.GioKetThuc.substring(0, 5);
@@ -659,9 +731,7 @@ scheduleForm.addEventListener('submit', async function(e) {
 
         // Create schedule for each selected shift
         for (const {day, shift} of selectedShifts) {
-            const date = new Date(startDate);
-            date.setDate(date.getDate() + day);
-            const dateString = date.toISOString().split('T')[0];
+            const dateString = addDaysToDateString(startDate, day);
             const shiftTimes = shiftsConfig[shift];
             try {
                 const formData = {
@@ -686,7 +756,7 @@ scheduleForm.addEventListener('submit', async function(e) {
                     successCount++;
                 } else {
                     const error = result.error || 'Unknown error';
-                    if (error.includes('đã có lịch')) {
+                    if (error.includes('đã có lịch') || error.includes('đã được') || error.includes('Phòng')) {
                         conflictCount++;
                     } else {
                         errorCount++;
@@ -710,8 +780,8 @@ scheduleForm.addEventListener('submit', async function(e) {
 
         if (conflictCount > 0) {
             const message = conflictCount === 1
-                ? '⚠️ 1 lịch bị xung đột (bác sĩ đã có lịch khác)'
-                : `⚠️ ${conflictCount} lịch bị xung đột (bác sĩ đã có lịch khác)`;
+                ? '⚠️ 1 lịch bị xung đột (bác sĩ hoặc phòng khám đã có lịch khác)'
+                : `⚠️ ${conflictCount} lịch bị xung đột (bác sĩ hoặc phòng khám đã có lịch khác)`;
             showAlert(message, 'warning');
         }
 
@@ -725,6 +795,7 @@ scheduleForm.addEventListener('submit', async function(e) {
             clearFormErrors();
             shiftCheckboxes.forEach(cb => cb.checked = false);
             setMinDate();
+            await updateAvailableRooms();
 
             // Reload schedules
             await loadSchedules();
@@ -800,6 +871,16 @@ filterDoctorSelect.addEventListener('change', function() {
  */
 chuyenKhoaSelect.addEventListener('change', function() {
     updateDoctorsBySpecialty();
+});
+
+ngayLamViecInput.addEventListener('change', function() {
+    updateAvailableRooms();
+});
+
+shiftCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        updateAvailableRooms();
+    });
 });
 
 // DOM Elements - thêm

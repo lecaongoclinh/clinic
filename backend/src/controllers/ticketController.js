@@ -3,9 +3,14 @@ import pool from '../config/db.js';
 // Tìm kiếm bệnh nhân
 export const searchPatients = async (req, res) => {
     try {
-        const { keyword } = req.query;
+        const rawKeyword = req.query.keyword || req.query.tenBN || '';
+        const keyword = String(rawKeyword).trim();
+        const shouldReturnArray = !req.query.keyword && req.query.tenBN !== undefined;
         
         if (!keyword || keyword.length < 2) {
+            if (shouldReturnArray) {
+                return res.json([]);
+            }
             return res.json({ success: true, data: [] });
         }
 
@@ -22,6 +27,10 @@ export const searchPatients = async (req, res) => {
              LIMIT 10`,
             [`%${keyword}%`, `%${keyword}%`, `%${keyword}%`]
         );
+
+        if (shouldReturnArray) {
+            return res.json(rows);
+        }
 
         res.json({
             success: true,

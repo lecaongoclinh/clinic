@@ -284,25 +284,30 @@
                             </select>
                         </div>
 
-                        <!-- STEP 4: Chọn bác sĩ -->
+                        <!-- STEP 4: Chọn ngày hẹn -->
+                        <div class="mb-3" id="appointmentDateStep" style="display: none;">
+                            <label class="form-label"><strong>Bước 4: Chọn ngày hẹn</strong></label>
+                            <input type="date" class="form-control" id="ngayHen" required>
+                        </div>
+
+                        <!-- STEP 5: Chọn bác sĩ -->
                         <div class="mb-3" id="doctorStep" style="display: none;">
-                            <label class="form-label"><strong>Bước 4: Chọn bác sĩ</strong></label>
+                            <label class="form-label"><strong>Bước 5: Chọn bác sĩ</strong></label>
                             <select class="form-select" id="maBacSiCreate" required>
                                 <option value="">-- Chọn bác sĩ --</option>
                             </select>
                         </div>
 
-                        <!-- STEP 5: Chọn ngày giờ và lý do khám -->
+                        <!-- STEP 6: Chọn giờ và lý do khám -->
                         <div class="mb-3" id="appointmentDetailsStep" style="display: none;">
-                            <label class="form-label"><strong>Bước 5: Chọn ngày giờ và lý do khám</strong></label>
+                            <label class="form-label"><strong>Bước 6: Chọn giờ và lý do khám</strong></label>
                             
                             <div class="mb-3">
-                                <label for="ngayHen" class="form-label">Ngày hẹn</label>
-                                <input type="date" class="form-control" id="ngayHen" required>
-                            </div>
-                            <div class="mb-3">
                                 <label for="gioHen" class="form-label">Giờ hẹn</label>
-                                <input type="time" class="form-control" id="gioHen" required>
+                                <select class="form-select" id="gioHen" required disabled>
+                                    <option value="">-- Chọn bác sĩ trước --</option>
+                                </select>
+                                <small class="form-text text-muted" id="doctorWorkingHoursHelp"></small>
                             </div>
                             <div class="mb-3">
                                 <label for="lyDoKham" class="form-label">Lý do khám</label>
@@ -630,15 +635,22 @@
         const maChuyenKhoaSelect = document.getElementById('maChuyenKhoa');
         const maBacSiCreateSelect = document.getElementById('maBacSiCreate');
         const specialtyStep = document.getElementById('specialtyStep');
+        const appointmentDateStep = document.getElementById('appointmentDateStep');
         const doctorStep = document.getElementById('doctorStep');
         const appointmentDetailsStep = document.getElementById('appointmentDetailsStep');
         const btnSubmitCreate = document.getElementById('btnSubmitCreate');
+        const gioHenCreateSelect = document.getElementById('gioHen');
+        const doctorWorkingHoursHelp = document.getElementById('doctorWorkingHoursHelp');
+        let latestPatientSearchRequest = 0;
+        let createDoctorSchedulesByDoctor = {};
 
         // STEP 1: Tìm kiếm bệnh nhân
         searchPatientInput.addEventListener('input', async (e) => {
             const tenBN = e.target.value.trim();
+            const searchRequestId = ++latestPatientSearchRequest;
             
             if (tenBN.length < 2) {
+                patientList.innerHTML = '';
                 patientListContainer.style.display = 'none';
                 patientInfoContainer.style.display = 'none';
                 newPatientFormContainer.style.display = 'none';
@@ -648,14 +660,26 @@
                 return;
             }
 
+            currentPatientId = null;
+            isNewPatient = false;
+            patientInfoContainer.style.display = 'none';
+            newPatientFormContainer.style.display = 'none';
+            patientListContainer.style.display = 'block';
+            patientList.innerHTML = '<div class="list-group-item text-muted">Đang tìm bệnh nhân...</div>';
+            updateStepsVisibility();
+
             try {
-                const res = await fetch(`http://localhost:3000/api/patients/search?tenBN=${encodeURIComponent(tenBN)}`);
-                const patients = await res.json();
+                const res = await fetch(`http://localhost:3000/api/patients/search?keyword=${encodeURIComponent(tenBN)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const result = await res.json();
+                if (searchRequestId !== latestPatientSearchRequest) return;
+
+                const patients = Array.isArray(result) ? result : (Array.isArray(result.data) ? result.data : []);
+                patientList.innerHTML = '';
 
                 if (Array.isArray(patients) && patients.length > 0) {
                     // Có bệnh nhân tìm được
                     patientListContainer.style.display = 'block';
-                    patientList.innerHTML = '';
                     
                     patients.forEach(patient => {
                         const item = document.createElement('button');
@@ -674,12 +698,23 @@
                     newBtn.addEventListener('click', showNewPatientForm);
                     patientList.appendChild(newBtn);
                 } else {
-                    // Không có bệnh nhân → show form nhập mới
-                    showNewPatientForm();
+                    const emptyItem = document.createElement('div');
+                    emptyItem.className = 'list-group-item text-muted';
+                    emptyItem.textContent = 'Không tìm thấy bệnh nhân phù hợp';
+                    patientList.appendChild(emptyItem);
+
+                    const newBtn = document.createElement('button');
+                    newBtn.type = 'button';
+                    newBtn.className = 'list-group-item list-group-item-action text-primary';
+                    newBtn.innerHTML = '<strong>+ Thêm bệnh nhân mới</strong>';
+                    newBtn.addEventListener('click', showNewPatientForm);
+                    patientList.appendChild(newBtn);
                 }
             } catch (err) {
+                if (searchRequestId !== latestPatientSearchRequest) return;
                 console.error('Lỗi tìm kiếm bệnh nhân:', err);
-                alert('Lỗi tìm kiếm bệnh nhân');
+                patientListContainer.style.display = 'block';
+                patientList.innerHTML = '<div class="list-group-item text-danger">Lỗi tìm kiếm bệnh nhân. Vui lòng thử lại.</div>';
             }
         });
 
@@ -743,42 +778,187 @@
             }
         }
 
-        // STEP 4: Load bác sĩ theo chuyên khoa
-        maChuyenKhoaSelect.addEventListener('change', async (e) => {
-            const maChuyenKhoa = e.target.value;
+        // Helper: Load bác sĩ theo chuyên khoa và ngày
+        async function loadDoctorsBySpecialtyAndDate(maChuyenKhoa, ngayHen) {
             maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+            resetCreateTimeSelect('-- Chọn bác sĩ trước --');
+            appointmentDetailsStep.style.display = 'none';
+            btnSubmitCreate.style.display = 'none';
+            createDoctorSchedulesByDoctor = {};
             
-            if (!maChuyenKhoa) {
+            if (!maChuyenKhoa || !ngayHen) {
+                maBacSiCreateSelect.disabled = true;
                 doctorStep.style.display = 'none';
-                appointmentDetailsStep.style.display = 'none';
                 return;
             }
 
             try {
-                const res = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maChuyenKhoa}`);
-                const doctors = await res.json();
+                // Gọi API mới để lấy bác sĩ có ca làm việc vào ngày được chọn
+                const res = await fetch(`http://localhost:3000/api/schedules/doctors-by-date?maChuyenKhoa=${maChuyenKhoa}&ngayLam=${ngayHen}`);
+                const result = await res.json();
+                const doctors = result.data || [];
                 
-                if (Array.isArray(doctors)) {
-                    doctors.forEach(doctor => {
-                        const option = new Option(doctor.HoTen, doctor.MaNV);
-                        maBacSiCreateSelect.add(option);
-                    });
+                if (doctors.length === 0) {
+                    maBacSiCreateSelect.innerHTML = '<option value="">-- Không có bác sĩ nào có ca làm việc vào ngày này --</option>';
+                    maBacSiCreateSelect.disabled = true;
+                    doctorStep.style.display = 'block';
+                    appointmentDetailsStep.style.display = 'none';
+                    btnSubmitCreate.style.display = 'none';
+                    return;
                 }
+
+                maBacSiCreateSelect.disabled = false;
+                const doctorsById = new Map();
+                doctors.forEach(doctor => {
+                    const doctorId = String(doctor.MaNV);
+                    if (!doctorsById.has(doctorId)) {
+                        doctorsById.set(doctorId, doctor);
+                        createDoctorSchedulesByDoctor[doctorId] = [];
+                    }
+
+                    createDoctorSchedulesByDoctor[doctorId].push({
+                        start: normalizeTime(doctor.GioBatDau),
+                        end: normalizeTime(doctor.GioKetThuc)
+                    });
+                });
+
+                doctorsById.forEach(doctor => {
+                    const schedules = createDoctorSchedulesByDoctor[String(doctor.MaNV)]
+                        .map(schedule => `${schedule.start} - ${schedule.end}`)
+                        .join(', ');
+                    const option = new Option(`${doctor.HoTen} (${schedules})`, doctor.MaNV);
+                    maBacSiCreateSelect.add(option);
+                });
                 
                 doctorStep.style.display = 'block';
             } catch (err) {
                 console.error('Lỗi load bác sĩ:', err);
+                maBacSiCreateSelect.innerHTML = '<option value="">-- Lỗi tải bác sĩ --</option>';
+                maBacSiCreateSelect.disabled = true;
+                resetCreateTimeSelect('-- Không tải được giờ khám --');
+                doctorStep.style.display = 'block';
+                appointmentDetailsStep.style.display = 'none';
+                btnSubmitCreate.style.display = 'none';
+            }
+        }
+
+        function normalizeTime(timeValue) {
+            return String(timeValue || '').substring(0, 5);
+        }
+
+        function timeToMinutes(timeValue) {
+            const [hours, minutes] = normalizeTime(timeValue).split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        function minutesToTime(totalMinutes) {
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        function resetCreateTimeSelect(placeholder) {
+            gioHenCreateSelect.innerHTML = `<option value="">${placeholder}</option>`;
+            gioHenCreateSelect.disabled = true;
+            doctorWorkingHoursHelp.textContent = '';
+        }
+
+        function populateCreateTimeSlots(maBacSi) {
+            const schedules = createDoctorSchedulesByDoctor[String(maBacSi)] || [];
+            resetCreateTimeSelect('-- Không có giờ khám phù hợp --');
+
+            if (schedules.length === 0) {
+                return false;
+            }
+
+            const slots = [];
+            schedules.forEach(schedule => {
+                const start = timeToMinutes(schedule.start);
+                const end = timeToMinutes(schedule.end);
+
+                for (let minutes = start; minutes < end; minutes += 30) {
+                    slots.push(minutesToTime(minutes));
+                }
+            });
+
+            const uniqueSlots = [...new Set(slots)].sort();
+            gioHenCreateSelect.innerHTML = '<option value="">-- Chọn giờ khám --</option>';
+            uniqueSlots.forEach(slot => {
+                gioHenCreateSelect.add(new Option(slot, slot));
+            });
+
+            gioHenCreateSelect.disabled = uniqueSlots.length === 0;
+            doctorWorkingHoursHelp.textContent = schedules
+                .map(schedule => `Bác sĩ làm việc ${schedule.start} - ${schedule.end}`)
+                .join('; ');
+
+            return uniqueSlots.length > 0;
+        }
+
+        // STEP 4: Load bác sĩ khi chuyên khoa thay đổi
+        maChuyenKhoaSelect.addEventListener('change', async (e) => {
+            const maChuyenKhoa = e.target.value;
+            const ngayHen = document.getElementById('ngayHen').value;
+
+            if (!maChuyenKhoa) {
+                appointmentDateStep.style.display = 'none';
+                doctorStep.style.display = 'none';
+                appointmentDetailsStep.style.display = 'none';
+                btnSubmitCreate.style.display = 'none';
+                maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                maBacSiCreateSelect.disabled = true;
+                createDoctorSchedulesByDoctor = {};
+                resetCreateTimeSelect('-- Chọn bác sĩ trước --');
+                return;
+            }
+
+            appointmentDateStep.style.display = 'block';
+            doctorStep.style.display = 'none';
+            appointmentDetailsStep.style.display = 'none';
+            btnSubmitCreate.style.display = 'none';
+            maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+            maBacSiCreateSelect.disabled = true;
+            createDoctorSchedulesByDoctor = {};
+            resetCreateTimeSelect('-- Chọn bác sĩ trước --');
+
+            // Nếu ngày đã được chọn, tải bác sĩ theo ngày
+            if (ngayHen) {
+                await loadDoctorsBySpecialtyAndDate(maChuyenKhoa, ngayHen);
             }
         });
 
-        // STEP 4b: Hiển thị bước chọn ngày giờ khi chọn bác sĩ
+        // STEP 4b: Load bác sĩ khi ngày thay đổi
+        document.getElementById('ngayHen').addEventListener('change', async (e) => {
+            const ngayHen = e.target.value;
+            const maChuyenKhoa = maChuyenKhoaSelect.value;
+
+            if (!ngayHen) {
+                maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                maBacSiCreateSelect.disabled = true;
+                doctorStep.style.display = 'none';
+                appointmentDetailsStep.style.display = 'none';
+                btnSubmitCreate.style.display = 'none';
+                createDoctorSchedulesByDoctor = {};
+                resetCreateTimeSelect('-- Chọn bác sĩ trước --');
+                return;
+            }
+
+            // Nếu chuyên khoa đã được chọn, tải bác sĩ
+            if (maChuyenKhoa) {
+                await loadDoctorsBySpecialtyAndDate(maChuyenKhoa, ngayHen);
+            }
+        });
+
+        // STEP 4c: Hiển thị bước chọn ngày giờ khi chọn bác sĩ
         maBacSiCreateSelect.addEventListener('change', (e) => {
             if (e.target.value) {
+                const hasSlots = populateCreateTimeSlots(e.target.value);
                 appointmentDetailsStep.style.display = 'block';
-                btnSubmitCreate.style.display = 'block';
+                btnSubmitCreate.style.display = hasSlots ? 'block' : 'none';
             } else {
                 appointmentDetailsStep.style.display = 'none';
                 btnSubmitCreate.style.display = 'none';
+                resetCreateTimeSelect('-- Chọn bác sĩ trước --');
             }
         });
 
@@ -789,9 +969,14 @@
                 loadSpecialties();
             } else {
                 specialtyStep.style.display = 'none';
+                appointmentDateStep.style.display = 'none';
                 doctorStep.style.display = 'none';
                 appointmentDetailsStep.style.display = 'none';
                 btnSubmitCreate.style.display = 'none';
+                maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+                maBacSiCreateSelect.disabled = true;
+                createDoctorSchedulesByDoctor = {};
+                resetCreateTimeSelect('-- Chọn bác sĩ trước --');
             }
         }
 
@@ -878,9 +1063,14 @@
             patientInfoContainer.style.display = 'none';
             newPatientFormContainer.style.display = 'none';
             specialtyStep.style.display = 'none';
+            appointmentDateStep.style.display = 'none';
             doctorStep.style.display = 'none';
             appointmentDetailsStep.style.display = 'none';
             btnSubmitCreate.style.display = 'none';
+            maBacSiCreateSelect.innerHTML = '<option value="">-- Chọn bác sĩ --</option>';
+            maBacSiCreateSelect.disabled = true;
+            createDoctorSchedulesByDoctor = {};
+            resetCreateTimeSelect('-- Chọn bác sĩ trước --');
         }
 
         // Reset form khi mở modal mới
