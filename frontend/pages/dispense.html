@@ -33,6 +33,17 @@
         .dropdown-box .item:hover { background: #f1f5f9; }
         .center-action { display: flex; justify-content: center; }
         .sidebar .dropdown-menu { position: static !important; transform: none !important; margin-top: 0; }
+        .prescription-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .prescription-card { border: 1px solid #d8dee8; border-radius: 8px; padding: 12px 14px; background: #fff; margin-bottom: 10px; }
+        .prescription-card-title { font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .prescription-card-meta { color: #5d6675; font-size: 13px; margin-top: 4px; }
+        .prescription-card-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; }
+        .prescription-detail-meta { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 8px 16px; margin-bottom: 14px; }
+        .role-hidden { display: none !important; }
+        @media (max-width: 768px) {
+            .prescription-filter-grid, .prescription-detail-meta { grid-template-columns: 1fr; }
+            .prescription-card-actions { align-items: stretch; flex-direction: column; }
+        }
 
 .btn-outline-accent {
     border: 1px solid #CED4DA !important;
@@ -109,9 +120,14 @@
             <div class="navbar-nav ms-auto">
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <img class="rounded-circle" src="../img/user.jpg" style="width:40px">
-                        <span id="usernameNavbar"></span>
+                        <img class="rounded-circle me-lg-2" src="../img/user.jpg" style="width:40px">
+                        <span class="d-none d-lg-inline-flex" id="usernameNavbar"></span>
                     </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item">Hồ sơ</a>
+                        <a href="#" class="dropdown-item">Cài đặt</a>
+                        <a href="../signin.html" class="dropdown-item">Đăng xuất</a>
+                    </div>
                 </div>
             </div>
         </nav>
@@ -121,7 +137,7 @@
                 <div class="col-md-5">
                     <div class="card-box h-100">
                         <div class="section-head">
-                            <div><h5 class="section-title">Thông tin phiếu xuất</h5></div>
+                            <div><h5 class="section-title" id="formTitle">Thông tin phiếu xuất</h5></div>
                             <div class="fw-bold fs-5" id="draftCode"></div>
                         </div>
                         <div class="row g-3">
@@ -130,10 +146,10 @@
                                 <select id="khoSelect" class="form-select"></select>
                             </div>
                             <div class="col-6">
-                                <label>Ngày xuất</label>
+                                <label id="dateLabel">Ngày xuất</label>
                                 <input id="ngayXuat" type="datetime-local" class="form-control" autocomplete="off">
                             </div>
-                            <div class="col-6">
+                            <div class="col-6" id="exportTypeField">
                                 <label>Loại xuất</label>
                                 <select id="loaiXuat" class="form-select">
                                     <option value="BanChoBN">Bệnh nhân</option>
@@ -203,7 +219,7 @@
 
                 <div class="col-md-7">
                     <div class="card-box h-100 d-flex flex-column">
-                        <h5 class="mb-3">Danh sách thuốc thêm vào phiếu</h5>
+                        <h5 class="mb-3" id="cartTitle">Danh sách thuốc thêm vào phiếu</h5>
                         <div class="flex-grow-1 overflow-auto mb-3">
                             <table class="table">
                                 <thead>
@@ -224,14 +240,14 @@
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-auto">
                             <div class="total-box">Tổng tiền: <span id="totalMoney">0 đ</span></div>
-                            <button class="btn btn-primary" onclick="submitDispense()">Tạo phiếu</button>
+                            <button class="btn btn-primary" id="submitDispenseBtn" onclick="submitDispense()">Tạo phiếu</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card-box mb-3">
-                <h5 class="mb-3">Danh sách phiếu xuất</h5>
+                <h5 class="mb-3" id="historyTitle">Danh sách phiếu xuất</h5>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0" id="dispenseTable" data-page-size="6">
                         <thead>
@@ -265,11 +281,48 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Danh sách đơn thuốc chưa xuất</h5>
+                <h5 class="modal-title" id="prescriptionModalTitle">Danh sách đơn thuốc chưa xuất</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <div class="prescription-filter-grid">
+                    <div>
+                        <label class="form-label">Khoa</label>
+                        <select class="form-select" id="prescriptionSpecialtyFilter"></select>
+                    </div>
+                    <div>
+                        <label class="form-label">Bác sĩ</label>
+                        <select class="form-select" id="prescriptionDoctorFilter"></select>
+                    </div>
+                    <div>
+                        <label class="form-label">Bệnh nhân</label>
+                        <input class="form-control" id="prescriptionPatientFilter" placeholder="Tên hoặc mã BN">
+                    </div>
+                    <div>
+                        <label class="form-label">Sắp xếp</label>
+                        <select class="form-select" id="prescriptionSortFilter">
+                            <option value="newest">Mới nhất</option>
+                            <option value="oldest">Lâu nhất</option>
+                        </select>
+                    </div>
+                </div>
                 <div id="prescriptionModalList" class="aside-list"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="prescriptionDispenseDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết đơn thuốc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="prescriptionDispenseDetailBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="confirmPrescriptionDispenseBtn">Xác nhận cấp phát</button>
             </div>
         </div>
     </div>

@@ -196,6 +196,12 @@ const DispenseService = {
     saveDraft: async (payload) => {
     validateHeader(payload);
 
+    if (payload.MaDT) {
+        const prescription = await DispenseModel.getPrescriptionStatus({ MaDT: payload.MaDT });
+        if (!prescription) throw new Error("Khong tim thay don thuoc");
+        if (prescription.TrangThai === "DaXuat") throw new Error("Don thuoc da duoc xuat");
+    }
+
     const items = normalizeItems(payload.items);
     const enrichedItems = [];
 
@@ -297,6 +303,16 @@ const DispenseService = {
             const draft = await DispenseModel.getDraftHeaderById({ MaPX, connection, forUpdate: true });
             if (!draft) throw new Error("Phi?u xu?t không t?n t?i");
             if (draft.TrangThai !== "Nhap") throw new Error("Phi?u xu?t dã hoàn thành ho?c dã h?y");
+
+            if (draft.MaDT) {
+                const prescription = await DispenseModel.getPrescriptionStatus({
+                    MaDT: draft.MaDT,
+                    connection,
+                    forUpdate: true
+                });
+                if (!prescription) throw new Error("Khong tim thay don thuoc");
+                if (prescription.TrangThai === "DaXuat") throw new Error("Don thuoc da duoc xuat");
+            }
 
             const parsed = parseDraftNote(draft.GhiChu);
             const items = normalizeItems(parsed.items);

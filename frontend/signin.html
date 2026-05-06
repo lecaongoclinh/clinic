@@ -111,11 +111,20 @@
                     // Lưu token vào localStorage hoặc cookie
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('username', data.user.userName);
+                    localStorage.setItem('userId', data.user.id);
                     console.log(localStorage.getItem('username'));
                     localStorage.setItem('role', data.user.role);
                     // Chuyển hướng đến trang dashboard
                     alert('Đăng nhập thành công!');
-                    window.location.href = 'index.html';
+                    const roleHome = {
+                        1: 'index.html',
+                        2: 'schedule.html',
+                        3: 'LichKham.html',
+                        4: 'pages/invoices.html',
+                        5: 'pages/dispense.html',
+                        6: 'pages/medicines.html'
+                    };
+                    window.location.href = roleHome[Number(data.user.role)] || 'index.html';
                 } else {
                     alert(data.message || 'Đăng nhập thất bại!');
                 }

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Đơn thuốc</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="../img/favicon.ico" rel="icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #eef1f6; color: #111; }
+        .page-shell { padding: 18px; }
+        .page-panel { background: #fff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 18px; }
+        .filter-grid { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; align-items: end; margin-bottom: 16px; }
+        .table th { font-size: 13px; color: #111; white-space: nowrap; }
+        .table td { color: #111; vertical-align: middle; }
+        .status-badge { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+        .status-pending { background: #fff3cd; color: #7a5200; }
+        .status-done { background: #d1e7dd; color: #0f5132; }
+        .empty-row { color: #6c757d; text-align: center; padding: 28px 0 !important; }
+        @media (max-width: 992px) { .filter-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); } }
+        @media (max-width: 576px) { .filter-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container-xxl position-relative bg-white d-flex p-0">
+    <div class="sidebar pe-4 pb-3">
+        <nav class="navbar bg-light navbar-light">
+            <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
+            <div class="d-flex align-items-center ms-4 mb-4">
+                <div class="position-relative">
+                    <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
+                </div>
+                <div class="ms-3"><h6 class="mb-0" id="usernameSidebar"></h6></div>
+            </div>
+            <div class="navbar-nav w-100"></div>
+        </nav>
+    </div>
+
+    <div class="content">
+        <nav class="navbar navbar-expand bg-light navbar-light sticky-top px-4 py-0">
+            <a href="#" class="sidebar-toggler flex-shrink-0"><i class="fa fa-bars"></i></a>
+            <div class="navbar-nav align-items-center ms-auto">
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                        <img class="rounded-circle me-lg-2" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                        <span class="d-none d-lg-inline-flex" id="usernameNavbar"></span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
+                        <a href="#" class="dropdown-item">Hồ sơ</a>
+                        <a href="#" class="dropdown-item">Đăng xuất</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container-fluid page-shell">
+            <div class="page-panel">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                    <div>
+                        <h5 class="mb-1">Đơn thuốc</h5>
+                        <div class="text-muted small">Tra cứu đơn thuốc theo khoa, bác sĩ, bệnh nhân và trạng thái</div>
+                    </div>
+                    <button class="btn btn-outline-secondary" id="resetFiltersBtn"><i class="fa fa-redo me-2"></i>Làm mới</button>
+                </div>
+
+                <div class="filter-grid">
+                    <div>
+                        <label class="form-label">Khoa</label>
+                        <select class="form-select" id="specialtyFilter"></select>
+                    </div>
+                    <div>
+                        <label class="form-label">Bác sĩ</label>
+                        <select class="form-select" id="doctorFilter"></select>
+                    </div>
+                    <div>
+                        <label class="form-label">Bệnh nhân</label>
+                        <input class="form-control" id="patientFilter" placeholder="Tên, mã BN hoặc SĐT">
+                    </div>
+                    <div>
+                        <label class="form-label">Trạng thái</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Tất cả</option>
+                            <option value="ChuaXuat">Chưa xuất</option>
+                            <option value="DaXuat">Đã xuất</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary w-100" id="applyFiltersBtn"><i class="fa fa-search me-2"></i>Lọc</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mã đơn</th>
+                                <th>Ngày kê</th>
+                                <th>Bệnh nhân</th>
+                                <th>Khoa</th>
+                                <th>Bác sĩ</th>
+                                <th class="text-center">Số thuốc</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prescriptionsTableBody">
+                            <tr><td colspan="8" class="empty-row">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-muted small" id="prescriptionCount">0 đơn thuốc</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="prescriptionDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Chi tiết đơn thuốc</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="prescriptionDetailBody"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/main.js"></script>
+<script src="../js/prescriptions.js"></script>
+</body>
+</html>

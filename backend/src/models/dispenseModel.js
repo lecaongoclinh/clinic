@@ -89,7 +89,10 @@ const DispenseModel = {
                 bn.HoTen,
                 COALESCE(ba.ChuanDoan, '') AS ChuanDoan,
                 COALESCE(ba.GhiChu, '') AS GhiChu,
+                ba.MaBacSi,
                 COALESCE(nv.HoTen, '') AS TenBacSi,
+                nv.MaChuyenKhoa,
+                COALESCE(ck.TenChuyenKhoa, '') AS TenChuyenKhoa,
                 COALESCE(ct.SoLoaiThuoc, 0) AS SoLoaiThuoc,
                 COALESCE(ct.TongSoLuong, 0) AS TongSoLuong,
                 COALESCE(ct.TongTien, 0) AS TongTien
@@ -98,6 +101,7 @@ const DispenseModel = {
             JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
             JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
             LEFT JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
+            LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
             LEFT JOIN (
                 SELECT
                     ctdt.MaDT,
@@ -256,7 +260,10 @@ const DispenseModel = {
             bn.HoTen,
             COALESCE(ba.ChuanDoan, '') AS ChuanDoan,
             COALESCE(ba.GhiChu, '') AS GhiChu,
+            ba.MaBacSi,
             COALESCE(nv.HoTen, '') AS TenBacSi,
+            nv.MaChuyenKhoa,
+            COALESCE(ck.TenChuyenKhoa, '') AS TenChuyenKhoa,
             COALESCE(ct.SoLoaiThuoc, 0) AS SoLoaiThuoc,
             COALESCE(ct.TongSoLuong, 0) AS TongSoLuong,
             COALESCE(ct.TongTien, 0) AS TongTien
@@ -265,6 +272,7 @@ const DispenseModel = {
         JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
         JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
         LEFT JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
+        LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
         LEFT JOIN (
             SELECT
                 ctdt.MaDT,
@@ -326,6 +334,17 @@ const DispenseModel = {
         `, [...stockParams, MaDT]);
 
         return rows;
+    },
+
+    getPrescriptionStatus: async ({ MaDT, connection = db, forUpdate = false }) => {
+        const [rows] = await connection.query(`
+            SELECT MaDT, COALESCE(TrangThai, 'ChuaXuat') AS TrangThai
+            FROM DonThuoc
+            WHERE MaDT = ?
+            ${forUpdate ? "FOR UPDATE" : ""}
+        `, [MaDT]);
+
+        return rows[0] || null;
     },
 
     getAlternativeMedicines: async ({ MaThuoc, MaKho = null }) => {

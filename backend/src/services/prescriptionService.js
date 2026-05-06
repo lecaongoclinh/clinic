@@ -2,8 +2,8 @@ import PrescriptionModel from "../models/prescriptionModel.js";
 
 const PrescriptionService = {
 
-    getAll: async () => {
-        return await PrescriptionModel.getAll();
+    getAll: async (filters = {}) => {
+        return await PrescriptionModel.getAll(filters);
     },
 
     getDetail: async (id) => {

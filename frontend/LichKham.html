@@ -276,6 +276,10 @@
                                 <label class="form-label"><strong>Bước 2: Nhập thông tin bệnh nhân mới</strong></label>
                             </div>
                             <div class="mb-3">
+                                <label for="newPatientId" class="form-label">Mã bệnh nhân / CCCD</label>
+                                <input type="text" class="form-control" id="newPatientId" placeholder="Nhập CCCD đủ 12 số">
+                            </div>
+                            <div class="mb-3">
                                 <label for="newPatientName" class="form-label">Họ tên</label>
                                 <input type="text" class="form-control" id="newPatientName" placeholder="Nhập họ tên bệnh nhân">
                             </div>
@@ -431,7 +435,7 @@
             // Kiểm tra token
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = '/signin';
+                window.location.href = 'signin.html';
                 return;
             }
             const username = localStorage.getItem('username');
@@ -453,8 +457,30 @@
             const editAppointmentModal = new bootstrap.Modal(document.getElementById('editAppointmentModal'));
             const maBacSiCreate = document.getElementById('maBacSiCreate');
             const pendingTableBody = document.getElementById('pendingAppointmentsTable').querySelector('tbody');
+            const currentRole = Number(localStorage.getItem('role'));
+            const currentUserId = Number(localStorage.getItem('userId')) || getUserIdFromToken();
+            const canManageAppointments = currentRole === 1 || currentRole === 3;
+            const isDoctorRole = currentRole === 2;
 
             let allDoctors = []; // Store all doctors for create form
+
+            function getUserIdFromToken() {
+                try {
+                    const payload = (localStorage.getItem('token') || '').split('.')[1];
+                    if (!payload) return null;
+                    return Number(JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).id);
+                } catch {
+                    return null;
+                }
+            }
+
+            if (!canManageAppointments && btnCreateAppointment) {
+                btnCreateAppointment.style.display = 'none';
+            }
+            if (isDoctorRole) {
+                if (selectKhoa) selectKhoa.disabled = true;
+                if (selectBacSi) selectBacSi.disabled = true;
+            }
 
             // Load all doctors for create form
             async function loadAllDoctors() {
@@ -490,7 +516,8 @@
 
             // Load pending appointments for table
             function loadPendingAppointments() {
-                fetch(`http://localhost:3000/api/appointments?tenBN=${encodeURIComponent(inputTenBN.value || '')}&maChuyenKhoa=${selectKhoa.value || ''}&maBacSi=${selectBacSi.value || ''}`)
+                const maBacSiFilter = isDoctorRole && currentUserId ? currentUserId : (selectBacSi.value || '');
+                fetch(`http://localhost:3000/api/appointments?tenBN=${encodeURIComponent(inputTenBN.value || '')}&maChuyenKhoa=${selectKhoa.value || ''}&maBacSi=${maBacSiFilter}`)
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         return res.json();
@@ -520,6 +547,12 @@
                                         <button class="btn btn-sm btn-danger delete-btn" data-id="${app.id}" title="Xóa">✕ Xóa</button>
                                     </td>
                                 `;
+                                if (!canManageAppointments) {
+                                    row.querySelectorAll('.confirm-btn, .edit-btn, .delete-btn').forEach(btn => {
+                                        const cell = btn.closest('td');
+                                        if (cell) cell.innerHTML = '<span class="text-muted">Chỉ xem</span>';
+                                    });
+                                }
                                 pendingTableBody.appendChild(row);
                             });
                         }
@@ -544,7 +577,7 @@
             // Load events từ API
             events: function(info, successCallback, failureCallback) {
                 const maChuyenKhoa = selectKhoa.value || '';
-                const maBacSi = selectBacSi.value || '';
+                const maBacSi = isDoctorRole && currentUserId ? currentUserId : (selectBacSi.value || '');
                 const tenBN = inputTenBN.value || '';
 
                 fetch(`http://localhost:3000/api/appointments?tenBN=${encodeURIComponent(tenBN)}&maChuyenKhoa=${maChuyenKhoa}&maBacSi=${maBacSi}`)
@@ -616,17 +649,19 @@
                 deleteBtn.onclick = () => deleteAppointment(event.extendedProps.id);
 
                 info.el.style.position = 'relative';
-                info.el.appendChild(editBtn);
-                info.el.appendChild(deleteBtn);
+                if (canManageAppointments) {
+                    info.el.appendChild(editBtn);
+                    info.el.appendChild(deleteBtn);
 
-                info.el.addEventListener('mouseenter', () => {
-                    editBtn.style.display = 'block';
-                    deleteBtn.style.display = 'block';
-                });
-                info.el.addEventListener('mouseleave', () => {
-                    editBtn.style.display = 'none';
-                    deleteBtn.style.display = 'none';
-                });
+                    info.el.addEventListener('mouseenter', () => {
+                        editBtn.style.display = 'block';
+                        deleteBtn.style.display = 'block';
+                    });
+                    info.el.addEventListener('mouseleave', () => {
+                        editBtn.style.display = 'none';
+                        deleteBtn.style.display = 'none';
+                    });
+                }
             }
         });
 
@@ -634,6 +669,7 @@
 
         // Button tạo lịch
         btnCreateAppointment.addEventListener('click', () => {
+            if (!canManageAppointments) return;
             createAppointmentModal.show();
         });
 
@@ -773,6 +809,7 @@
             
             // Xóa giá trị cũ
             document.getElementById('newPatientName').value = '';
+            document.getElementById('newPatientId').value = '';
             document.getElementById('newPatientPhone').value = '';
             document.getElementById('newPatientAddress').value = '';
             document.getElementById('newPatientDOB').value = '';
@@ -1007,11 +1044,12 @@
 
             if (isNewPatient) {
                 const hoTen = document.getElementById('newPatientName').value.trim();
+                const newMaBN = document.getElementById('newPatientId').value.trim();
                 const soDienThoai = document.getElementById('newPatientPhone').value.trim();
                 const diaChi = document.getElementById('newPatientAddress').value.trim();
                 const ngaySinh = document.getElementById('newPatientDOB').value;
 
-                if (!hoTen || !soDienThoai || !diaChi || !ngaySinh) {
+                if (!newMaBN || !hoTen || !soDienThoai || !diaChi || !ngaySinh) {
                     alert('Vui lòng điền đầy đủ thông tin bệnh nhân mới');
                     return;
                 }
@@ -1022,6 +1060,7 @@
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
+                            maBN: newMaBN,
                             hoTen,
                             soDienThoai,
                             diaChi,
@@ -1100,6 +1139,7 @@
 
             // Open edit modal
             function openEditModal(maLK) {
+                if (!canManageAppointments) return;
                 fetch(`http://localhost:3000/api/appointments?tenBN=&maChuyenKhoa=&maBacSi=`)
                     .then(res => res.json())
                     .then(data => {
@@ -1269,6 +1309,7 @@
 
             // Submit edit (update appointment)
             document.getElementById('btnSubmitEdit').addEventListener('click', async () => {
+                if (!canManageAppointments) return;
                 const maLK = document.getElementById('editMaLK').value;
                 const maBN = document.getElementById('editMaBN').value;
                 const maBacSi = document.getElementById('editMaBacSiStep').value || null;
@@ -1306,6 +1347,7 @@
 
             // Confirm appointment (change status to DaXacNhan)
             document.getElementById('btnConfirm').addEventListener('click', async () => {
+                if (!canManageAppointments) return;
                 if (!confirm('Bạn có chắc muốn xác nhận lịch khám này?')) return;
 
                 const maLK = document.getElementById('editMaLK').value;
@@ -1346,6 +1388,7 @@
 
             // Delete appointment
             document.getElementById('btnDelete').addEventListener('click', async () => {
+                if (!canManageAppointments) return;
                 if (!confirm('Bạn có chắc muốn xóa lịch khám này?')) return;
                 
                 const maLK = document.getElementById('editMaLK').value;
@@ -1385,6 +1428,7 @@
 
             // Quick confirm appointment (without opening modal)
             async function confirmAppointmentQuick(maLK) {
+                if (!canManageAppointments) return;
                 if (!confirm('Bạn có chắc muốn xác nhận lịch khám này?')) return;
 
                 // Get appointment details first
@@ -1449,6 +1493,7 @@
             }
 
             async function deleteAppointment(maLK) {
+                if (!canManageAppointments) return;
                 if (!confirm('Bạn có chắc muốn xóa lịch khám này?')) return;
                 
                 try {
@@ -1495,7 +1540,7 @@
                         .then(res => {
                             if (res.status === 401) {
                                 localStorage.removeItem('token');
-                                window.location.href = '/signin';
+                                window.location.href = 'signin.html';
                                 return;
                             }
                             if (!res.ok) throw new Error("Lỗi lấy lịch khám");
@@ -1517,11 +1562,11 @@
             // Load danh sách khoa
             fetch('http://localhost:3000/api/specialty')
                 .then(res => {
-                    if (res.status === 401) {
-                        localStorage.removeItem('token');
-                        window.location.href = '/signin';
-                        return;
-                    }
+                        if (res.status === 401) {
+                            localStorage.removeItem('token');
+                            window.location.href = 'signin.html';
+                            return;
+                        }
                     if (!res.ok) throw new Error("Lỗi lấy danh sách khoa");
                     return res.json();
                 })
@@ -1550,7 +1595,7 @@
                         const res = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${maKhoa}`);
                         if (res.status === 401) {
                             localStorage.removeItem('token');
-                            window.location.href = '/signin';
+                            window.location.href = 'signin.html';
                             return;
                         }
                         if (!res.ok) throw new Error("Lỗi lấy danh sách bác sĩ");

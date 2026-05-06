@@ -26,6 +26,36 @@ let doctors = [];
 let rooms = [];
 let specialties = [];
 let doctorsBySpecialty = {};
+const currentRole = Number(localStorage.getItem('role'));
+const currentUserId = Number(localStorage.getItem('userId')) || getUserIdFromToken();
+const canManageSchedules = currentRole === 1;
+const isDoctorRole = currentRole === 2;
+
+function getUserIdFromToken() {
+    try {
+        const token = localStorage.getItem('token') || '';
+        const payload = token.split('.')[1];
+        if (!payload) return null;
+        return Number(JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).id);
+    } catch {
+        return null;
+    }
+}
+
+function applyScheduleRoleUi() {
+    const toggleBtn = document.getElementById('toggleFormBtn');
+    const formSection = document.getElementById('scheduleFormSection');
+
+    if (!canManageSchedules) {
+        if (toggleBtn) toggleBtn.style.display = 'none';
+        if (formSection) formSection.style.display = 'none';
+    }
+
+    if (isDoctorRole) {
+        if (selectKhoa) selectKhoa.disabled = true;
+        if (filterDoctorSelect) filterDoctorSelect.disabled = true;
+    }
+}
 
 // Shift configuration
 const shiftsConfig = {
@@ -37,6 +67,7 @@ const dayLabels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6'];
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    applyScheduleRoleUi();
     initializeSchedulePage();
     setMinDate();
 });
@@ -367,6 +398,14 @@ function populateSpecialtyFilter() {
         option.textContent = specialty.TenChuyenKhoa;
         selectKhoa.appendChild(option);
     });
+
+    if (isDoctorRole) {
+        const doctor = doctors.find(item => Number(item.MaNV) === currentUserId);
+        if (doctor?.MaChuyenKhoa) {
+            selectKhoa.value = String(doctor.MaChuyenKhoa);
+        }
+        selectKhoa.disabled = true;
+    }
 }
 
 /**
@@ -386,7 +425,12 @@ function populateDoctorFilter(maChuyenKhoa) {
         filterDoctorSelect.appendChild(option);
     });
 
-    filterDoctorSelect.disabled = false;
+    if (isDoctorRole && currentUserId) {
+        filterDoctorSelect.value = String(currentUserId);
+        filterDoctorSelect.disabled = true;
+    } else {
+        filterDoctorSelect.disabled = false;
+    }
 }
 
 /**
@@ -397,7 +441,7 @@ async function loadSchedules() {
         if (loadingSpinner) loadingSpinner.style.display = 'block';
 
         const maChuyenKhoa = selectKhoa.value || null;
-        const maBacSi = filterDoctorSelect.value || null;
+        const maBacSi = isDoctorRole && currentUserId ? currentUserId : (filterDoctorSelect.value || null);
 
         // ✅ Build query params
         const params = new URLSearchParams();
@@ -1009,7 +1053,7 @@ function showEventPopup(eventId, schedule, anchorEl) {
                 <p><i class="fa fa-calendar me-2"></i><strong>Ngày:</strong> ${formatDate(schedule.NgayLam)}</p>
                 <p><i class="fa fa-clock me-2"></i><strong>Giờ:</strong> ${formatTime(schedule.GioBatDau)} - ${formatTime(schedule.GioKetThuc)}</p>
             </div>
-            <div class="event-popup-footer">
+            <div class="event-popup-footer" style="${canManageSchedules ? '' : 'display:none'}">
                 <button class="btn btn-danger btn-sm" onclick="closeEventPopup(); openDeleteModal(${eventId})">
                     <i class="fa fa-trash me-1"></i>Xóa
                 </button>

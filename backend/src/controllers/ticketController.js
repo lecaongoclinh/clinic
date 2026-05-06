@@ -69,19 +69,6 @@ const ensureTicketSchema = async (connection = pool) => {
 };
 
 const ensurePatientSchema = async (connection = pool) => {
-    if (patientSchemaReady) return;
-
-    const [columns] = await connection.query(
-        `SELECT COLUMN_NAME
-         FROM INFORMATION_SCHEMA.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'BenhNhan'`
-    );
-    const existing = new Set(columns.map((col) => col.COLUMN_NAME));
-
-    if (!existing.has('SoCCCD')) {
-        await connection.query('ALTER TABLE BenhNhan ADD COLUMN SoCCCD VARCHAR(20) UNIQUE NULL AFTER SoDienThoai');
-    }
-
     patientSchemaReady = true;
 };
 
@@ -120,7 +107,7 @@ const ticketSelectSql = `
         COALESCE(pk.ThoiGianTao, TIMESTAMP(pk.NgayKham, '00:00:00')) AS ThoiGianTaoHienThi,
         bn.HoTen AS TenBenhNhan,
         bn.SoDienThoai,
-        bn.SoCCCD,
+        bn.MaBN AS SoCCCD,
         bn.NgaySinh,
         bn.GioiTinh,
         ck.TenChuyenKhoa,
@@ -161,9 +148,9 @@ export const searchPatients = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            `SELECT MaBN, HoTen, SoDienThoai, SoCCCD, NgaySinh, DiaChi, GioiTinh, Email
+            `SELECT MaBN, HoTen, SoDienThoai, MaBN AS SoCCCD, NgaySinh, DiaChi, GioiTinh, Email
              FROM BenhNhan
-             WHERE SoCCCD LIKE ?
+             WHERE MaBN LIKE ?
              ORDER BY HoTen
              LIMIT 10`,
             [`%${keyword.trim()}%`]
@@ -194,8 +181,9 @@ export const createPatient = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Vui long nhap ho ten, ngay sinh, so dien thoai va CCCD' });
         }
 
-        const [exists] = await pool.query('SELECT MaBN, SoCCCD, SoDienThoai FROM BenhNhan WHERE SoCCCD = ? OR SoDienThoai = ?', [soCCCD, soDienThoai]);
-        const duplicatedCCCD = exists.some((row) => row.SoCCCD === soCCCD);
+        const maBN = String(soCCCD).trim();
+        const [exists] = await pool.query('SELECT MaBN, SoDienThoai FROM BenhNhan WHERE MaBN = ? OR SoDienThoai = ?', [maBN, soDienThoai]);
+        const duplicatedCCCD = exists.some((row) => row.MaBN === maBN);
         const duplicatedPhone = exists.some((row) => row.SoDienThoai === soDienThoai);
         if (duplicatedCCCD) {
             return res.status(409).json({ success: false, message: 'So CCCD da ton tai' });
@@ -205,13 +193,13 @@ export const createPatient = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO BenhNhan (HoTen, NgaySinh, SoDienThoai, SoCCCD)
+            `INSERT INTO BenhNhan (MaBN, HoTen, NgaySinh, SoDienThoai)
              VALUES (?, ?, ?, ?)`,
-            [hoTen, ngaySinh, soDienThoai, soCCCD]
+            [maBN, hoTen, ngaySinh, soDienThoai]
         );
         const [rows] = await pool.query(
-            'SELECT MaBN, HoTen, SoDienThoai, SoCCCD, NgaySinh, DiaChi, GioiTinh, Email FROM BenhNhan WHERE MaBN = ?',
-            [result.insertId]
+            'SELECT MaBN, HoTen, SoDienThoai, MaBN AS SoCCCD, NgaySinh, DiaChi, GioiTinh, Email FROM BenhNhan WHERE MaBN = ?',
+            [maBN]
         );
 
         res.status(201).json({ success: true, data: rows[0] });

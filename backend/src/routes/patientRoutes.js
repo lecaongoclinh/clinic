@@ -3,7 +3,7 @@ import patientController from '../controllers/patientController.js';
 
 const router = express.Router();
 
-// router.get('/', patientController.getPatients);
+router.get('/', patientController.list);
 // router.get('/:id', patientController.getPatientById);
 
 // Tìm kiếm bệnh nhân theo tên
@@ -14,5 +14,7 @@ router.get('/:maBN', patientController.getById);
 
 // Tạo bệnh nhân
 router.post('/', patientController.create);
+router.put('/:maBN', patientController.update);
+router.delete('/:maBN', patientController.delete);
 
 export default router;

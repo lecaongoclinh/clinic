@@ -4,7 +4,12 @@ const PrescriptionController = {
 
     getAll: async (req, res) => {
         try {
-            const data = await PrescriptionService.getAll();
+            const data = await PrescriptionService.getAll({
+                maChuyenKhoa: req.query.maChuyenKhoa || '',
+                maBacSi: req.query.maBacSi || '',
+                patient: req.query.patient || '',
+                trangThai: req.query.trangThai || ''
+            });
             res.json(data);
         } catch (err) {
             res.status(500).json({ message: err.message });

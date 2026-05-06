@@ -8,6 +8,19 @@ let doctorRequestId = 0;
 
 const role = Number(localStorage.getItem('role'));
 const canManageTickets = role === 1 || role === 3;
+const currentUserId = Number(localStorage.getItem('userId')) || getUserIdFromToken();
+const isDoctor = role === 2;
+
+function getUserIdFromToken() {
+    try {
+        const token = localStorage.getItem('token') || '';
+        const payload = token.split('.')[1];
+        if (!payload) return null;
+        return Number(JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).id);
+    } catch {
+        return null;
+    }
+}
 
 const authHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('token') || ''}`
@@ -63,6 +76,27 @@ function formatAppointmentDateTime(ngayHen, gioHen) {
     return formatDateTime(`${datePart}T${timePart}`);
 }
 
+function normalizeBirthDateInput(value) {
+    const raw = String(value || '').trim();
+    const match = raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (!match) return null;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+    ) {
+        return null;
+    }
+
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
 function ticketStatusText(status) {
     const map = {
         WAITING: 'Đang chờ',
@@ -79,11 +113,11 @@ function ticketTypeText(type) {
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('token')) {
-        window.location.href = '/signin';
+        window.location.href = 'signin.html';
         return;
     }
 
-    const username = localStorage.getItem('username') || 'Lễ tân';
+    const username = localStorage.getItem('username') || (isDoctor ? 'Bác sĩ' : 'Lễ tân');
     document.querySelectorAll('#usernameSidebar, #navbarUserName').forEach((el) => {
         if (el) el.textContent = username;
     });
@@ -263,7 +297,7 @@ async function modalSearchPatients() {
                         <input class="form-control" id="quickPatientName" placeholder="Họ tên bệnh nhân">
                     </div>
                     <div class="col-md-3">
-                        <input class="form-control" id="quickPatientDob" type="date" title="Ngày sinh">
+                        <input class="form-control" id="quickPatientDob" inputmode="numeric" placeholder="Ngày sinh dd/mm/yyyy" title="Nhập ngày sinh theo dd/mm/yyyy">
                     </div>
                     <div class="col-md-3">
                         <input class="form-control" id="quickPatientPhone" placeholder="Số điện thoại">
@@ -291,12 +325,17 @@ async function modalSearchPatients() {
 
 async function createPatientFromModal() {
     const hoTen = (document.getElementById('quickPatientName')?.value || '').trim();
-    const ngaySinh = (document.getElementById('quickPatientDob')?.value || '').trim();
+    const birthDateInput = (document.getElementById('quickPatientDob')?.value || '').trim();
+    const ngaySinh = normalizeBirthDateInput(birthDateInput);
     const soDienThoai = (document.getElementById('quickPatientPhone')?.value || '').trim();
     const soCCCD = (document.getElementById('quickPatientCCCD')?.value || '').trim();
 
-    if (!hoTen || !ngaySinh || !soDienThoai || !soCCCD) {
+    if (!hoTen || !birthDateInput || !soDienThoai || !soCCCD) {
         showToast('warning', 'Nhập họ tên, ngày sinh, số điện thoại và số CCCD');
+        return;
+    }
+    if (!ngaySinh) {
+        showToast('warning', 'Ngày sinh phải theo định dạng dd/mm/yyyy');
         return;
     }
 
@@ -448,7 +487,9 @@ async function loadWaitingList() {
         const count = document.getElementById('waitingCount');
         if (!list) return;
 
-        const rows = data.data || [];
+        const rows = isDoctor && currentUserId
+            ? (data.data || []).filter((ticket) => Number(ticket.MaBacSi) === currentUserId)
+            : (data.data || []);
         if (count) count.textContent = rows.length;
 
         if (!rows.length) {
@@ -592,8 +633,9 @@ function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('username');
     localStorage.removeItem('role');
+    localStorage.removeItem('userId');
     localStorage.removeItem('user');
-    window.location.href = '/signin';
+    window.location.href = 'signin.html';
 }
 
 window.openCreateTicketModal = openCreateTicketModal;
