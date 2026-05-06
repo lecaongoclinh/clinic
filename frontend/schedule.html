@@ -434,126 +434,105 @@
                 <!-- Alert Messages -->
                 <div id="alertContainer"></div>
 
-                <!-- Create Schedule Section -->
-                <div class="row mb-4" id="scheduleFormSection" style="display: none;">
-                    <div class="col-lg-8 mx-auto">
-                        <div class="schedule-form">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5 class="mb-0"><i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc Mới</h5>
-                                <button type="button" class="btn-close" id="closeFormBtn" aria-label="Close"></button>
+                <!-- Modal Tạo Lịch Làm Việc -->
+                <div class="modal fade" id="createScheduleModal" tabindex="-1">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content border-0 shadow">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title text-white"><i class="fa fa-calendar-plus me-2"></i>Tạo Lịch Làm Việc Mới</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                             </div>
+                            <div class="modal-body p-4">
+                                <form id="scheduleForm">
+                                    <div class="row g-3">
+                                        <!-- Specialty Selection -->
+                                        <div class="col-md-6">
+                                            <label for="chuyenKhoa" class="form-label">Chuyên Khoa <span class="text-danger">*</span></label>
+                                            <select id="chuyenKhoa" class="form-select" required>
+                                                <option value="">-- Chọn Chuyên Khoa --</option>
+                                            </select>
+                                            <div class="error-message" id="error-chuyenKhoa"></div>
+                                        </div>
 
-                            <form id="scheduleForm">
-                                <div class="row">
-                                    <!-- Specialty Selection -->
-                                    <div class="col-md-6 form-group-wrapper">
-                                        <label for="chuyenKhoa" class="form-label">Chuyên Khoa <span class="text-danger">*</span></label>
-                                        <select id="chuyenKhoa" class="form-select" required>
-                                            <option value="">-- Chọn Chuyên Khoa --</option>
-                                        </select>
-                                        <div class="error-message" id="error-chuyenKhoa"></div>
-                                    </div>
+                                        <!-- Doctor Selection -->
+                                        <div class="col-md-6">
+                                            <label for="bacSiId" class="form-label">Bác Sĩ <span class="text-danger">*</span></label>
+                                            <select id="bacSiId" class="form-select" required disabled>
+                                                <option value="">-- Chọn Bác Sĩ --</option>
+                                            </select>
+                                            <div class="error-message" id="error-bacSiId"></div>
+                                        </div>
 
-                                    <!-- Doctor Selection -->
-                                    <div class="col-md-6 form-group-wrapper">
-                                        <label for="bacSiId" class="form-label">Bác Sĩ <span class="text-danger">*</span></label>
-                                        <select id="bacSiId" class="form-select" required disabled>
-                                            <option value="">-- Chọn Bác Sĩ --</option>
-                                        </select>
-                                        <div class="error-message" id="error-bacSiId"></div>
-                                    </div>
+                                        <!-- Room Selection -->
+                                        <div class="col-md-6">
+                                            <label for="phongKhamId" class="form-label">Phòng Khám <span class="text-danger">*</span></label>
+                                            <select id="phongKhamId" class="form-select" required>
+                                                <option value="">-- Chọn Phòng --</option>
+                                            </select>
+                                            <div class="error-message" id="error-phongKhamId"></div>
+                                        </div>
 
-                                    <!-- Room Selection -->
-                                    <div class="col-md-6 form-group-wrapper">
-                                        <label for="phongKhamId" class="form-label">Phòng Khám <span class="text-danger">*</span></label>
-                                        <select id="phongKhamId" class="form-select" required>
-                                            <option value="">-- Chọn Phòng --</option>
-                                        </select>
-                                        <div class="error-message" id="error-phongKhamId"></div>
-                                    </div>
-
-                                    <!-- Date Selection -->
-                                    <div class="col-md-6 form-group-wrapper">
-                                        <label for="ngayLamViec" class="form-label">Ngày Bắt Đầu (Thứ 2) <span class="text-danger">*</span></label>
-                                        <input type="date" id="ngayLamViec" class="form-control" required>
-                                        <div class="error-message" id="error-ngayLamViec"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Shift Selection Matrix -->
-                                <div class="row mt-4">
-                                    <div class="col-12">
-                                        <label class="form-label"><strong>Chọn Ca Làm Việc Trong Tuần <span class="text-danger">*</span></strong></label>
-                                        <div class="shift-matrix-wrapper">
-                                            <table class="table table-bordered shift-matrix">
-                                                <thead>
-                                                    <tr>
-                                                        <th class="text-center" style="width: 120px;">Ngày</th>
-                                                        <th class="text-center">Ca Sáng<br><small>(07:00 - 11:30)</small></th>
-                                                        <th class="text-center">Ca Chiều<br><small>(13:30 - 17:00)</small></th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td class="text-center fw-bold">Thứ 2</td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="0" data-shift="morning" id="shift-0-0">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="0" data-shift="afternoon" id="shift-0-1">
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="text-center fw-bold">Thứ 3</td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="1" data-shift="morning" id="shift-1-0">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="1" data-shift="afternoon" id="shift-1-1">
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="text-center fw-bold">Thứ 4</td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="2" data-shift="morning" id="shift-2-0">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="2" data-shift="afternoon" id="shift-2-1">
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="text-center fw-bold">Thứ 5</td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="3" data-shift="morning" id="shift-3-0">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="3" data-shift="afternoon" id="shift-3-1">
-                                                        </td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td class="text-center fw-bold">Thứ 6</td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="4" data-shift="morning" id="shift-4-0">
-                                                        </td>
-                                                        <td class="text-center">
-                                                            <input type="checkbox" class="shift-checkbox" data-day="4" data-shift="afternoon" id="shift-4-1">
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                            <div class="error-message" id="error-shifts"></div>
+                                        <!-- Date Selection -->
+                                        <div class="col-md-6">
+                                            <label for="ngayLamViec" class="form-label">Ngày Bắt Đầu (Thứ 2) <span class="text-danger">*</span></label>
+                                            <input type="date" id="ngayLamViec" class="form-control" required>
+                                            <div class="error-message" id="error-ngayLamViec"></div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <!-- Submit Button -->
-                                <div class="d-grid mt-4">
-                                    <button type="submit" class="btn btn-schedule btn-primary" id="submitBtn">
-                                        <i class="fa fa-save me-2"></i>Tạo Lịch Làm Việc
-                                    </button>
-                                </div>
-                                <div class="success-message" id="success-message"></div>
-                            </form>
+                                    <!-- Shift Selection Matrix -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <label class="form-label"><strong>Chọn Ca Làm Việc Trong Tuần <span class="text-danger">*</span></strong></label>
+                                            <div class="shift-matrix-wrapper p-3 border rounded">
+                                                <table class="table table-bordered shift-matrix mb-0">
+                                                    <thead class="bg-light">
+                                                        <tr>
+                                                            <th class="text-center" style="width: 120px;">Ngày</th>
+                                                            <th class="text-center">Ca Sáng<br><small class="fw-normal">(07:00 - 11:30)</small></th>
+                                                            <th class="text-center">Ca Chiều<br><small class="fw-normal">(13:30 - 17:00)</small></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="text-center fw-bold bg-light">Thứ 2</td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="0" data-shift="morning" id="shift-0-0"></td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="0" data-shift="afternoon" id="shift-0-1"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-center fw-bold bg-light">Thứ 3</td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="1" data-shift="morning" id="shift-1-0"></td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="1" data-shift="afternoon" id="shift-1-1"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-center fw-bold bg-light">Thứ 4</td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="2" data-shift="morning" id="shift-2-0"></td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="2" data-shift="afternoon" id="shift-2-1"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-center fw-bold bg-light">Thứ 5</td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="3" data-shift="morning" id="shift-3-0"></td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="3" data-shift="afternoon" id="shift-3-1"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td class="text-center fw-bold bg-light">Thứ 6</td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="4" data-shift="morning" id="shift-4-0"></td>
+                                                            <td class="text-center"><input type="checkbox" class="shift-checkbox form-check-input" data-day="4" data-shift="afternoon" id="shift-4-1"></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                                <div class="error-message" id="error-shifts"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                                <button type="submit" form="scheduleForm" class="btn btn-primary" id="submitBtn">
+                                    <i class="fa fa-save me-2"></i>Tạo Lịch
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -703,28 +682,15 @@
                 document.getElementById('username-top').textContent = username;
             }
         });
-       // DOM Elements
+        // DOM Elements
         const toggleFormBtn = document.getElementById('toggleFormBtn');
-        const closeFormBtn = document.getElementById('closeFormBtn');
-        const scheduleFormSection = document.getElementById('scheduleFormSection');
 
-        // Xóa toàn bộ đoạn cũ, thay bằng:
         if (toggleFormBtn) {
             toggleFormBtn.addEventListener('click', function () {
-                const isVisible = scheduleFormSection.style.display !== 'none';
-                scheduleFormSection.style.display = isVisible ? 'none' : 'block';
+                var myModal = new bootstrap.Modal(document.getElementById('createScheduleModal'));
+                myModal.show();
             });
         }
-
-        if (closeFormBtn) {
-            closeFormBtn.addEventListener('click', function () {
-                scheduleFormSection.style.display = 'none';
-            });
-        }
-        // closeFormBtn: ẩn form
-        closeFormBtn.addEventListener('click', function () {
-            scheduleFormSection.style.display = 'none';
-        });
     </script>
     <!-- <script>
                 // DOM Elements - thêm

@@ -135,18 +135,22 @@ async function openPrescriptionDetail(maDT) {
                         <thead>
                             <tr>
                                 <th>Thuốc</th>
-                                <th class="text-center">Số lượng</th>
+                                <th class="text-center">Kê đơn</th>
+                                <th class="text-center" style="color: #0d6efd;">Thực xuất</th>
                                 <th>Cách dùng</th>
-                                <th class="text-center">Tồn</th>
+                                <th class="text-center">Tồn kho</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${data.map((row) => `
                                 <tr>
                                     <td>${escapeHtml(row.TenThuoc || '')}</td>
-                                    <td class="text-center">${row.SoLuong || 0}</td>
+                                    <td class="text-center fw-bold">${row.SoLuong || 0}</td>
+                                    <td class="text-center fw-bold" style="color: ${row.SoLuongDaXuat < row.SoLuong ? '#dc3545' : '#198754'}">
+                                        ${row.SoLuongDaXuat || 0}
+                                    </td>
                                     <td>${escapeHtml(row.CachDung || '')}</td>
-                                    <td class="text-center">${row.SoLuongTon ?? ''}</td>
+                                    <td class="text-center text-muted">${row.SoLuongTon ?? ''}</td>
                                 </tr>
                             `).join('')}
                         </tbody>

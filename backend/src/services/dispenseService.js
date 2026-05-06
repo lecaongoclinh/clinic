@@ -24,26 +24,26 @@ function parseDraftNote(rawNote) {
 }
 
 function validateHeader(payload) {
-    if (!payload.MaKho) throw new Error("Phi?u xu?t ph?i ch?n kho");
-    if (!payload.LoaiXuat) throw new Error("Phi?u xu?t ph?i có lo?i xu?t");
-    if (!payload.MaNhanVien) throw new Error("Thi?u nhân viên th?c hi?n");
-    if (payload.LoaiXuat === "BanChoBN" && !payload.MaBN && !payload.MaDT) throw new Error("Xu?t cho b?nh nhân ph?i ch?n b?nh nhân ho?c don thu?c");
-    if (payload.LoaiXuat === "NoiBo" && !payload.MaKhoa) throw new Error("Xu?t n?i b? ph?i ch?n khoa");
-    if (payload.LoaiXuat === "TraNCC" && !payload.MaNCC) throw new Error("Tr? NCC ph?i ch?n nhà cung c?p");
-    if (payload.LoaiXuat === "Huy" && !payload.LyDo) throw new Error("H?y phi?u ph?i nh?p lý do");
+    if (!payload.MaKho) throw new Error("Phiếu xuất phải chọn kho");
+    if (!payload.LoaiXuat) throw new Error("Phiếu xuất phải có loại xuất");
+    if (!payload.MaNhanVien) throw new Error("Thiếu nhân viên thực hiện");
+    if (payload.LoaiXuat === "BanChoBN" && !payload.MaBN && !payload.MaDT) throw new Error("Xuất cho bệnh nhân phải chọn bệnh nhân hoặc đơn thuốc");
+    if (payload.LoaiXuat === "NoiBo" && !payload.MaKhoa) throw new Error("Xuất nội bộ phải chọn khoa");
+    if (payload.LoaiXuat === "TraNCC" && !payload.MaNCC) throw new Error("Trả NCC phải chọn nhà cung cấp");
+    if (payload.LoaiXuat === "Huy" && !payload.LyDo) throw new Error("Hủy phiếu phải nhập lý do");
 }
 
 function normalizeItems(items = []) {
     if (!Array.isArray(items) || !items.length) {
-        throw new Error("Phi?u xu?t ph?i có ít nh?t 1 dòng thu?c");
+        throw new Error("Phiếu xuất phải có ít nhất 1 dòng thuốc");
     }
 
     return items.map((item) => {
         const soLuong = Math.round(toNumber(item.SoLuong));
 
-        if (!item.MaThuoc) throw new Error("Thi?u mã thu?c trong chi ti?t phi?u");
+        if (!item.MaThuoc) throw new Error("Thiếu mã thuốc trong chi tiết phiếu");
         if (!Number.isInteger(soLuong) || soLuong <= 0) {
-            throw new Error(`S? lu?ng xu?t không h?p l? cho thu?c ${item.TenThuoc || item.MaThuoc}`);
+            throw new Error(`Số lượng xuất không hợp lệ cho thuốc ${item.TenThuoc || item.MaThuoc}`);
         }
 
         return {
@@ -68,20 +68,20 @@ function buildLotWarning(lot) {
         const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
 
         if (diffDays <= 0) {
-            warnings.push({ level: "danger", code: "expired", message: "Lô dã h?t h?n và b? ch?n xu?t" });
+            warnings.push({ level: "danger", code: "expired", message: "Lô đã hết hạn và bị chặn xuất" });
         } else if (diffDays <= NEAR_EXPIRY_DAYS) {
-            warnings.push({ level: "warning", code: "near_expiry", message: `Lô c?n date còn ${diffDays} ngày` });
+            warnings.push({ level: "warning", code: "near_expiry", message: `Lô cận date còn ${diffDays} ngày` });
         }
     }
 
     if (lot.NhietDoBaoQuan) {
-        warnings.push({ level: "info", code: "storage", message: `B?o qu?n: ${lot.NhietDoBaoQuan}` });
+        warnings.push({ level: "info", code: "storage", message: `Bảo quản: ${lot.NhietDoBaoQuan}` });
     }
 
     return warnings;
 }
 
-async function buildAllocationPreview({ MaThuoc, SoLuong, MaKho, connection = db }) {
+async function buildAllocationPreview({ MaThuoc, SoLuong, MaKho, connection = db, strict = false }) {
     const lots = await DispenseModel.getMedicineLots({ MaThuoc, MaKho, connection });
     let remaining = SoLuong;
     const allocations = [];
@@ -114,18 +114,22 @@ async function buildAllocationPreview({ MaThuoc, SoLuong, MaKho, connection = db
     }
 
     if (remaining > 0) {
-        throw new Error(`Không d? t?n d? xu?t thu?c mã ${MaThuoc}`);
+        if (strict) {
+            throw new Error(`Không đủ tồn kho để xuất thuốc mã ${MaThuoc}`);
+        } else {
+            warnings.push({ level: "danger", code: "out_of_stock", message: `Không đủ tồn kho (Thiếu ${remaining})` });
+        }
     }
 
     if (allocations.length > 1) {
-        warnings.push({ level: "info", code: "auto_split", message: `Ðã t? tách ${allocations.length} lô theo FEFO` });
+        warnings.push({ level: "info", code: "auto_split", message: `Đã tự tách ${allocations.length} lô theo FEFO` });
     }
 
     return { lots, allocations, warnings };
 }
 
-async function enrichItem(item, MaKho, connection = db) {
-    const preview = await buildAllocationPreview({ MaThuoc: item.MaThuoc, SoLuong: item.SoLuong, MaKho, connection });
+async function enrichItem(item, MaKho, connection = db, strict = false) {
+    const preview = await buildAllocationPreview({ MaThuoc: item.MaThuoc, SoLuong: item.SoLuong, MaKho, connection, strict });
     const firstLot = preview.allocations[0] || null;
 
     return {
@@ -159,12 +163,12 @@ async function enrichItem(item, MaKho, connection = db) {
 const DispenseService = {
     getBootstrap: async (MaKho) => DispenseModel.getBootstrap(MaKho || null),
     getCatalog: async (filters = {}) => DispenseModel.getCatalog(filters),
-    getMedicinePreview: async ({ MaThuoc, MaKho, SoLuong = 1 }) => enrichItem(normalizeItems([{ MaThuoc, SoLuong }])[0], MaKho || null),
+    getMedicinePreview: async ({ MaThuoc, MaKho, SoLuong = 1 }) => enrichItem(normalizeItems([{ MaThuoc, SoLuong }])[0], MaKho || null, db, false),
     getPendingPrescriptions: async () => DispenseModel.getPendingPrescriptions(),
 
     getPrescriptionDetail: async ({ MaDT, MaKho = null }) => {
         const rows = await DispenseModel.getPrescriptionDetail({ MaDT, MaKho });
-        if (!rows.length) throw new Error("Không tìm th?y don thu?c");
+        if (!rows.length) throw new Error("Không tìm thấy đơn thuốc");
 
         const header = {
             MaDT: rows[0].MaDT,
@@ -184,7 +188,7 @@ const DispenseService = {
                 DonGia: row.GiaBan,
                 DonVi: row.DonViCoBan,
                 LieuDung: row.LieuDung
-            }, MaKho));
+            }, MaKho, db, false));
         }
 
         return { header, items };
@@ -198,15 +202,15 @@ const DispenseService = {
 
     if (payload.MaDT) {
         const prescription = await DispenseModel.getPrescriptionStatus({ MaDT: payload.MaDT });
-        if (!prescription) throw new Error("Khong tim thay don thuoc");
-        if (prescription.TrangThai === "DaXuat") throw new Error("Don thuoc da duoc xuat");
+        if (!prescription) throw new Error("Không tìm thấy đơn thuốc");
+        if (prescription.TrangThai === "DaXuat") throw new Error("Đơn thuốc đã được xuất");
     }
 
     const items = normalizeItems(payload.items);
     const enrichedItems = [];
 
     for (const item of items) {
-        enrichedItems.push(await enrichItem(item, payload.MaKho));
+        enrichedItems.push(await enrichItem(item, payload.MaKho, db, false));
     }
 
     const tongTien = enrichedItems.reduce(
@@ -281,7 +285,7 @@ const DispenseService = {
 },
     getDraftById: async (MaPX) => {
         const draft = await DispenseModel.getDraftHeaderById({ MaPX });
-        if (!draft) throw new Error("Không tìm th?y phi?u xu?t");
+        if (!draft) throw new Error("Không tìm thấy phiếu xuất");
 
         const parsed = parseDraftNote(draft.GhiChu);
         return {
@@ -301,8 +305,8 @@ const DispenseService = {
             await connection.beginTransaction();
 
             const draft = await DispenseModel.getDraftHeaderById({ MaPX, connection, forUpdate: true });
-            if (!draft) throw new Error("Phi?u xu?t không t?n t?i");
-            if (draft.TrangThai !== "Nhap") throw new Error("Phi?u xu?t dã hoàn thành ho?c dã h?y");
+            if (!draft) throw new Error("Phiếu xuất không tồn tại");
+            if (draft.TrangThai !== "Nhap") throw new Error("Phiếu xuất đã hoàn thành hoặc đã hủy");
 
             if (draft.MaDT) {
                 const prescription = await DispenseModel.getPrescriptionStatus({
@@ -310,8 +314,8 @@ const DispenseService = {
                     connection,
                     forUpdate: true
                 });
-                if (!prescription) throw new Error("Khong tim thay don thuoc");
-                if (prescription.TrangThai === "DaXuat") throw new Error("Don thuoc da duoc xuat");
+                if (!prescription) throw new Error("Không tìm thấy đơn thuốc");
+                if (prescription.TrangThai === "DaXuat") throw new Error("Đơn thuốc đã được xuất");
             }
 
             const parsed = parseDraftNote(draft.GhiChu);
@@ -319,7 +323,7 @@ const DispenseService = {
             const completedItems = [];
 
             for (const item of items) {
-                const enriched = await enrichItem(item, draft.MaKho, connection);
+                const enriched = await enrichItem(item, draft.MaKho, connection, true);
 
                for (const allocation of enriched.allocations) {
                 await DispenseModel.insertExportDetail({
@@ -373,7 +377,7 @@ const DispenseService = {
             return {
                 MaPX,
                 SoPhieu: `PX-${String(MaPX).padStart(5, "0")}`,
-                message: "Hoàn thành phi?u xu?t thành công",
+                message: "Hoàn thành phiếu xuất thành công",
                 items: completedItems,
                 TongTien: tongTien
             };

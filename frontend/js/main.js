@@ -18,10 +18,10 @@
 
     const ROLE_HOME = {
         [ROLE.ADMIN]: "index.html",
-        [ROLE.DOCTOR]: "schedule.html",
+        [ROLE.DOCTOR]: "phieukham.html",
         [ROLE.RECEPTIONIST]: "LichKham.html",
         [ROLE.CASHIER]: "pages/invoices.html",
-        [ROLE.PHARMACIST]: "pages/dispense.html",
+        [ROLE.PHARMACIST]: "pages/capphatthuoc.html",
         [ROLE.WAREHOUSE]: "pages/medicines.html"
     };
 
@@ -32,6 +32,28 @@
             href: "pages/patients.html",
             icon: "fa fa-user-injured",
             roles: [ROLE.ADMIN, ROLE.RECEPTIONIST]
+        },
+        {
+            label: "Phiếu khám",
+            href: "phieukham.html",
+            icon: "fa fa-id-card",
+            roles: [ROLE.ADMIN, ROLE.DOCTOR, ROLE.RECEPTIONIST],
+            roleLabels: { [ROLE.DOCTOR]: "Khám bệnh" }
+        },
+        {
+            label: "Đơn thuốc",
+            href: "pages/prescriptions.html",
+            icon: "fa fa-prescription-bottle-alt",
+            roles: [ROLE.DOCTOR]
+        },
+        {
+            label: "Bệnh án",
+            icon: "fa fa-notes-medical",
+            roles: [ROLE.ADMIN, ROLE.DOCTOR],
+            children: [
+                { label: "Danh sách bệnh án", href: "BenhAn.html", roles: [ROLE.ADMIN, ROLE.DOCTOR] },
+                { label: "Tạo bệnh án mới", href: "CreateBenhAn.html", roles: [ROLE.ADMIN, ROLE.DOCTOR] }
+            ]
         },
         {
             label: "Lịch làm việc",
@@ -46,20 +68,10 @@
             roles: [ROLE.ADMIN, ROLE.DOCTOR, ROLE.RECEPTIONIST]
         },
         {
-            label: "Phiếu khám",
-            href: "phieukham.html",
-            icon: "fa fa-ticket-alt",
-            roles: [ROLE.ADMIN, ROLE.DOCTOR, ROLE.RECEPTIONIST],
-            roleLabels: { [ROLE.DOCTOR]: "Bệnh nhân chờ" }
-        },
-        {
-            label: "Bệnh án",
-            icon: "fa fa-table",
-            roles: [ROLE.ADMIN, ROLE.DOCTOR],
-            children: [
-                { label: "Danh sách bệnh án", href: "BenhAn.html", roles: [ROLE.ADMIN, ROLE.DOCTOR] },
-                { label: "Tạo bệnh án mới", href: "CreateBenhAn.html", roles: [ROLE.ADMIN, ROLE.DOCTOR] }
-            ]
+            label: "Cấp phát thuốc",
+            href: "pages/capphatthuoc.html",
+            icon: "fa fa-prescription-bottle-alt",
+            roles: [ROLE.PHARMACIST]
         },
         {
             label: "Thuốc",
@@ -70,12 +82,6 @@
                 { label: "Đơn thuốc", href: "pages/prescriptions.html", roles: [ROLE.ADMIN, ROLE.PHARMACIST] },
                 { label: "Tồn kho thuốc", href: "pages/inventory.html", roles: [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.WAREHOUSE] }
             ]
-        },
-        {
-            label: "Cấp phát thuốc",
-            href: "pages/dispense.html",
-            icon: "fa fa-prescription-bottle-alt",
-            roles: [ROLE.PHARMACIST]
         },
         {
             label: "Quản lý kho",
@@ -108,10 +114,11 @@
         "benhan.html": [ROLE.ADMIN, ROLE.DOCTOR],
         "createbenhan.html": [ROLE.ADMIN, ROLE.DOCTOR],
         "pages/patients.html": [ROLE.ADMIN, ROLE.RECEPTIONIST],
-        "pages/prescriptions.html": [ROLE.ADMIN, ROLE.PHARMACIST],
+        "pages/prescriptions.html": [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.DOCTOR],
         "pages/medicines.html": [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.WAREHOUSE],
         "pages/medicine-detail.html": [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.WAREHOUSE],
         "pages/inventory.html": [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.WAREHOUSE],
+        "pages/capphatthuoc.html": [ROLE.PHARMACIST],
         "pages/dispense.html": [ROLE.ADMIN, ROLE.PHARMACIST, ROLE.WAREHOUSE],
         "pages/tam.html": [ROLE.ADMIN, ROLE.WAREHOUSE],
         "pages/imports.html": [ROLE.ADMIN, ROLE.WAREHOUSE],
@@ -170,16 +177,17 @@
         const children = item.children.filter((child) => canSee(child, role));
         if (!children.length) return "";
         const active = isActive(item) ? " active" : "";
+        const show = isActive(item) ? " show" : "";
         const childHtml = children.map((child) => {
             const childActive = normalizeHref(child.href) === currentPage() ? " active" : "";
             return `<a href="${resolveHref(child.href)}" class="dropdown-item${childActive}">${child.label}</a>`;
         }).join("");
 
         return `<div class="nav-item dropdown">
-            <a href="#" class="nav-link dropdown-toggle${active}" data-bs-toggle="dropdown">
+            <a href="#" class="nav-link dropdown-toggle${active}${show}" data-bs-toggle="dropdown" aria-expanded="${isActive(item)}">
                 <i class="${item.icon} me-2"></i>${item.label}
             </a>
-            <div class="dropdown-menu bg-transparent border-0">${childHtml}</div>
+            <div class="dropdown-menu bg-transparent border-0${show}">${childHtml}</div>
         </div>`;
     }
 
@@ -192,6 +200,16 @@
             .filter((item) => canSee(item, role))
             .map((item) => item.children ? dropdown(item, role) : navLink(item, role))
             .join("");
+
+        setTimeout(() => {
+            const activeEl = nav.querySelector(".nav-link.active, .dropdown-item.active");
+            const sidebar = document.querySelector(".sidebar");
+            if (activeEl && sidebar) {
+                // Tính toán vị trí cuộn cho mượt mà, không dùng scrollIntoView để tránh trang web bị nhảy
+                const topPos = activeEl.offsetTop;
+                sidebar.scrollTop = topPos - sidebar.clientHeight / 2 + 50;
+            }
+        }, 50);
     }
 
     function applyPageAccess() {

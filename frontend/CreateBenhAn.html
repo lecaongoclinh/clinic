@@ -14,7 +14,6 @@
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Icon Font Stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -32,12 +31,15 @@
     <style>
         .exam-ticket-card {
             border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 20px;
             background: #fff;
             transition: all 0.3s ease;
             cursor: pointer;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .exam-ticket-card:hover {
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -50,14 +52,15 @@
         .exam-ticket-info {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
+            flex-grow: 1;
         }
         .patient-info {
             flex: 1;
         }
         .patient-info strong {
             font-size: 16px;
-            color: #111;
+            color: var(--primary);
         }
         .patient-info small {
             display: block;
@@ -239,7 +242,7 @@
                     <div class="col-12">
                         <div class="bg-light rounded p-4">
                             <h5 class="mb-3">Danh sách phiếu khám (Đã xong / Đang khám)</h5>
-                            <div id="examTicketsList" class="list-group">
+                            <div id="examTicketsList" class="row g-3">
                                 <!-- Exam tickets will be inserted here -->
                             </div>
                             <div id="emptyState" class="text-center text-muted py-4">

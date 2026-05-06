@@ -114,7 +114,8 @@ const ticketSelectSql = `
         bs.HoTen AS TenBacSi,
         phong.TenPhong,
         lk.NgayHen,
-        lk.GioHen
+        lk.GioHen,
+        (SELECT COUNT(*) FROM DonThuoc dt JOIN BenhAn ba ON dt.MaBA = ba.MaBA WHERE ba.MaPK = pk.MaPK) > 0 AS DaKeDon
     FROM PhieuKham pk
     JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
     LEFT JOIN LichKham lk ON pk.MaLK = lk.MaLK
@@ -126,7 +127,8 @@ const ticketSelectSql = `
 const mapTicket = (ticket) => ({
     ...ticket,
     LoaiKham: ticket.LoaiKham || (ticket.MaLK ? 'APPOINTMENT' : 'WALK_IN'),
-    TrangThai: normalizeStatus(ticket.TrangThai)
+    TrangThai: normalizeStatus(ticket.TrangThai),
+    DaKeDon: Boolean(ticket.DaKeDon)
 });
 
 const getTicket = async (connection, maPK) => {
@@ -473,11 +475,17 @@ export const createAppointmentTicket = async (req, res) => {
 export const getWaitingTickets = async (req, res) => {
     try {
         await ensureTicketSchema();
-        const [rows] = await pool.query(
-            `${ticketSelectSql}
-             WHERE DATE(pk.NgayKham) = CURDATE()
-             ORDER BY pk.STT ASC, pk.MaPK DESC`
-        );
+        const maBacSi = req.query.maBacSi ? Number(req.query.maBacSi) : null;
+
+        let sql = `${ticketSelectSql} WHERE DATE(pk.NgayKham) = CURDATE()`;
+        const params = [];
+        if (maBacSi) {
+            sql += ' AND pk.MaBacSi = ?';
+            params.push(maBacSi);
+        }
+        sql += ' ORDER BY pk.STT ASC, pk.MaPK DESC';
+
+        const [rows] = await pool.query(sql, params);
         const data = rows.map(mapTicket);
         res.json({ success: true, data, total: data.length });
     } catch (error) {
@@ -541,6 +549,69 @@ export const cancelTicket = async (req, res) => {
         res.status(500).json({ success: false, message: 'Loi server' });
     } finally {
         connection.release();
+    }
+};
+
+/**
+ * PATCH /tickets/:ticketId/done
+ * Bác sĩ đánh dấu phiếu khám đã hoàn thành (DaKham)
+ */
+export const markTicketDone = async (req, res) => {
+    const header = req.headers.authorization || '';
+    const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ success: false, message: 'Chua dang nhap' });
+
+    try { jwt.verify(token, process.env.JWT_SECRET); }
+    catch { return res.status(401).json({ success: false, message: 'Token khong hop le' }); }
+
+    try {
+        await ensureTicketSchema();
+        const { ticketId } = req.params;
+        const [rows] = await pool.query('SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ?', [ticketId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Khong tim thay phieu kham' });
+
+        const current = normalizeStatus(rows[0].TrangThai);
+        if (current === 'DONE') return res.json({ success: true, message: 'Phieu da duoc danh dau xong' });
+        if (current === 'CANCELLED') return res.status(400).json({ success: false, message: 'Phieu da bi huy' });
+
+        await pool.query("UPDATE PhieuKham SET TrangThai = 'DaKham' WHERE MaPK = ?", [ticketId]);
+        const ticket = await getTicket(pool, ticketId);
+        res.json({ success: true, message: 'Da danh dau kham xong', ticket });
+    } catch (error) {
+        console.error('markTicketDone:', error);
+        res.status(500).json({ success: false, message: 'Loi server' });
+    }
+};
+
+/**
+ * PATCH /tickets/:ticketId/start
+ * Bác sĩ bắt đầu khám (ChoKham → DangKham)
+ */
+export const markTicketStart = async (req, res) => {
+    const header = req.headers.authorization || '';
+    const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ success: false, message: 'Chua dang nhap' });
+
+    try { jwt.verify(token, process.env.JWT_SECRET); }
+    catch { return res.status(401).json({ success: false, message: 'Token khong hop le' }); }
+
+    try {
+        await ensureTicketSchema();
+        const { ticketId } = req.params;
+        const [rows] = await pool.query('SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ?', [ticketId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Khong tim thay phieu kham' });
+
+        const current = normalizeStatus(rows[0].TrangThai);
+        if (current === 'IN_PROGRESS') return res.json({ success: true, message: 'Phieu dang trong trang thai kham' });
+        if (current === 'DONE')        return res.status(400).json({ success: false, message: 'Phieu da kham xong' });
+        if (current === 'CANCELLED')   return res.status(400).json({ success: false, message: 'Phieu da bi huy' });
+
+        await pool.query("UPDATE PhieuKham SET TrangThai = 'DangKham' WHERE MaPK = ?", [ticketId]);
+        const ticket = await getTicket(pool, ticketId);
+        res.json({ success: true, message: 'Da bat dau kham', ticket });
+    } catch (error) {
+        console.error('markTicketStart:', error);
+        res.status(500).json({ success: false, message: 'Loi server' });
     }
 };
 

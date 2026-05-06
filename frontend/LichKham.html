@@ -478,8 +478,7 @@
                 btnCreateAppointment.style.display = 'none';
             }
             if (isDoctorRole) {
-                if (selectKhoa) selectKhoa.disabled = true;
-                if (selectBacSi) selectBacSi.disabled = true;
+                // Không disable — bác sĩ vẫn có thể chọn xem lịch của bác sĩ khác
             }
 
             // Load all doctors for create form
@@ -1570,12 +1569,47 @@
                     if (!res.ok) throw new Error("Lỗi lấy danh sách khoa");
                     return res.json();
                 })
-                .then(data => {
+                .then(async data => {
                     if (Array.isArray(data)) {
                         data.forEach(k => {
                             const option = new Option(k.TenChuyenKhoa, k.MaChuyenKhoa);
                             selectKhoa.add(option);
                         });
+                    }
+
+                    // ── Nếu là bác sĩ: tự động chọn khoa + bác sĩ của chính mình ──
+                    if (isDoctorRole && currentUserId) {
+                        try {
+                            const drRes = await fetch('http://localhost:3000/api/doctor');
+                            if (drRes.ok) {
+                                const allDrs = await drRes.json();
+                                const me = Array.isArray(allDrs)
+                                    ? allDrs.find(d => Number(d.MaNV) === currentUserId)
+                                    : null;
+
+                                if (me && me.MaChuyenKhoa) {
+                                    // Set khoa
+                                    selectKhoa.value = String(me.MaChuyenKhoa);
+
+                                    // Load bác sĩ theo khoa rồi set bác sĩ
+                                    const bsRes = await fetch(`http://localhost:3000/api/doctor/doctor-by-specialty?maChuyenKhoa=${me.MaChuyenKhoa}`);
+                                    if (bsRes.ok) {
+                                        const bsList = await bsRes.json();
+                                        selectBacSi.innerHTML = '<option value="">-- Tất cả bác sĩ --</option>';
+                                        if (Array.isArray(bsList)) {
+                                            bsList.forEach(bs => selectBacSi.add(new Option(bs.HoTen, bs.MaNV)));
+                                        }
+                                        selectBacSi.value = String(currentUserId);
+                                    }
+
+                                    // Refetch lịch theo bác sĩ
+                                    calendar.refetchEvents();
+                                    loadPendingAppointments();
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Lỗi load thông tin bác sĩ:', err);
+                        }
                     }
                 })
                 .catch(err => console.error("Lỗi Fetch Khoa:", err));

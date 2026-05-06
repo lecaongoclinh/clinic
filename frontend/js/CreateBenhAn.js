@@ -197,23 +197,25 @@ document.addEventListener('DOMContentLoaded', function () {
             const statusText = ticket.TrangThai === 'DangKham' || ticket.TrangThai === 'InProgress' ? 'Đang khám' : 'Đã khám xong';
 
             const card = document.createElement('div');
-            card.className = 'exam-ticket-card';
+            card.className = 'col-12 col-lg-6';
             card.innerHTML = `
-                <div class="exam-ticket-info">
-                    <div class="patient-info">
-                        <strong>#${escapeHtml(ticket.MaPK)} - ${escapeHtml(ticket.TenBenhNhan)}</strong>
-                        <small>ID: ${escapeHtml(ticket.MaBenhNhan)} | ${formatDate(ticket.NgaySinh)}</small>
-                        <small>Bác sĩ: ${escapeHtml(ticket.TenBacSi || 'Chưa được gán')}</small>
-                        <small>Chuyên khoa: ${escapeHtml(ticket.TenChuyenKhoa || 'N/A')}</small>
-                        <small>Ngày khám: ${formatDate(ticket.NgayKham)}</small>
-                    </div>
-                    <div class="text-end">
-                        <div class="mb-2">
-                            <span class="badge-status ${statusBadgeClass}">${statusText}</span>
+                <div class="exam-ticket-card">
+                    <div class="exam-ticket-info">
+                        <div class="patient-info">
+                            <strong>#${escapeHtml(ticket.MaPK)} - ${escapeHtml(ticket.TenBenhNhan)}</strong>
+                            <small>ID: ${escapeHtml(ticket.MaBenhNhan)} | ${formatDate(ticket.NgaySinh)}</small>
+                            <small>Bác sĩ: ${escapeHtml(ticket.TenBacSi || 'Chưa được gán')}</small>
+                            <small>Chuyên khoa: ${escapeHtml(ticket.TenChuyenKhoa || 'N/A')}</small>
+                            <small>Ngày khám: ${formatDate(ticket.NgayKham)}</small>
                         </div>
-                        <button class="btn btn-sm btn-primary btn-create-record" data-index="${index}">
-                            <i class="fa fa-plus me-1"></i>Tạo Bệnh Án
-                        </button>
+                        <div class="text-end">
+                            <div class="mb-3">
+                                <span class="badge-status ${statusBadgeClass}">${statusText}</span>
+                            </div>
+                            <button class="btn btn-sm btn-primary btn-create-record" data-index="${index}">
+                                <i class="fa fa-plus me-1"></i>Tạo Bệnh Án
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -224,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.btn-create-record').forEach(btn => {
             btn.addEventListener('click', function() {
                 const index = this.dataset.index;
-                openCreateRecordModal(filtered[index]);
+                openCreateRecordModal(tickets[index]);
             });
         });
     }

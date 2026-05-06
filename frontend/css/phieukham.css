@@ -9,17 +9,17 @@
 }
 
 .exam-type-card:hover {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #f8f9fa;
 }
 
 .exam-type-card.selected {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #e7f1ff;
 }
 
 .badge-walk-in {
-    background: #009CFF;
+    background: var(--primary);
     color: white;
     padding: 5px 10px;
     border-radius: 5px;
@@ -64,17 +64,17 @@
 }
 
 .exam-type-card:hover {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #f8f9fa;
 }
 
 .exam-type-card.selected {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #e7f1ff;
 }
 
 .badge-walk-in {
-    background: #009CFF;
+    background: var(--primary);
     color: white;
     padding: 5px 10px;
     border-radius: 5px;
@@ -111,7 +111,7 @@
 .waiting-number {
     width: 60px;
     height: 60px;
-    background: #009CFF;
+    background: var(--primary);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -140,17 +140,17 @@
 }
 
 .exam-type-card:hover {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #f8f9fa;
 }
 
 .exam-type-card.selected {
-    border-color: #009CFF;
+    border-color: var(--primary);
     background: #e7f1ff;
 }
 
 .badge-walk-in {
-    background: #009CFF;
+    background: var(--primary);
     color: white;
     padding: 5px 10px;
     border-radius: 5px;
@@ -187,7 +187,7 @@
 .waiting-number {
     width: 60px;
     height: 60px;
-    background: #009CFF;
+    background: var(--primary);
     color: white;
     border-radius: 50%;
     display: flex;

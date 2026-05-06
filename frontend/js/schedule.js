@@ -51,10 +51,7 @@ function applyScheduleRoleUi() {
         if (formSection) formSection.style.display = 'none';
     }
 
-    if (isDoctorRole) {
-        if (selectKhoa) selectKhoa.disabled = true;
-        if (filterDoctorSelect) filterDoctorSelect.disabled = true;
-    }
+    // Bác sĩ có thể xem lịch của bác sĩ khác — không disable filter
 }
 
 // Shift configuration
@@ -130,7 +127,12 @@ async function loadDoctorsBySpecialty(maChuyenKhoa) {
         if (res.ok) {
             const doctorsList = await res.json();
             doctorsBySpecialty[maChuyenKhoa] = doctorsList;
-            doctors.push(...doctorsList);
+            // Gán thêm MaChuyenKhoa để populateSpecialtyFilter biết khoa của bác sĩ
+            doctorsList.forEach(d => {
+                if (!doctors.find(existing => existing.MaNV === d.MaNV)) {
+                    doctors.push({ ...d, MaChuyenKhoa: maChuyenKhoa });
+                }
+            });
         }
     } catch (error) {
         console.error(`Error loading doctors for specialty ${maChuyenKhoa}:`, error);
@@ -404,7 +406,7 @@ function populateSpecialtyFilter() {
         if (doctor?.MaChuyenKhoa) {
             selectKhoa.value = String(doctor.MaChuyenKhoa);
         }
-        selectKhoa.disabled = true;
+        // Không disable — bác sĩ vẫn có thể chọn xem khoa/bác sĩ khác
     }
 }
 
@@ -427,9 +429,7 @@ function populateDoctorFilter(maChuyenKhoa) {
 
     if (isDoctorRole && currentUserId) {
         filterDoctorSelect.value = String(currentUserId);
-        filterDoctorSelect.disabled = true;
-    } else {
-        filterDoctorSelect.disabled = false;
+        // Không disable — bác sĩ vẫn có thể chọn xem bác sĩ khác
     }
 }
 
@@ -695,6 +695,12 @@ function validateForm() {
     if (!ngayLamViecInput.value) {
         showFieldError('ngayLamViec', 'Vui lòng chọn ngày làm việc');
         isValid = false;
+    } else {
+        const dateObj = new Date(ngayLamViecInput.value);
+        if (dateObj.getDay() !== 1) {
+            showFieldError('ngayLamViec', 'Ngày bắt đầu phải là Thứ 2');
+            isValid = false;
+        }
     }
 
     // Validate at least one shift is selected
@@ -724,38 +730,37 @@ function getSelectedShifts() {
 }
 
 /**
- * Check for room conflicts - room should not have different doctor at same time
+ * Check for conflicts before creating schedules
  */
-async function checkRoomConflict(phongId, bacSiId, startDate, selectedShifts) {
+async function checkAllConflicts(phongId, bacSiId, startDate, selectedShifts) {
     try {
-        // Loop through all doctors to check for conflicts
         for (const doctor of doctors) {
-            if (doctor.MaNV === bacSiId) continue; // Skip same doctor
-
-            // Get schedules for this other doctor
             const res = await fetch(`${API_BASE_URL}/schedules/doctor/${doctor.MaNV}`);
             if (!res.ok) continue;
 
             const result = await res.json();
             const schedules = Array.isArray(result) ? result : (result.data || []);
 
-            // Check if any schedule conflicts
             for (const {day, shift} of selectedShifts) {
                 const dateString = addDaysToDateString(startDate, day);
                 const shiftTimes = shiftsConfig[shift];
 
                 for (const schedule of schedules) {
                     const scheduleDate = normalizeDateString(schedule.NgayLam);
-                    // Check if same room and same date
-                    if (String(schedule.MaPhong) === String(phongId) && scheduleDate === dateString) {
-                        // Check time overlap
+                    
+                    if (scheduleDate === dateString) {
                         const existStart = schedule.GioBatDau.substring(0, 5);
                         const existEnd = schedule.GioKetThuc.substring(0, 5);
                         const newStart = shiftTimes.start;
                         const newEnd = shiftTimes.end;
 
-                        if ((newStart < existEnd && newEnd > existStart)) {
-                            return `Phòng ${schedule.TenPhong} đã được gán cho bác sĩ ${schedule.TenBacSi} vào ${dayLabels[day]} ca này`;
+                        // Check time overlap
+                        if (newStart < existEnd && newEnd > existStart) {
+                            if (doctor.MaNV === bacSiId) {
+                                return `Bác sĩ đã có lịch vào ${dayLabels[day]} ca này (Phòng ${schedule.TenPhong})`;
+                            } else if (String(schedule.MaPhong) === String(phongId)) {
+                                return `Phòng ${schedule.TenPhong} đã được gán cho bác sĩ ${schedule.TenBacSi} vào ${dayLabels[day]} ca này`;
+                            }
                         }
                     }
                 }
@@ -763,7 +768,7 @@ async function checkRoomConflict(phongId, bacSiId, startDate, selectedShifts) {
         }
         return null; // No conflict
     } catch (error) {
-        console.error('Error checking room conflict:', error);
+        console.error('Error checking conflicts:', error);
         return null;
     }
 }
@@ -780,17 +785,17 @@ scheduleForm.addEventListener('submit', async function(e) {
 
     try {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang tạo...';
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
 
         const bacSiId = parseInt(bacSiIdSelect.value);
         const phongId = parseInt(phongKhamIdSelect.value);
         const startDate = ngayLamViecInput.value; 
         const selectedShifts = getSelectedShifts();
 
-        // Check room conflicts
-        const roomConflict = await checkRoomConflict(phongId, bacSiId, startDate, selectedShifts);
-        if (roomConflict) {
-            showAlert(`❌ ${roomConflict}`, 'danger');
+        // Check all conflicts
+        const conflictError = await checkAllConflicts(phongId, bacSiId, startDate, selectedShifts);
+        if (conflictError) {
+            showAlert(`❌ ${conflictError}`, 'danger');
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="fa fa-save me-2"></i>Tạo Lịch Làm Việc';
             return;
@@ -845,7 +850,11 @@ scheduleForm.addEventListener('submit', async function(e) {
             const message = successCount === 1
                 ? '✅ Tạo thành công 1 lịch làm việc!'
                 : `✅ Tạo thành công ${successCount} lịch làm việc!`;
-            document.getElementById('scheduleFormSection').style.display = 'none';
+            const myModalEl = document.getElementById('createScheduleModal');
+            if (myModalEl) {
+                const myModal = bootstrap.Modal.getInstance(myModalEl) || new bootstrap.Modal(myModalEl);
+                myModal.hide();
+            }
             showAlert(message, 'success');
         }
 
