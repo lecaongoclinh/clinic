@@ -12,9 +12,9 @@ const patientRoutes = express.Router();
 patientRoutes.get('/search', patientController.searchByName);
 
 // Lấy thông tin bệnh nhân
-patientRoutes.get('/:maBN', patientController.getById);
+router.get('/:maBN', patientController.getById);
 
-// Tạo bệnh nhân mới
-patientRoutes.post('', patientController.create);
+// Tạo bệnh nhân
+router.post('/', patientController.create);
 
-export default patientRoutes;
+export default router;

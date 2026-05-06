@@ -1,91 +1,59 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from "express";
+import cors from "cors";
+import morgan from "morgan";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import ticketRoutes from './routes/ticketRoutes.js';
+import ticketRoutes from "./routes/ticketRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
+import appointmentRoutes from "./routes/appointmentsRoutes.js";
+import quyDoiRoutes from "./routes/quyDoiRoutes.js";
+import khoRoutes from "./routes/khoRoutes.js";
+import servicesRoutes from "./routes/servicesRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, '../../frontend');
-// import express from "express";
-// import cors from "cors";
-import swaggerUi from "swagger-ui-express";
-import fs from "fs";
-// import path from "path";
-import authRoutes from "./routes/authRoutes.js";
-import appointmentRoutes from "./routes/appointmentsRoutes.js";
-
-import medicinesRoutes from "./routes/medicinesRoutes.js";
-import suppliersRoutes from "./routes/suppliersRoutes.js";
-import importsRoutes from "./routes/importsRoutes.js";
-import dispenseRoutes from "./routes/dispenseRoutes.js";
-
-import prescriptionRouters from "./routes/prescriptionRoutes.js";
+const frontendPath = path.join(__dirname, "../../frontend");
 
 const app = express();
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-app.use(morgan('dev'));
+app.use(morgan("dev"));
 app.use(express.static(frontendPath));
 
-// Routes API
-app.use('/api', ticketRoutes);
-
-// Routes cho trang frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'index.html'));
+app.get("/", (req, res) => {
+    res.sendFile(path.join(frontendPath, "index.html"));
 });
 
-app.get('/phieukham', (req, res) => {
-    res.sendFile(path.join(frontendPath, 'phieukham.html'));
+app.get("/phieukham", (req, res) => {
+    res.sendFile(path.join(frontendPath, "phieukham.html"));
 });
-// routes
-app.use('/api/auth', authRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/patients', (await import('./routes/patientRoutes.js')).default);
-app.use('/api/specialty', (await import('./routes/specialtyRoutes.js')).default);
-app.use('/api/doctor', (await import('./routes/doctorRoutes.js')).default);
-app.use('/api/schedules', (await import('./routes/scheduleRoutes.js')).default);
-app.use('/api/medical-records', (await import('./routes/medicalRecordsRoutes.js')).default);
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).send('Không tìm thấy trang');
-});
-/* ===== routes bạn thêm ===== */
-
-app.use('/api/medicines', (await import('./routes/medicinesRoutes.js')).default);
-
-
-app.use('/api/suppliers', (await import('./routes/suppliersRoutes.js')).default);
-
-
-app.use("/api/imports", (await import('./routes/importsRoutes.js')).default);
-
-app.use("/api/dispense", (await import('./routes/dispenseRoutes.js')).default);
-app.use("/api/batches", (await import('./routes/batchRoutes.js')).default);
-app.use("/api/prescriptions", (await import('./routes/prescriptionRoutes.js')).default);
-
-import quyDoiRoutes from "./routes/quyDoiRoutes.js";
-
+app.use("/api", ticketRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/patients", (await import("./routes/patientRoutes.js")).default);
+app.use("/api/specialty", (await import("./routes/specialtyRoutes.js")).default);
+app.use("/api/doctor", (await import("./routes/doctorRoutes.js")).default);
+app.use("/api/schedules", (await import("./routes/scheduleRoutes.js")).default);
+app.use("/api/medical-records", (await import("./routes/medicalRecordsRoutes.js")).default);
+app.use("/api/medicines", (await import("./routes/medicinesRoutes.js")).default);
+app.use("/api/suppliers", (await import("./routes/suppliersRoutes.js")).default);
+app.use("/api/imports", (await import("./routes/importsRoutes.js")).default);
+app.use("/api/dispense", (await import("./routes/dispenseRoutes.js")).default);
+app.use("/api/batches", (await import("./routes/batchRoutes.js")).default);
+app.use("/api/prescriptions", (await import("./routes/prescriptionRoutes.js")).default);
 app.use("/api/quy-doi", quyDoiRoutes);
-
-import khoRoutes from "./routes/khoRoutes.js";
-
 app.use("/api/kho", khoRoutes);
-app.use("/api/inventory", (await import('./routes/inventoryRouter.js')).default);
-
-import servicesRoutes from "./routes/servicesRoutes.js";
-
+app.use("/api/inventory", (await import("./routes/inventoryRouter.js")).default);
 app.use("/api/services", servicesRoutes);
 app.use("/api/invoices", (await import("./routes/invoicesRoutes.js")).default);
-
-import dashboardRoutes from "./routes/dashboardRoutes.js";
-
-
 app.use("/api/dashboard", dashboardRoutes);
+
+app.use((req, res) => {
+    res.status(404).send("Khong tim thay trang");
+});
+
 export default app;
