@@ -76,7 +76,7 @@ async function loadWaitingList() {
         });
         if (res.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = '/signin';
+            window.location.href = '/frontend/signin';
             return;
         }
         const data = await res.json();

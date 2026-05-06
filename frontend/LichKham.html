@@ -377,9 +377,12 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
+    <!-- <script src="js/schedule.js"></script> -->
      <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <script src="https://unpkg.com/tippy.js@6"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Kiểm tra token
@@ -1271,8 +1274,8 @@
                             console.error("Lỗi Fetch Lịch:", err);
                             failureCallback(err);
                         });
-                }
-            });
+                },
+            ),
 
             calendar.render();
 
@@ -1297,9 +1300,9 @@
                 })
                 .catch(err => console.error("Lỗi Fetch Khoa:", err));
 
-            // Load all doctors and pending appointments
-            loadAllDoctors();
-            loadPendingAppointments();
+                // Load all doctors and pending appointments
+                loadAllDoctors();
+                loadPendingAppointments();
 
             // 3. Sự kiện khi chọn Khoa
             selectKhoa.addEventListener('change', async function() {
@@ -1341,13 +1344,9 @@
                 calendar.refetchEvents();
                 loadPendingAppointments();
             });
-        });
-    
-    </script>
-    <script>
         
     </script>
-   
+
 </body>
 
 </html>

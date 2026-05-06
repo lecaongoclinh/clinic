@@ -32,7 +32,13 @@ CREATE TABLE ChuyenKhoa (
     MaChuyenKhoa INT AUTO_INCREMENT PRIMARY KEY,
     TenChuyenKhoa VARCHAR(100) NOT NULL
 );
-
+INSERT INTO ChuyenKhoa (MaChuyenKhoa, TenChuyenKhoa) VALUES 
+(1, 'Khoa Nội Tổng Quát'),
+(2, 'Nhi Khoa'),
+(3, 'Sản Phụ Khoa'),
+(4, 'Da Liễu'),
+(5, 'Tim Mạch'),
+(6, 'Khoa Tai Mũi Họng');
 -- 3. Bảng Nhân Viên
 CREATE TABLE NhanVien (
     MaNV INT AUTO_INCREMENT PRIMARY KEY,
@@ -226,6 +232,7 @@ ADD COLUMN GioTao TIME;
 CREATE TABLE LoThuoc (
     MaLo INT AUTO_INCREMENT PRIMARY KEY,
     MaThuoc INT,
+    MaCTPN INT,
     SoLo VARCHAR(50),
     HanSuDung DATE,
     GiaNhap DECIMAL(10,2),
@@ -412,11 +419,6 @@ ALTER TABLE LoThuoc
 ADD CONSTRAINT chk_trangthai_lo 
 CHECK (TrangThai IN ('ConHan','SapHetHan','HetHan','DaHuy'));
 
---- hiện tại đang null, sau khi thêm dữ liệu vào mới dùng câu này---
-ALTER TABLE LoThuoc
-MODIFY MaCTPN INT NOT NULL;
-
-
 ALTER TABLE DichVu
 ADD COLUMN MaDV VARCHAR(20) UNIQUE NULL,
 ADD COLUMN MoTa TEXT NULL,
@@ -477,7 +479,7 @@ ADD COLUMN MauNhan VARCHAR(20) NULL,
 ADD COLUMN MaChuyenKhoa INT NULL,
 ADD FOREIGN KEY (MaChuyenKhoa) REFERENCES ChuyenKhoa(MaChuyenKhoa);
 
-CREATE TABLE CauHinhDichVu (
+CREATE TABLE chuyenkhoaCauHinhDichVu (
     MaCauHinh INT AUTO_INCREMENT PRIMARY KEY,
     MaDichVu INT NOT NULL UNIQUE,
     ThoiLuongPhut INT DEFAULT 15,
@@ -537,7 +539,7 @@ INSERT INTO ChiTietGoiDichVu (MaGoi, MaDichVu, SoLuong, GhiChu) VALUES
 (3, 2, 1, 'Xét nghiệm máu'),
 (3, 5, 1, 'Kiểm tra đường huyết');
 
-INSERT INTO CauHinhDichVu (
+INSERT INTO chuyenkhoaCauHinhDichVu (
     MaDichVu,
     ThoiLuongPhut,
     CanDatTruoc,
@@ -550,7 +552,7 @@ INSERT INTO CauHinhDichVu (
 (1, 20, 1, 0, 1, 1, '#0ea5e9', 'Nên đến trước 15 phút để làm thủ tục'),
 (2, 15, 1, 1, 1, 2, '#f97316', 'Nhịn ăn 8 giờ trước khi lấy máu nếu có chỉ định'),
 (3, 25, 1, 1, 1, 3, '#8b5cf6', 'Uống đủ nước trước khi siêu âm nếu bác sĩ yêu cầu'),
-(4, 20, 1, 0, 6, 4, '#2563eb', 'Không dùng thuốc xịt mũi trước khi khám nếu không cần thiết'),
+(4, 20, 1, 0, 1, 4, '#2563eb', 'Không dùng thuốc xịt mũi trước khi khám nếu không cần thiết'),
 (5, 10, 0, 0, 1, 5, '#16a34a', 'Có thể thực hiện nhanh trong ngày');
 -- 2. Bổ sung bảng HoaDon
 ALTER TABLE HoaDon
@@ -563,13 +565,6 @@ ADD FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX);
 ALTER TABLE HoaDon
 MODIFY NgayThanhToan TIMESTAMP NULL;
 
--- 3. Bổ sung bảng ChiTietHoaDon
-ALTER TABLE ChiTietHoaDon
-ADD SoLuong INT NOT NULL DEFAULT 1 AFTER MaThuoc,
-ADD DonGia DECIMAL(10,2) NOT NULL DEFAULT 0 AFTER SoLuong,
-ADD LoaiMuc ENUM('DichVu','Thuoc') NOT NULL DEFAULT 'DichVu' AFTER DonGia,
-ADD GhiChu TEXT NULL AFTER LoaiMuc;
-
 ALTER TABLE HoaDon
 MODIFY TrangThai ENUM('ChuaThanhToan','DaThanhToan','QuaHan','Huy') DEFAULT 'ChuaThanhToan';
 
@@ -578,20 +573,11 @@ ADD LoaiMuc ENUM('DichVu','Thuoc') DEFAULT 'DichVu',
 ADD SoLuong INT DEFAULT 1,
 ADD DonGia DECIMAL(12,2) DEFAULT 0,
 ADD ThanhTien DECIMAL(12,2) DEFAULT 0,
-ADD DienGiai VARCHAR(255) NULL;
+ADD DienGiai VARCHAR(255) NULL; 
 
 ALTER TABLE ChiTietHoaDon
 ADD MaPX INT NULL,
 ADD FOREIGN KEY (MaPX) REFERENCES PhieuXuatThuoc(MaPX);
-
-ALTER TABLE HoaDon
-ADD MaHoaDon VARCHAR(30) UNIQUE NULL,
-ADD NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-ADD TongTien DECIMAL(12,2) DEFAULT 0,
-ADD GiamGia DECIMAL(12,2) DEFAULT 0,
-ADD ThanhTienCuoi DECIMAL(12,2) DEFAULT 0,
-ADD HanThanhToan DATE NULL,
-ADD GhiChu TEXT NULL;
 
 
 INSERT INTO HoaDon
@@ -1096,3 +1082,7 @@ INSERT INTO BenhNhan (HoTen, NgaySinh, GioiTinh, DiaChi, SoDienThoai, Email) VAL
 ('Trần Thị Bình', '1988-10-20', 'Nu', '456 Đường Nguyễn Huệ, Quận Hải Châu, Đà Nẵng', '0912987654', 'binhtran@gmail.com'),
 
 ('Lê Hoàng Long', '2002-02-02', 'Nam', '789 Đường Hùng Vương, Ba Đình, Hà Nội', '0988000111', 'longlh@gmail.com');
+
+--- hiện tại đang null, sau khi thêm dữ liệu vào mới dùng câu này---
+-- ALTER TABLE LoThuoc
+-- MODIFY MaCTPN INT NOT NULL;
