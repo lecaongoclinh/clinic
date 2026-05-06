@@ -198,6 +198,24 @@
     background: #FFFFFF;
 }
 
+.sidebar .navbar > .d-flex.align-items-center {
+    margin-left: 12px !important;
+    margin-right: 0 !important;
+    width: calc(100% - 12px);
+}
+
+.sidebar .navbar > .d-flex.align-items-center .ms-3 {
+    margin-left: 10px !important;
+    min-width: 0;
+}
+
+.sidebar .navbar > .d-flex.align-items-center h6 {
+    overflow: hidden;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .sidebar .navbar .navbar-brand,
 .sidebar .navbar h6,
 .sidebar .navbar .ms-3,

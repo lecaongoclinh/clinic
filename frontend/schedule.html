@@ -64,6 +64,15 @@
             box-shadow: 0 4px 12px rgba(0, 156, 255, 0.4);
         }
 
+        .schedule-list-header {
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .schedule-list-header .btn-schedule {
+            white-space: nowrap;
+        }
+
         .alert-custom {
             border-radius: 8px;
             border: none;
@@ -422,15 +431,6 @@
                 <!-- Alert Messages -->
                 <div id="alertContainer"></div>
 
-                <!-- Create Schedule Button -->
-                <div class="row mb-4">
-                    <div class="col-lg-8 mx-auto align-items-center d-flex justify-content-between">
-                        <button type="button" class="btn btn-schedule btn-primary mb-3" id="toggleFormBtn">
-                            <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
-                        </button>
-                    </div>
-                </div>
-
                 <!-- Create Schedule Section -->
                 <div class="row mb-4" id="scheduleFormSection" style="display: none;">
                     <div class="col-lg-8 mx-auto">
@@ -560,12 +560,14 @@
                     <div class="col-12">
                     
                         <div class="bg-light rounded p-4 mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <h5>
+                            <div class="schedule-list-header d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="mb-0">
                                     <i class="fa fa-list me-2"></i>Danh Sách Lịch Làm Việc
                                 </h5>
 
-                               
+                                <button type="button" class="btn btn-schedule btn-primary" id="toggleFormBtn">
+                                    <i class="fa fa-plus-circle me-2"></i>Tạo Lịch Làm Việc
+                                </button>
                             </div>
                                                         
                             <!-- Loading Spinner -->

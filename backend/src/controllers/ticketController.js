@@ -149,9 +149,14 @@ const getTicket = async (connection, maPK) => {
 
 export const searchPatients = async (req, res) => {
     try {
-        await ensurePatientSchema();
-        const { keyword = '' } = req.query;
-        if (keyword.trim().length < 6) {
+        const rawKeyword = req.query.keyword || req.query.tenBN || '';
+        const keyword = String(rawKeyword).trim();
+        const shouldReturnArray = !req.query.keyword && req.query.tenBN !== undefined;
+        
+        if (!keyword || keyword.length < 2) {
+            if (shouldReturnArray) {
+                return res.json([]);
+            }
             return res.json({ success: true, data: [] });
         }
 
@@ -164,7 +169,14 @@ export const searchPatients = async (req, res) => {
             [`%${keyword.trim()}%`]
         );
 
-        res.json({ success: true, data: rows });
+        if (shouldReturnArray) {
+            return res.json(rows);
+        }
+
+        res.json({
+            success: true,
+            data: rows
+        });
     } catch (error) {
         console.error('searchPatients:', error);
         res.status(500).json({ success: false, message: 'Loi server' });

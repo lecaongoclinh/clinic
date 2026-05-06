@@ -7,6 +7,7 @@ const Appointment = {
             SELECT 
                 lk.MaLK as id,
                 lk.MaBN,
+                lk.MaBacSi,
                 bn.HoTen as title,
                 CONCAT(lk.NgayHen, 'T', lk.GioHen) as start,
                 lk.LyDoKham,
@@ -37,6 +38,23 @@ const Appointment = {
         const [rows] = await db.execute(query, params);
         return rows;
     },
+
+    // Kiểm tra bác sĩ có lịch làm việc tại thời điểm hẹn không
+    getDoctorWorkingSchedule: async (maBacSi, ngayHen, gioHen) => {
+        const query = `
+            SELECT MaLich, MaBacSi, MaPhong, NgayLam, GioBatDau, GioKetThuc
+            FROM LichLamViecBacSi
+            WHERE MaBacSi = ?
+            AND DATE(NgayLam) = DATE(?)
+            AND ? >= GioBatDau
+            AND ? < GioKetThuc
+            ORDER BY GioBatDau ASC
+            LIMIT 1
+        `;
+        const [rows] = await db.execute(query, [maBacSi, ngayHen, gioHen, gioHen]);
+        return rows.length > 0 ? rows[0] : null;
+    },
+
     // Tạo lịch khám mới
     createAppointment: async (maBN, maBacSi, ngayHen, gioHen, lyDoKham) => {
         const query = `

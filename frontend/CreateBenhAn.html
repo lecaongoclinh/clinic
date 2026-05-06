@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
     <meta charset="utf-8">
-    <title>CLINIC - Quản lý Bệnh Án</title>
+    <title>CLINIC - Tạo Bệnh Án</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="" name="keywords">
     <meta content="" name="description">
@@ -29,6 +29,62 @@
 
     <!-- Template Stylesheet -->
     <link href="css/style.css" rel="stylesheet">
+    <style>
+        .exam-ticket-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #fff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .exam-ticket-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-color: #3659f4;
+        }
+        .exam-ticket-card.selected {
+            background: #e7f1ff;
+            border-color: #3659f4;
+        }
+        .exam-ticket-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .patient-info {
+            flex: 1;
+        }
+        .patient-info strong {
+            font-size: 16px;
+            color: #111;
+        }
+        .patient-info small {
+            display: block;
+            color: #666;
+            margin-top: 4px;
+        }
+        .badge-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-done {
+            background: #d4edda;
+            color: #155724;
+        }
+        .badge-ongoing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .btn-create-record {
+            padding: 6px 12px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+    </style>
 </head>
 
 <body>
@@ -72,8 +128,8 @@
                             <i class="fa fa-table me-2"></i>Bệnh án
                         </a>
                         <div class="dropdown-menu bg-transparent border-0">
-                            <a href="BenhAn.html" class="dropdown-item active">Danh sách bệnh án</a>
-                            <a href="CreateBenhAn.html" class="dropdown-item">Tạo bệnh án mới</a>
+                            <a href="BenhAn.html" class="dropdown-item">Danh sách bệnh án</a>
+                            <a href="CreateBenhAn.html" class="dropdown-item active">Tạo bệnh án mới</a>
                         </div>
                     </div>
 
@@ -148,92 +204,50 @@
                     <!-- Filter Section -->
                     <div class="col-12">
                         <div class="bg-light rounded p-4">
-                            <h5 class="mb-4">Quản lý Bệnh Án</h5>
-                            <div class="row mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Tên bệnh nhân</label>
-                                    <input type="text" class="form-control" id="tenBNInput" placeholder="Nhập tên bệnh nhân...">
-                                </div>
+                            <h5 class="mb-4">Bộ lọc phiếu khám</h5>
+                            <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="form-label">Chuyên khoa</label>
-                                    <select class="form-select" id="chuyenKhoaSelect">
+                                    <select class="form-select" id="specialtyFilter">
                                         <option value="">-- Tất cả chuyên khoa --</option>
                                     </select>
                                 </div>
-                                <div class="col-md-2">
-                                    <label class="form-label">Hiển thị</label>
-                                    <select class="form-select" id="pageLimitSelect">
-                                        <option value="5">5</option>
-                                        <option value="10" selected>10</option>
-                                        <option value="20">20</option>
-                                        <option value="50">50</option>
+                                <div class="col-md-3">
+                                    <label class="form-label">Bác sĩ</label>
+                                    <select class="form-select" id="doctorFilter">
+                                        <option value="">-- Tất cả bác sĩ --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">
+                                    <label class="form-label">Tìm bệnh nhân</label>
+                                    <input type="text" class="form-control" id="patientSearchInput" placeholder="Tên hoặc ID...">
+                                </div>
+                                <div class="col-md-3">
                                     <label class="form-label">&nbsp;</label>
-                                    <button class="btn btn-primary w-100" id="btnSearch">
-                                        <i class="fa fa-search me-2"></i>Tìm kiếm
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label class="form-label">Từ ngày</label>
-                                    <input type="date" class="form-control" id="fromDateInput">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Đến ngày</label>
-                                    <input type="date" class="form-control" id="toDateInput">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">&nbsp;</label>
-                                    <button class="btn btn-secondary w-100" id="btnReset">
-                                        <i class="fa fa-redo me-2"></i>Xóa lọc
+                                    <button class="btn btn-primary w-100" id="btnFilter">
+                                        <i class="fa fa-search me-2"></i>Lọc
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Patient List -->
+                    <!-- Exam Tickets List -->
                     <div class="col-12">
                         <div class="bg-light rounded p-4">
-                            <h5 class="mb-3">Danh sách bệnh nhân đã khám</h5>
-                            <div class="table-responsive">
-                                <table class="table table-striped" id="patientTable">
-                                    <thead>
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Tên bệnh nhân</th>
-                                            <th>Ngày sinh</th>
-                                            <th>Giới tính</th>
-                                            <th>Số điện thoại</th>
-                                            <th>Số lần khám</th>
-                                            <th>Lần khám gần nhất</th>
-                                            <th>Thao tác</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="patientTableBody">
-                                    </tbody>
-                                </table>
+                            <h5 class="mb-3">Danh sách phiếu khám (Đã xong / Đang khám)</h5>
+                            <div id="examTicketsList" class="list-group">
+                                <!-- Exam tickets will be inserted here -->
                             </div>
-                            <!-- Pagination -->
-                            <nav aria-label="Page navigation" class="mt-4">
-                                <ul class="pagination justify-content-center" id="paginationControl">
-                                    <!-- Pagination buttons will be inserted here -->
-                                </ul>
-                            </nav>
-                            <div class="text-center text-muted mt-2">
-                                <small>Trang <span id="currentPageInfo">1</span> - Tổng: <span id="totalRecordsInfo">0</span> bệnh nhân</small>
+                            <div id="emptyState" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
+                                <p>Không có phiếu khám nào</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <!-- Main Content End -->
-
-            <!-- Footer -->
-            <!-- Footer End -->
         </div>
         <!-- Content End -->
 
@@ -241,114 +255,60 @@
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
     </div>
 
-    <!-- Modal Xem Chi Tiết Bệnh Án -->
-    <div class="modal fade" id="medicalDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Danh Sách Bệnh Án</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6><strong>Thông tin bệnh nhân:</strong></h6>
-                            <p id="patientNameDetail"></p>
-                            <p id="patientDOBDetail"></p>
-                            <p id="patientPhoneDetail"></p>
-                            <p id="patientAddressDetail"></p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><strong>Tổng hợp:</strong></h6>
-                            <p id="totalVisitsDetail"></p>
-                            <p id="lastVisitDetail"></p>
-                        </div>
-                    </div>
-
-                    <h6 class="mb-3"><strong>Lịch sử khám:</strong></h6>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-sm" id="medicalHistoryTable">
-                            <thead>
-                                <tr>
-                                    <th>Ngày khám</th>
-                                    <th>Bác sĩ</th>
-                                    <th>Chuyên khoa</th>
-                                    <th>Triệu chứng</th>
-                                    <th>Chẩn đoán</th>
-                                    <th>Thao tác</th>
-                                </tr>
-                            </thead>
-                            <tbody id="medicalHistoryBody">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Chi Tiết Bệnh Án (View/Edit) -->
-    <div class="modal fade" id="recordDetailModal" tabindex="-1">
+    <!-- Modal Tạo Bệnh Án -->
+    <div class="modal fade" id="createRecordModal" tabindex="-1" size="lg">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Chi Tiết Bệnh Án</h5>
+                    <h5 class="modal-title">Tạo Bệnh Án</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <input type="hidden" id="recordMaBA">
-                    <input type="hidden" id="recordMaBacSi">
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Bệnh nhân:</strong></label>
-                        <p id="recordPatientName"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Bác sĩ:</strong></label>
-                        <p id="recordDoctorName"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Chuyên khoa:</strong></label>
-                        <p id="recordSpecialty"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label"><strong>Ngày khám:</strong></label>
-                        <p id="recordVisitDate"></p>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Triệu chứng</label>
-                        <textarea class="form-control" id="recordTrieuChung" rows="3" readonly></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Chẩn đoán</label>
-                        <textarea class="form-control" id="recordChuanDoan" rows="3" readonly></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ghi chú</label>
-                        <textarea class="form-control" id="recordGhiChu" rows="3" readonly></textarea>
-                    </div>
-
-                    <!-- Invoice Section -->
-                    <div id="invoiceSection" class="mb-3" style="display: none;">
-                        <h6 class="mb-2"><strong>Thông tin thanh toán:</strong></h6>
-                        <div class="alert alert-info">
-                            <p><strong>Tổng tiền:</strong> <span id="recordTotalAmount">0</span> VND</p>
-                            <p><strong>Trạng thái:</strong> <span id="recordPaymentStatus"></span></p>
-                            <p><strong>Phương thức:</strong> <span id="recordPaymentMethod"></span></p>
+                    <!-- Patient Info -->
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Bệnh nhân:</strong> <span id="modalPatientName">-</span></p>
+                                <p class="mb-1"><strong>Ngày sinh:</strong> <span id="modalPatientDOB">-</span></p>
+                                <p class="mb-0"><strong>Giới tính:</strong> <span id="modalPatientGender">-</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <p class="mb-1"><strong>Bác sĩ:</strong> <span id="modalDoctorName">-</span></p>
+                                <p class="mb-1"><strong>Chuyên khoa:</strong> <span id="modalSpecialty">-</span></p>
+                                <p class="mb-0"><strong>Ngày khám:</strong> <span id="modalVisitDate">-</span></p>
+                            </div>
                         </div>
                     </div>
+
+                    <form id="createRecordForm">
+                        <input type="hidden" id="modalMaPK">
+                        <input type="hidden" id="modalMaBacSi">
+                        <input type="hidden" id="modalMaBN">
+
+                        <div class="mb-3">
+                            <label class="form-label">Triệu chứng <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="modalTrieuChung" rows="3" required></textarea>
+                            <small class="text-muted">Mô tả các triệu chứng bệnh nhân</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Chẩn đoán <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="modalChuanDoan" rows="3" required></textarea>
+                            <small class="text-muted">Kết quả chẩn đoán của bác sĩ</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú điều trị</label>
+                            <textarea class="form-control" id="modalGhiChu" rows="2"></textarea>
+                            <small class="text-muted">Hướng dẫn điều trị, liệu pháp, v.v.</small>
+                        </div>
+                    </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-warning" id="btnEditRecord">
-                        <i class="fa fa-edit me-1"></i>Sửa
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveCreateRecord">
+                        <i class="fa fa-save me-1"></i>Lưu Bệnh Án
                     </button>
-                    <button type="button" class="btn btn-outline-secondary d-none" id="btnCancelEditRecord">Hủy</button>
-                    <button type="button" class="btn btn-primary d-none" id="btnSaveRecord">
-                        <i class="fa fa-save me-1"></i>Cập nhật
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                 </div>
             </div>
         </div>
@@ -367,7 +327,7 @@
 
     <!-- Template Javascript -->
     <script src="js/main.js"></script>
-    <script src="js/BenhAn_list.js"></script>
+    <script src="js/CreateBenhAn.js"></script>
 </body>
 
 </html>

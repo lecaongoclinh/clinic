@@ -4,9 +4,9 @@ const patientController = {
     // Tìm kiếm bệnh nhân
     searchByName: async (req, res) => {
         try {
-            const { tenBN } = req.query;
+            const tenBN = String(req.query.tenBN || req.query.keyword || '').trim();
             
-            if (!tenBN || tenBN.trim() === '') {
+            if (!tenBN) {
                 return res.status(400).json({ message: 'Vui lòng nhập tên bệnh nhân' });
             }
 

@@ -12,6 +12,7 @@ const appointmentsService = {
 
     createAppointment: async (maBN, maBacSi, ngayHen, gioHen, lyDoKham) => {
         try {
+            await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
             const appointmentId = await Appointment.createAppointment(maBN, maBacSi, ngayHen, gioHen, lyDoKham);
             return appointmentId;
         } catch (error) {
@@ -21,6 +22,7 @@ const appointmentsService = {
 
     updateAppointment: async (maLK, maBN, maBacSi, ngayHen, gioHen, lyDoKham, trangThai) => {
         try {
+            await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
             const success = await Appointment.updateAppointment(maLK, maBN, maBacSi, ngayHen, gioHen, lyDoKham, trangThai);
             return success;
         } catch (error) {
@@ -35,6 +37,15 @@ const appointmentsService = {
         } catch (error) {
             throw new Error(error.message);
         }
+    },
+
+    validateDoctorWorkingTime: async (maBacSi, ngayHen, gioHen) => {
+        const workingSchedule = await Appointment.getDoctorWorkingSchedule(maBacSi, ngayHen, gioHen);
+        if (!workingSchedule) {
+            throw new Error('Giờ hẹn không nằm trong lịch làm việc của bác sĩ đã chọn');
+        }
+
+        return workingSchedule;
     }
 }
 export default appointmentsService;

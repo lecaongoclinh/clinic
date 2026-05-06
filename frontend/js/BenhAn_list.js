@@ -25,20 +25,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const currentPageInfo = document.getElementById('currentPageInfo');
     const totalRecordsInfo = document.getElementById('totalRecordsInfo');
 
-    const createDoctorIdInput = document.getElementById('createDoctorIdInput');
-    const ticketDateInput = document.getElementById('ticketDateInput');
-    const ticketPatientSearchInput = document.getElementById('ticketPatientSearchInput');
-    const examTicketSelect = document.getElementById('examTicketSelect');
-    const selectedTicketInfo = document.getElementById('selectedTicketInfo');
-    const createTrieuChungInput = document.getElementById('createTrieuChungInput');
-    const createChuanDoanInput = document.getElementById('createChuanDoanInput');
-    const createGhiChuInput = document.getElementById('createGhiChuInput');
-    const btnRefreshTickets = document.getElementById('btnRefreshTickets');
-    const btnClearCreateRecord = document.getElementById('btnClearCreateRecord');
-    const btnSaveCreateRecord = document.getElementById('btnSaveCreateRecord');
-
-    const recordMaBAInput = document.getElementById('recordMaBA');
-    const recordMaBacSiInput = document.getElementById('recordMaBacSi');
     const recordTrieuChung = document.getElementById('recordTrieuChung');
     const recordChuanDoan = document.getElementById('recordChuanDoan');
     const recordGhiChu = document.getElementById('recordGhiChu');
@@ -53,34 +39,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     let totalRecords = 0;
     let pageLimit = parseInt(pageLimitSelect.value, 10) || 10;
-    let eligibleTickets = [];
     let currentRecordSnapshot = null;
-    let currentHistoryPatientId = null;
-
-    function parseJwtPayload(jwt) {
-        try {
-            const payload = jwt.split('.')[1];
-            if (!payload) return null;
-            return JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
-        } catch (error) {
-            return null;
-        }
-    }
-
-    function getCurrentDoctorId() {
-        const storedId = localStorage.getItem('maNV') || localStorage.getItem('MaNV');
-        if (storedId) return storedId;
-
-        try {
-            const user = JSON.parse(localStorage.getItem('user') || 'null');
-            if (user?.MaNV) return user.MaNV;
-            if (user?.id) return user.id;
-        } catch (error) {
-            // Ignore malformed localStorage data.
-        }
-
-        return parseJwtPayload(token)?.id || '';
-    }
 
     function authHeaders(hasBody = false) {
         const headers = { Authorization: `Bearer ${token}` };
@@ -132,18 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const date = new Date(value);
         return Number.isNaN(date.getTime()) ? text : date.toLocaleDateString('vi-VN');
-    }
-
-    function formatTime(value) {
-        if (!value) return '';
-        return String(value).slice(0, 5);
-    }
-
-    function todayIso() {
-        const now = new Date();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        return `${now.getFullYear()}-${month}-${day}`;
     }
 
     function buildPatientQueryParams(page = 1) {
@@ -271,133 +218,8 @@ document.addEventListener('DOMContentLoaded', function () {
         totalRecordsInfo.textContent = totalRecords;
     }
 
-    async function loadEligibleTickets() {
-        try {
-            const params = new URLSearchParams();
-            const doctorId = createDoctorIdInput.value.trim();
-            const patientKeyword = ticketPatientSearchInput.value.trim();
-            const ticketDate = ticketDateInput.value;
-
-            if (doctorId) params.append('maBacSi', doctorId);
-            if (patientKeyword) params.append('tenBN', patientKeyword);
-            if (ticketDate) params.append('date', ticketDate);
-            params.append('limit', '50');
-
-            const data = await fetchJson(`${API_BASE}/medical-records/exam-tickets?${params.toString()}`);
-            eligibleTickets = data.data || [];
-            renderTicketOptions();
-        } catch (error) {
-            console.error('Lỗi load phiếu khám:', error);
-            examTicketSelect.innerHTML = '<option value="">Không thể tải phiếu khám</option>';
-            selectedTicketInfo.classList.add('d-none');
-        }
-    }
-
-    function renderTicketOptions() {
-        examTicketSelect.innerHTML = '<option value="">-- Chọn phiếu khám --</option>';
-
-        if (eligibleTickets.length === 0) {
-            examTicketSelect.add(new Option('Không có phiếu khám phù hợp', ''));
-            selectedTicketInfo.classList.add('d-none');
-            return;
-        }
-
-        eligibleTickets.forEach((ticket) => {
-            const status = ticket.TrangThai === 'DangKham' ? 'Đang khám' : 'Chờ khám';
-            const display = `#${ticket.MaPK} - ${ticket.TenBenhNhan} - ${ticket.TenBacSi || 'Chưa có bác sĩ'} - ${status}`;
-            examTicketSelect.add(new Option(display, ticket.MaPK));
-        });
-
-        updateSelectedTicketInfo();
-    }
-
-    function getSelectedTicket() {
-        return eligibleTickets.find((ticket) => String(ticket.MaPK) === String(examTicketSelect.value)) || null;
-    }
-
-    function updateSelectedTicketInfo() {
-        const ticket = getSelectedTicket();
-        if (!ticket) {
-            selectedTicketInfo.classList.add('d-none');
-            selectedTicketInfo.innerHTML = '';
-            return;
-        }
-
-        if (ticket.MaBacSi) {
-            createDoctorIdInput.value = ticket.MaBacSi;
-        }
-
-        selectedTicketInfo.classList.remove('d-none');
-        selectedTicketInfo.innerHTML = `
-            <strong>Phiếu khám #${escapeHtml(ticket.MaPK)}</strong> -
-            ${escapeHtml(ticket.TenBenhNhan)}
-            (${formatDate(ticket.NgaySinh)}, ${escapeHtml(ticket.GioiTinh || 'N/A')}) -
-            Bác sĩ: ${escapeHtml(ticket.TenBacSi || 'N/A')} -
-            Trạng thái: ${escapeHtml(ticket.TrangThai)}
-        `;
-    }
-
-    function clearCreateForm(clearTicket = true) {
-        createTrieuChungInput.value = '';
-        createChuanDoanInput.value = '';
-        createGhiChuInput.value = '';
-
-        if (clearTicket) {
-            examTicketSelect.value = '';
-            updateSelectedTicketInfo();
-        }
-    }
-
-    async function saveCreateMedicalRecord() {
-        const ticket = getSelectedTicket();
-        const maBacSi = createDoctorIdInput.value.trim();
-        const trieuChung = createTrieuChungInput.value.trim();
-        const chuanDoan = createChuanDoanInput.value.trim();
-        const ghiChu = createGhiChuInput.value.trim();
-
-        if (!ticket) {
-            alert('Vui lòng chọn phiếu khám');
-            return;
-        }
-        if (!maBacSi) {
-            alert('Vui lòng nhập mã bác sĩ');
-            return;
-        }
-        if (!trieuChung || !chuanDoan) {
-            alert('Vui lòng nhập đầy đủ triệu chứng và chẩn đoán');
-            return;
-        }
-
-        try {
-            const result = await fetchJson(`${API_BASE}/medical-records`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    maPK: ticket.MaPK,
-                    maBacSi,
-                    trieuChung,
-                    chuanDoan,
-                    ghiChu
-                })
-            });
-
-            alert(result.message || 'Tạo bệnh án thành công');
-            clearCreateForm();
-            await loadEligibleTickets();
-            await loadAllPatients(1);
-
-            const maBA = result.data?.medicalRecord?.MaBA || result.data?.insertId;
-            if (maBA) {
-                await viewRecordDetail(maBA);
-            }
-        } catch (error) {
-            console.error('Lỗi tạo bệnh án:', error);
-            alert(error.message || 'Không thể tạo bệnh án');
-        }
-    }
-
     async function viewPatientRecords(maBN) {
         try {
-            currentHistoryPatientId = maBN;
             const history = await fetchJson(`${API_BASE}/medical-records/patient/${maBN}`);
 
             const patientRow = Array.from(patientTableBody.querySelectorAll('tr'))
@@ -472,8 +294,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             currentRecordSnapshot = { ...record };
-            recordMaBAInput.value = record.MaBA;
-            recordMaBacSiInput.value = record.MaBacSi || '';
+            document.getElementById('recordMaBA').value = record.MaBA;
+            document.getElementById('recordMaBacSi').value = record.MaBacSi || '';
             document.getElementById('recordPatientName').textContent = record.HoTen || 'N/A';
             document.getElementById('recordDoctorName').textContent = record.TenBacSi || 'N/A';
             document.getElementById('recordSpecialty').textContent = record.TenChuyenKhoa || 'N/A';
@@ -502,11 +324,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function saveRecordUpdate() {
-        const maBA = recordMaBAInput.value;
+        const maBA = document.getElementById('recordMaBA').value;
         const trieuChung = recordTrieuChung.value.trim();
         const chuanDoan = recordChuanDoan.value.trim();
         const ghiChu = recordGhiChu.value.trim();
-        const maBacSi = getCurrentDoctorId() || recordMaBacSiInput.value;
+        const maBacSi = document.getElementById('recordMaBacSi').value;
 
         if (!trieuChung || !chuanDoan) {
             alert('Vui lòng nhập đầy đủ triệu chứng và chẩn đoán');
@@ -533,6 +355,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Event listeners
     btnSearch.addEventListener('click', () => {
         currentPage = 1;
         if (chuyenKhoaSelect.value) {
@@ -568,16 +391,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btnSearch.click();
     });
 
-    btnRefreshTickets.addEventListener('click', loadEligibleTickets);
-    btnClearCreateRecord.addEventListener('click', () => clearCreateForm());
-    btnSaveCreateRecord.addEventListener('click', saveCreateMedicalRecord);
-    examTicketSelect.addEventListener('change', updateSelectedTicketInfo);
-    ticketDateInput.addEventListener('change', loadEligibleTickets);
-    createDoctorIdInput.addEventListener('change', loadEligibleTickets);
-    ticketPatientSearchInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') loadEligibleTickets();
-    });
-
     btnEditRecord.addEventListener('click', () => setRecordEditMode(true));
     btnCancelEditRecord.addEventListener('click', restoreRecordSnapshot);
     btnSaveRecord.addEventListener('click', saveRecordUpdate);
@@ -609,13 +422,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    const doctorId = getCurrentDoctorId();
-    if (doctorId) {
-        createDoctorIdInput.value = doctorId;
-    }
-    ticketDateInput.value = todayIso();
-
+    // Initialize
     loadSpecialties();
-    loadEligibleTickets();
     loadAllPatients(1);
 });

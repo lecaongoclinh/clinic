@@ -50,6 +50,89 @@ const scheduleController = {
         }
     },
 
+    // Get all clinic rooms
+    getRooms: async (req, res) => {
+        try {
+            const { maChuyenKhoa } = req.query;
+            const parsedMaChuyenKhoa = maChuyenKhoa && !isNaN(maChuyenKhoa) ? parseInt(maChuyenKhoa) : null;
+
+            if (maChuyenKhoa && !parsedMaChuyenKhoa) {
+                return res.status(400).json({
+                    error: "maChuyenKhoa phải là một số"
+                });
+            }
+
+            const rooms = await scheduleService.getRooms(parsedMaChuyenKhoa);
+            res.status(200).json({
+                success: true,
+                data: rooms,
+                total: rooms.length,
+                filters: {
+                    maChuyenKhoa: parsedMaChuyenKhoa
+                }
+            });
+        } catch (error) {
+            res.status(500).json({
+                error: error.message
+            });
+        }
+    },
+
+    // Get rooms that are free for a specific date/time range
+    getAvailableRooms: async (req, res) => {
+        try {
+            const { ngayLam, gioBatDau, gioKetThuc, maChuyenKhoa } = req.query;
+            const parsedMaChuyenKhoa = maChuyenKhoa && !isNaN(maChuyenKhoa) ? parseInt(maChuyenKhoa) : null;
+
+            if (!ngayLam || !gioBatDau || !gioKetThuc) {
+                return res.status(400).json({
+                    error: "Vui lòng cung cấp ngayLam, gioBatDau, gioKetThuc"
+                });
+            }
+
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(ngayLam)) {
+                return res.status(400).json({
+                    error: "ngayLam không hợp lệ. Định dạng: YYYY-MM-DD"
+                });
+            }
+
+            if (maChuyenKhoa && !parsedMaChuyenKhoa) {
+                return res.status(400).json({
+                    error: "maChuyenKhoa phải là một số"
+                });
+            }
+
+            if (!/^\d{2}:\d{2}(:\d{2})?$/.test(gioBatDau) || !/^\d{2}:\d{2}(:\d{2})?$/.test(gioKetThuc)) {
+                return res.status(400).json({
+                    error: "Định dạng giờ không hợp lệ. Vui lòng sử dụng HH:MM hoặc HH:MM:SS"
+                });
+            }
+
+            if (gioBatDau >= gioKetThuc) {
+                return res.status(400).json({
+                    error: "Giờ bắt đầu phải nhỏ hơn giờ kết thúc"
+                });
+            }
+
+            const rooms = await scheduleService.getAvailableRooms(ngayLam, gioBatDau, gioKetThuc, parsedMaChuyenKhoa);
+            res.status(200).json({
+                success: true,
+                data: rooms,
+                total: rooms.length,
+                filters: {
+                    ngayLam,
+                    gioBatDau,
+                    gioKetThuc,
+                    maChuyenKhoa: parsedMaChuyenKhoa
+                }
+            });
+        } catch (error) {
+            res.status(500).json({
+                error: error.message
+            });
+        }
+    },
+
     // Get all schedules for a doctor
     getSchedulesByDoctor: async (req, res) => {
         try {
@@ -150,6 +233,50 @@ const scheduleController = {
                     maBacSi: parsedMaBacSi,
                     dateFrom,
                     dateTo
+                }
+            });
+        } catch (error) {
+            res.status(500).json({
+                error: error.message
+            });
+        }
+    },
+
+    // Get doctors by specialty and specific date (for appointment booking)
+    getDoctorsBySpecialtyAndDate: async (req, res) => {
+        try {
+            const { maChuyenKhoa, ngayLam } = req.query;
+
+            // Validate required fields
+            if (!maChuyenKhoa || !ngayLam) {
+                return res.status(400).json({
+                    error: "Vui lòng cung cấp maChuyenKhoa và ngayLam (YYYY-MM-DD)"
+                });
+            }
+
+            // Validate maChuyenKhoa is numeric
+            if (isNaN(maChuyenKhoa)) {
+                return res.status(400).json({
+                    error: "maChuyenKhoa phải là một số"
+                });
+            }
+
+            // Validate date format
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(ngayLam)) {
+                return res.status(400).json({
+                    error: "ngayLam không hợp lệ. Định dạng: YYYY-MM-DD"
+                });
+            }
+
+            const doctors = await scheduleService.getDoctorsBySpecialtyAndDate(maChuyenKhoa, ngayLam);
+
+            res.status(200).json({
+                success: true,
+                data: doctors,
+                total: doctors.length,
+                filters: {
+                    maChuyenKhoa,
+                    ngayLam
                 }
             });
         } catch (error) {

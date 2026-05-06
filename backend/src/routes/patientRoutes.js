@@ -3,7 +3,10 @@ import patientController from '../controllers/patientController.js';
 
 const router = express.Router();
 
-// Tìm kiếm bệnh nhân
+// router.get('/', patientController.getPatients);
+// router.get('/:id', patientController.getPatientById);
+
+// Tìm kiếm bệnh nhân theo tên
 router.get('/search', patientController.searchByName);
 
 // Lấy thông tin bệnh nhân
