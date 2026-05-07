@@ -19,7 +19,7 @@
     const ROLE_HOME = {
         [ROLE.ADMIN]: "index.html",
         [ROLE.DOCTOR]: "phieukham.html",
-        [ROLE.RECEPTIONIST]: "LichKham.html",
+        [ROLE.RECEPTIONIST]: "phieukham.html",
         [ROLE.CASHIER]: "pages/invoices.html",
         [ROLE.PHARMACIST]: "pages/capphatthuoc.html",
         [ROLE.WAREHOUSE]: "pages/medicines.html"
@@ -231,15 +231,16 @@
     }
 
     function applyUserLabels() {
-        const username = global.localStorage.getItem("username") || "";
+        const fullName = global.localStorage.getItem("fullName") || global.localStorage.getItem("username") || "";
         document.querySelectorAll("#usernameSidebar, #usernameNavbar, #navbarUserName").forEach((el) => {
-            if (el) el.textContent = username;
+            if (el) el.textContent = fullName;
         });
     }
 
     function logout() {
         global.localStorage.removeItem("token");
         global.localStorage.removeItem("username");
+        global.localStorage.removeItem("fullName");
         global.localStorage.removeItem("role");
         global.localStorage.removeItem("userId");
         global.localStorage.removeItem("user");

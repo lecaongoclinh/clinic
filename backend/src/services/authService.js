@@ -68,7 +68,7 @@ const userService = {
         process.env.JWT_SECRET, // Lấy từ file .env
         { expiresIn: process.env.JWT_EXPIRES_IN || '1d' } // Thời gian hết hạn token
     );
-    return { token, user: { id: user.MaNV, userName: user.Username, role: user.MaVaiTro } };
+    return { token, user: { id: user.MaNV, userName: user.Username, role: user.MaVaiTro, fullName: user.HoTen } };
   },
   getUserByUserName: async (username) => {
     return await User.findByUsername(username);

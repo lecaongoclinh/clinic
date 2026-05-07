@@ -160,8 +160,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /*** Navbar ***/
 .sidebar .navbar .navbar-nav .nav-link {
+    position: relative;
     padding: 10px 15px;
-    margin: 4px 15px;
+    margin: 4px 10px;
     color: var(--dark);
     font-size: 14px;
     font-weight: 500;
@@ -190,7 +191,8 @@ h1, h2, h3, h4, h5, h6 {
 
 .sidebar .navbar .dropdown-toggle::after {
     position: absolute;
-    top: 15px;
+    top: 50%;
+    transform: translateY(-50%);
     right: 15px;
     border: none;
     content: "\f107";
@@ -200,7 +202,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar .navbar .dropdown-toggle[aria-expanded=true]::after {
-    transform: rotate(-180deg);
+    transform: translateY(-50%) rotate(-180deg);
 }
 
 .sidebar .navbar .dropdown-item {

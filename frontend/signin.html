@@ -111,15 +111,16 @@
                     // Lưu token vào localStorage hoặc cookie
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('username', data.user.userName);
+                    localStorage.setItem('fullName', data.user.fullName);
                     localStorage.setItem('userId', data.user.id);
-                    console.log(localStorage.getItem('username'));
+                    console.log(localStorage.getItem('fullName'));
                     localStorage.setItem('role', data.user.role);
                     // Chuyển hướng đến trang dashboard
                     alert('Đăng nhập thành công!');
                     const roleHome = {
                         1: 'index.html',
                         2: 'phieukham.html',
-                        3: 'LichKham.html',
+                        3: 'phieukham.html',
                         4: 'pages/invoices.html',
                         5: 'pages/capphatthuoc.html',
                         6: 'pages/medicines.html'
