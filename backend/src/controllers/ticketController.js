@@ -69,19 +69,6 @@ const ensureTicketSchema = async (connection = pool) => {
 };
 
 const ensurePatientSchema = async (connection = pool) => {
-    if (patientSchemaReady) return;
-
-    const [columns] = await connection.query(
-        `SELECT COLUMN_NAME
-         FROM INFORMATION_SCHEMA.COLUMNS
-         WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'BenhNhan'`
-    );
-    const existing = new Set(columns.map((col) => col.COLUMN_NAME));
-
-    if (!existing.has('SoCCCD')) {
-        await connection.query('ALTER TABLE BenhNhan ADD COLUMN SoCCCD VARCHAR(20) UNIQUE NULL AFTER SoDienThoai');
-    }
-
     patientSchemaReady = true;
 };
 
@@ -120,14 +107,15 @@ const ticketSelectSql = `
         COALESCE(pk.ThoiGianTao, TIMESTAMP(pk.NgayKham, '00:00:00')) AS ThoiGianTaoHienThi,
         bn.HoTen AS TenBenhNhan,
         bn.SoDienThoai,
-        bn.SoCCCD,
+        bn.MaBN AS SoCCCD,
         bn.NgaySinh,
         bn.GioiTinh,
         ck.TenChuyenKhoa,
         bs.HoTen AS TenBacSi,
         phong.TenPhong,
         lk.NgayHen,
-        lk.GioHen
+        lk.GioHen,
+        (SELECT COUNT(*) FROM DonThuoc dt JOIN BenhAn ba ON dt.MaBA = ba.MaBA WHERE ba.MaPK = pk.MaPK) > 0 AS DaKeDon
     FROM PhieuKham pk
     JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
     LEFT JOIN LichKham lk ON pk.MaLK = lk.MaLK
@@ -139,7 +127,8 @@ const ticketSelectSql = `
 const mapTicket = (ticket) => ({
     ...ticket,
     LoaiKham: ticket.LoaiKham || (ticket.MaLK ? 'APPOINTMENT' : 'WALK_IN'),
-    TrangThai: normalizeStatus(ticket.TrangThai)
+    TrangThai: normalizeStatus(ticket.TrangThai),
+    DaKeDon: Boolean(ticket.DaKeDon)
 });
 
 const getTicket = async (connection, maPK) => {
@@ -161,9 +150,9 @@ export const searchPatients = async (req, res) => {
         }
 
         const [rows] = await pool.query(
-            `SELECT MaBN, HoTen, SoDienThoai, SoCCCD, NgaySinh, DiaChi, GioiTinh, Email
+            `SELECT MaBN, HoTen, SoDienThoai, MaBN AS SoCCCD, NgaySinh, DiaChi, GioiTinh, Email
              FROM BenhNhan
-             WHERE SoCCCD LIKE ?
+             WHERE MaBN LIKE ?
              ORDER BY HoTen
              LIMIT 10`,
             [`%${keyword.trim()}%`]
@@ -194,8 +183,9 @@ export const createPatient = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Vui long nhap ho ten, ngay sinh, so dien thoai va CCCD' });
         }
 
-        const [exists] = await pool.query('SELECT MaBN, SoCCCD, SoDienThoai FROM BenhNhan WHERE SoCCCD = ? OR SoDienThoai = ?', [soCCCD, soDienThoai]);
-        const duplicatedCCCD = exists.some((row) => row.SoCCCD === soCCCD);
+        const maBN = String(soCCCD).trim();
+        const [exists] = await pool.query('SELECT MaBN, SoDienThoai FROM BenhNhan WHERE MaBN = ? OR SoDienThoai = ?', [maBN, soDienThoai]);
+        const duplicatedCCCD = exists.some((row) => row.MaBN === maBN);
         const duplicatedPhone = exists.some((row) => row.SoDienThoai === soDienThoai);
         if (duplicatedCCCD) {
             return res.status(409).json({ success: false, message: 'So CCCD da ton tai' });
@@ -205,13 +195,13 @@ export const createPatient = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO BenhNhan (HoTen, NgaySinh, SoDienThoai, SoCCCD)
+            `INSERT INTO BenhNhan (MaBN, HoTen, NgaySinh, SoDienThoai)
              VALUES (?, ?, ?, ?)`,
-            [hoTen, ngaySinh, soDienThoai, soCCCD]
+            [maBN, hoTen, ngaySinh, soDienThoai]
         );
         const [rows] = await pool.query(
-            'SELECT MaBN, HoTen, SoDienThoai, SoCCCD, NgaySinh, DiaChi, GioiTinh, Email FROM BenhNhan WHERE MaBN = ?',
-            [result.insertId]
+            'SELECT MaBN, HoTen, SoDienThoai, MaBN AS SoCCCD, NgaySinh, DiaChi, GioiTinh, Email FROM BenhNhan WHERE MaBN = ?',
+            [maBN]
         );
 
         res.status(201).json({ success: true, data: rows[0] });
@@ -485,11 +475,17 @@ export const createAppointmentTicket = async (req, res) => {
 export const getWaitingTickets = async (req, res) => {
     try {
         await ensureTicketSchema();
-        const [rows] = await pool.query(
-            `${ticketSelectSql}
-             WHERE DATE(pk.NgayKham) = CURDATE()
-             ORDER BY pk.STT ASC, pk.MaPK DESC`
-        );
+        const maBacSi = req.query.maBacSi ? Number(req.query.maBacSi) : null;
+
+        let sql = `${ticketSelectSql} WHERE DATE(pk.NgayKham) = CURDATE()`;
+        const params = [];
+        if (maBacSi) {
+            sql += ' AND pk.MaBacSi = ?';
+            params.push(maBacSi);
+        }
+        sql += ' ORDER BY pk.STT ASC, pk.MaPK DESC';
+
+        const [rows] = await pool.query(sql, params);
         const data = rows.map(mapTicket);
         res.json({ success: true, data, total: data.length });
     } catch (error) {
@@ -553,6 +549,69 @@ export const cancelTicket = async (req, res) => {
         res.status(500).json({ success: false, message: 'Loi server' });
     } finally {
         connection.release();
+    }
+};
+
+/**
+ * PATCH /tickets/:ticketId/done
+ * Bác sĩ đánh dấu phiếu khám đã hoàn thành (DaKham)
+ */
+export const markTicketDone = async (req, res) => {
+    const header = req.headers.authorization || '';
+    const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ success: false, message: 'Chua dang nhap' });
+
+    try { jwt.verify(token, process.env.JWT_SECRET); }
+    catch { return res.status(401).json({ success: false, message: 'Token khong hop le' }); }
+
+    try {
+        await ensureTicketSchema();
+        const { ticketId } = req.params;
+        const [rows] = await pool.query('SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ?', [ticketId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Khong tim thay phieu kham' });
+
+        const current = normalizeStatus(rows[0].TrangThai);
+        if (current === 'DONE') return res.json({ success: true, message: 'Phieu da duoc danh dau xong' });
+        if (current === 'CANCELLED') return res.status(400).json({ success: false, message: 'Phieu da bi huy' });
+
+        await pool.query("UPDATE PhieuKham SET TrangThai = 'DaKham' WHERE MaPK = ?", [ticketId]);
+        const ticket = await getTicket(pool, ticketId);
+        res.json({ success: true, message: 'Da danh dau kham xong', ticket });
+    } catch (error) {
+        console.error('markTicketDone:', error);
+        res.status(500).json({ success: false, message: 'Loi server' });
+    }
+};
+
+/**
+ * PATCH /tickets/:ticketId/start
+ * Bác sĩ bắt đầu khám (ChoKham → DangKham)
+ */
+export const markTicketStart = async (req, res) => {
+    const header = req.headers.authorization || '';
+    const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+    if (!token) return res.status(401).json({ success: false, message: 'Chua dang nhap' });
+
+    try { jwt.verify(token, process.env.JWT_SECRET); }
+    catch { return res.status(401).json({ success: false, message: 'Token khong hop le' }); }
+
+    try {
+        await ensureTicketSchema();
+        const { ticketId } = req.params;
+        const [rows] = await pool.query('SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ?', [ticketId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Khong tim thay phieu kham' });
+
+        const current = normalizeStatus(rows[0].TrangThai);
+        if (current === 'IN_PROGRESS') return res.json({ success: true, message: 'Phieu dang trong trang thai kham' });
+        if (current === 'DONE')        return res.status(400).json({ success: false, message: 'Phieu da kham xong' });
+        if (current === 'CANCELLED')   return res.status(400).json({ success: false, message: 'Phieu da bi huy' });
+
+        await pool.query("UPDATE PhieuKham SET TrangThai = 'DangKham' WHERE MaPK = ?", [ticketId]);
+        const ticket = await getTicket(pool, ticketId);
+        res.json({ success: true, message: 'Da bat dau kham', ticket });
+    } catch (error) {
+        console.error('markTicketStart:', error);
+        res.status(500).json({ success: false, message: 'Loi server' });
     }
 };
 

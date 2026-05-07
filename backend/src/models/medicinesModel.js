@@ -13,6 +13,7 @@ const MedicinesModel = {
             SELECT
                 t.MaThuoc,
                 t.TenThuoc,
+                t.DonViCoBan,
                 t.HoatChat,
                 t.HamLuong,
                 t.DangBaoChe,
@@ -25,6 +26,7 @@ const MedicinesModel = {
             GROUP BY
                 t.MaThuoc,
                 t.TenThuoc,
+                t.DonViCoBan,
                 t.HoatChat,
                 t.HamLuong,
                 t.DangBaoChe,

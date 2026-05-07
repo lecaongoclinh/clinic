@@ -12,7 +12,9 @@ import {
     getWaitingTickets,
     getTicketById,
     cancelTicket,
-    callNextPatient
+    callNextPatient,
+    markTicketDone,
+    markTicketStart
 } from '../controllers/ticketController.js';
 
 const router = express.Router();
@@ -30,6 +32,8 @@ router.post('/tickets/walk-in', createWalkInTicket);
 router.post('/tickets/appointment', createAppointmentTicket);
 router.get('/tickets/waiting', getWaitingTickets);
 router.get('/tickets/:ticketId', getTicketById);
+router.patch('/tickets/:ticketId/start', markTicketStart);
+router.patch('/tickets/:ticketId/done', markTicketDone);
 router.patch('/tickets/:ticketId/cancel', cancelTicket);
 router.post('/tickets/call-next', callNextPatient);
 

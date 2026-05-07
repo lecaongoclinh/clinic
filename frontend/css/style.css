@@ -1,8 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 /********** Template CSS **********/
 :root {
-    --primary: #009CFF;
-    --light: #F3F6F9;
-    --dark: #191C24;
+    --primary: #0284c7;    /* Xanh lam thanh lịch (Sky 600) */
+    --primary-light: #e0f2fe; /* Xanh lam nhạt (Sky 100) */
+    --light: #f4f9fd;      /* Xanh nhạt pha trắng dùng làm nền */
+    --dark: #1e293b;       /* Xám đen đậm cho chữ (Slate 800) */
+    --border-color: #e2e8f0;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 14px !important;
+    background-color: var(--light) !important;
+    color: var(--dark) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+
+.bg-light {
+    background-color: #ffffff !important;
+}
+
+.text-muted {
+    color: #64748b !important;
 }
 
 .back-to-top {
@@ -16,14 +40,14 @@
 .tippy-box[data-theme~='light-border'] {
     background-color: white;
     color: #333;
-    border: 1px solid #ddd;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     font-size: 13px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .fc .fc-toolbar-title {
-    font-size: 1.2rem !important; /* Chỉnh nhỏ lại theo ý muốn (mặc định thường là 1rem) */
- 
+    font-size: 1.2rem !important;
 }
 
 /*** Spinner ***/
@@ -86,16 +110,16 @@
     width: 250px;
     height: 100vh;
     overflow-y: auto;
-    background: var(--light);
+    background: #FFFFFF;
+    box-shadow: 2px 0 15px rgba(0,0,0,0.04);
     transition: 0.5s;
     z-index: 999;
-    font-family: 'Inter', sans-serif;
 }
 
 .content {
     margin-left: 250px;
     min-height: 100vh;
-    background: #FFFFFF;
+    background: var(--light);
     transition: 0.5s;
 }
 
@@ -136,42 +160,39 @@
 
 /*** Navbar ***/
 .sidebar .navbar .navbar-nav .nav-link {
-    padding: 7px 20px;
-    color: #111111;
-    font-size: 15px;
+    position: relative;
+    padding: 10px 15px;
+    margin: 4px 10px;
+    color: var(--dark);
+    font-size: 14px;
     font-weight: 500;
-    border-left: 3px solid var(--light);
-    border-radius: 0 30px 30px 0;
+    border-radius: 8px;
+    border: none;
     outline: none;
+    transition: all 0.3s ease;
 }
 
 .sidebar .navbar .navbar-nav .nav-link:hover,
 .sidebar .navbar .navbar-nav .nav-link.active {
-    color: #009CFF;
-    background: #FFFFFF;
-    border-color: var(--primary);
+    color: var(--primary);
+    background: var(--primary-light);
 }
 
 .sidebar .navbar .navbar-nav .nav-link i {
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #FFFFFF;
-    border-radius: 40px;
+    font-size: 18px;
     color: inherit;
-    font-size: 16px;
-}
-
-.sidebar .navbar .navbar-nav .nav-link:hover i,
-.sidebar .navbar .navbar-nav .nav-link.active i {
-    background: var(--light);
+    transition: 0.3s ease;
 }
 
 .sidebar .navbar .dropdown-toggle::after {
     position: absolute;
-    top: 15px;
+    top: 50%;
+    transform: translateY(-50%);
     right: 15px;
     border: none;
     content: "\f107";
@@ -181,21 +202,24 @@
 }
 
 .sidebar .navbar .dropdown-toggle[aria-expanded=true]::after {
-    transform: rotate(-180deg);
+    transform: translateY(-50%) rotate(-180deg);
 }
 
 .sidebar .navbar .dropdown-item {
-    padding-left: 25px;
-    color: #111111;
-    font-size: 14px;
+    padding-left: 45px;
+    color: var(--dark);
+    font-size: 13px;
     font-weight: 500;
-    border-radius: 0 30px 30px 0;
+    border-radius: 8px;
+    margin: 2px 15px;
+    transition: all 0.2s;
 }
 
 .sidebar .navbar .dropdown-item:hover,
 .sidebar .navbar .dropdown-item.active {
-    color: #009CFF;
-    background: #FFFFFF;
+    color: var(--primary);
+    background: transparent;
+    font-weight: 600;
 }
 
 .sidebar .navbar > .d-flex.align-items-center {
@@ -226,9 +250,15 @@
 
 .sidebar .navbar h6 {
     margin-bottom: 0;
-    color: #111111;
-    font-size: 15px;
+    color: var(--dark);
+    font-size: 14px;
     font-weight: 600;
+}
+
+.content .navbar {
+    background: #FFFFFF !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border-bottom: 1px solid var(--border-color);
 }
 
 .content .navbar .navbar-nav .nav-link {
@@ -236,6 +266,7 @@
     padding: 12px 0;
     color: var(--dark);
     outline: none;
+    transition: color 0.3s;
 }
 
 .content .navbar .navbar-nav .nav-link:hover,
@@ -245,13 +276,21 @@
 
 .content .navbar .sidebar-toggler,
 .content .navbar .navbar-nav .nav-link i {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #FFFFFF;
-    border-radius: 40px;
+    background: var(--light);
+    border-radius: 10px;
+    color: var(--dark);
+    transition: all 0.3s;
+}
+
+.content .navbar .sidebar-toggler:hover,
+.content .navbar .navbar-nav .nav-link i:hover {
+    background: var(--primary-light);
+    color: var(--primary);
 }
 
 .content .navbar .dropdown-toggle::after {

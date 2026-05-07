@@ -14,7 +14,75 @@
     <!-- Google Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        .page-panel {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        .filter-section label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 6px;
+        }
+        .form-control, .form-select {
+            border-radius: 8px;
+            border-color: var(--border-color);
+            font-size: 14px;
+            padding: 10px 15px;
+        }
+        .form-control:focus, .form-select:focus {
+            box-shadow: 0 0 0 4px var(--primary-light);
+            border-color: var(--primary);
+        }
+        .table {
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 0;
+        }
+        .table thead th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 16px;
+            white-space: nowrap;
+        }
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--dark);
+        }
+        .table tbody tr:hover td {
+            background-color: #f8fafc;
+        }
+        .btn {
+            border-radius: 8px;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            background: var(--light);
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 16px 16px 0 0;
+        }
+    </style>
     
     <!-- Icon Font Stylesheet -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
@@ -150,9 +218,9 @@
                 <div class="row g-4">
                     <!-- Filter Section -->
                     <div class="col-12">
-                        <div class="bg-light rounded p-4">
-                            <h5 class="mb-4">Quản lý Bệnh Án</h5>
-                            <div class="row mb-3">
+                        <div class="page-panel filter-section">
+                            <h5 class="mb-4 text-dark"><i class="fa fa-filter me-2 text-primary"></i>Bộ lọc tìm kiếm</h5>
+                            <div class="row mb-3 g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Tên bệnh nhân</label>
                                     <input type="text" class="form-control" id="tenBNInput" placeholder="Nhập tên bệnh nhân...">
@@ -160,7 +228,7 @@
                                 <div class="col-md-3">
                                     <label class="form-label">Chuyên khoa</label>
                                     <select class="form-select" id="chuyenKhoaSelect">
-                                        <option value="">-- Tất cả chuyên khoa --</option>
+                                        <option value="">-- Tất cả khoa --</option>
                                     </select>
                                 </div>
                                 <div class="col-md-2">
@@ -172,14 +240,13 @@
                                         <option value="50">50</option>
                                     </select>
                                 </div>
-                                <div class="col-md-3">
-                                    <label class="form-label">&nbsp;</label>
+                                <div class="col-md-3 d-flex align-items-end">
                                     <button class="btn btn-primary w-100" id="btnSearch">
                                         <i class="fa fa-search me-2"></i>Tìm kiếm
                                     </button>
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Từ ngày</label>
                                     <input type="date" class="form-control" id="fromDateInput">
@@ -188,9 +255,8 @@
                                     <label class="form-label">Đến ngày</label>
                                     <input type="date" class="form-control" id="toDateInput">
                                 </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">&nbsp;</label>
-                                    <button class="btn btn-secondary w-100" id="btnReset">
+                                <div class="col-md-4 d-flex align-items-end">
+                                    <button class="btn btn-outline-secondary w-100" id="btnReset">
                                         <i class="fa fa-redo me-2"></i>Xóa lọc
                                     </button>
                                 </div>
@@ -200,10 +266,12 @@
 
                     <!-- Patient List -->
                     <div class="col-12">
-                        <div class="bg-light rounded p-4">
-                            <h5 class="mb-3">Danh sách bệnh nhân đã khám</h5>
+                        <div class="page-panel">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="text-dark m-0"><i class="fa fa-list-alt me-2 text-primary"></i>Danh sách Bệnh án</h5>
+                            </div>
                             <div class="table-responsive">
-                                <table class="table table-striped" id="patientTable">
+                                <table class="table" id="patientTable">
                                     <thead>
                                         <tr>
                                             <th>ID</th>
@@ -211,9 +279,9 @@
                                             <th>Ngày sinh</th>
                                             <th>Giới tính</th>
                                             <th>Số điện thoại</th>
-                                            <th>Số lần khám</th>
+                                            <th class="text-center">Số lần khám</th>
                                             <th>Lần khám gần nhất</th>
-                                            <th>Thao tác</th>
+                                            <th class="text-end">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="patientTableBody">
@@ -221,14 +289,14 @@
                                 </table>
                             </div>
                             <!-- Pagination -->
-                            <nav aria-label="Page navigation" class="mt-4">
-                                <ul class="pagination justify-content-center" id="paginationControl">
+                            <nav aria-label="Page navigation" class="mt-4 pt-2 border-top">
+                                <ul class="pagination justify-content-center mb-2" id="paginationControl">
                                     <!-- Pagination buttons will be inserted here -->
                                 </ul>
+                                <div class="text-center text-muted">
+                                    <small>Trang <b id="currentPageInfo">1</b> &middot; Tổng cộng <b id="totalRecordsInfo">0</b> bệnh nhân</small>
+                                </div>
                             </nav>
-                            <div class="text-center text-muted mt-2">
-                                <small>Trang <span id="currentPageInfo">1</span> - Tổng: <span id="totalRecordsInfo">0</span> bệnh nhân</small>
-                            </div>
                         </div>
                     </div>
                 </div>
