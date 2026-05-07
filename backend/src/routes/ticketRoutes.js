@@ -34,6 +34,7 @@ router.get('/tickets/waiting', getWaitingTickets);
 router.get('/tickets/:ticketId', getTicketById);
 router.patch('/tickets/:ticketId/start', markTicketStart);
 router.patch('/tickets/:ticketId/done', markTicketDone);
+router.patch('/tickets/:ticketId/no-show', cancelTicket);
 router.patch('/tickets/:ticketId/cancel', cancelTicket);
 router.post('/tickets/call-next', callNextPatient);
 

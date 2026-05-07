@@ -121,6 +121,21 @@ const InvoicesController = {
         }
     },
 
+    addVisitServices: async (req, res) => {
+        try {
+            const data = await InvoicesService.addServiceItemsForVisit({
+                ...req.body,
+                MaPK: req.params.ticketId
+            });
+            res.json(data);
+        } catch (error) {
+            console.error("add visit services invoice error:", error);
+            res.status(400).json({
+                message: error.message || "Loi them dich vu vao hoa don"
+            });
+        }
+    },
+
     remove: async (req, res) => {
         try {
             const data = await InvoicesService.remove(req.params.id);

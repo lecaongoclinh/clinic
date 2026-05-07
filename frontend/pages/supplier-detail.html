@@ -241,7 +241,7 @@
 <script src="../js/supplier_detail.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (username) {
         document.getElementById('usernameSidebar').textContent = username;
         document.getElementById('usernameNavbar').textContent = username;

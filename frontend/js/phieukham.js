@@ -60,7 +60,7 @@ function fmtDT(v) {
 }
 function statusLabel(s) {
     return { ChoKham:'Đang chờ', WAITING:'Đang chờ', DangKham:'Đang khám', IN_PROGRESS:'Đang khám',
-             DaKham:'Đã khám', DONE:'Đã khám', BoVe:'Đã hủy', CANCELLED:'Đã hủy' }[s] || s;
+             DaKham:'Đã khám', DONE:'Đã khám', BoVe:'Bỏ khám', CANCELLED:'Bỏ khám' }[s] || s;
 }
 function statusClass(s) {
     if (['ChoKham','WAITING'].includes(s))     return 'status-chokham';
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Ngày ' + new Date().toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
     // Username
-    const uname = localStorage.getItem('username') || (isDoctor ? 'Bác sĩ' : 'Lễ tân');
+    const uname = localStorage.getItem('fullName') || localStorage.getItem('username') || (isDoctor ? 'Bác sĩ' : 'Lễ tân');
     ['usernameSidebar','navbarUserName'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = uname;
@@ -229,7 +229,7 @@ function renderCard(t) {
               <small style="opacity:.8">${t.MaPhieu || t.MaPK}</small>
             </div>
           </div>
-          <span class="status-badge badge ${statusClass(t.TrangThai)}">${statusLabel(t.TrangThai)}</span>
+          <span class="status-badge badge ${statusClass(t.TrangThai)}">${['BoVe','CANCELLED'].includes(t.TrangThai) ? 'Bỏ khám' : statusLabel(t.TrangThai)}</span>
         </div>
         <div class="card-body">
           <div class="info-row"><i class="fa fa-id-card"></i><span>CCCD: <b>${t.SoCCCD || '—'}</b></span></div>
@@ -242,8 +242,8 @@ function renderCard(t) {
         <div class="card-footer">
           ${actionBtn}
           ${canCancel ? `<button class="btn btn-sm btn-outline-danger" onclick="cancelTicket(${t.MaPK})">
-              <i class="fa fa-times me-1"></i>Hủy</button>` : ''}
-          ${isCancelled ? `<span class="text-muted small"><i class="fa fa-ban me-1"></i>Đã hủy</span>` : ''}
+              <i class="fa fa-sign-out-alt me-1"></i>Bỏ khám</button>` : ''}
+          ${isCancelled ? `<span class="text-muted small"><i class="fa fa-ban me-1"></i>Đã bỏ khám</span>` : ''}
         </div>
       </div>
     </div>`;
@@ -356,12 +356,12 @@ async function submitBenhan() {
 
 // ── Hủy phiếu ────────────────────────────────────────────────────────────────
 async function cancelTicket(maPK) {
-    if (!confirm('Xác nhận hủy phiếu khám này?')) return;
+    if (!confirm('Xác nhận bệnh nhân bỏ khám? Phiếu khám sẽ được giữ lại và chuyển trạng thái Bỏ khám.')) return;
     try {
-        const res  = await fetch(`${API_BASE_URL}/tickets/${maPK}/cancel`, { method:'PATCH', headers: authHeaders() });
+        const res  = await fetch(`${API_BASE_URL}/tickets/${maPK}/no-show`, { method:'PATCH', headers: authHeaders() });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Lỗi hủy phiếu');
-        showToast('success', 'Đã hủy phiếu khám');
+        if (!res.ok || !data.success) throw new Error(data.message || 'Lỗi đánh dấu bỏ khám');
+        showToast('success', 'Đã đánh dấu bệnh nhân bỏ khám');
         await loadWaitingList();
     } catch (e) { showToast('error', e.message); }
 }
@@ -600,7 +600,15 @@ async function modalSearchPatients() {
             btn.onclick = () => selectPatientInModal(p);
             res.appendChild(btn);
         });
-        if (!(data.data||[]).length) res.innerHTML = '<div class="text-muted p-2">Không tìm thấy bệnh nhân</div>';
+        if (!(data.data||[]).length) {
+            const safeKeyword = kw.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            res.innerHTML = `
+                <div class="text-muted p-2">Không tìm thấy bệnh nhân</div>
+                <button type="button" class="btn btn-sm btn-primary m-2" onclick="showNewPatientForm('${safeKeyword}')">
+                    <i class="fa fa-user-plus me-1"></i>Tạo bệnh nhân mới
+                </button>
+            `;
+        }
     } catch { showToast('error', 'Lỗi tìm bệnh nhân'); }
 }
 
@@ -612,6 +620,62 @@ function selectPatientInModal(p) {
     document.getElementById('modalSearchResults').style.display = 'none';
     document.getElementById('modalSearchInput').value = '';
     if (document.getElementById('selectedTicketType').value === 'APPOINTMENT') loadPatientAppointments(p.MaBN);
+}
+
+function showNewPatientForm(cccd = '') {
+    const form = document.getElementById('newPatientForm');
+    const results = document.getElementById('modalSearchResults');
+    if (!form) return;
+
+    form.style.display = 'block';
+    if (results) results.style.display = 'none';
+
+    document.getElementById('newPatientCCCD').value = cccd || document.getElementById('modalSearchInput')?.value.trim() || '';
+    document.getElementById('newPatientName').focus();
+}
+
+function hideNewPatientForm() {
+    const form = document.getElementById('newPatientForm');
+    if (form) form.style.display = 'none';
+}
+
+async function createPatientFromTicketModal() {
+    const soCCCD = document.getElementById('newPatientCCCD').value.trim();
+    const hoTen = document.getElementById('newPatientName').value.trim();
+    const ngaySinh = document.getElementById('newPatientBirth').value;
+    const soDienThoai = document.getElementById('newPatientPhone').value.trim();
+
+    if (!soCCCD || !hoTen || !ngaySinh || !soDienThoai) {
+        showToast('warning', 'Vui lòng nhập đầy đủ CCCD, họ tên, ngày sinh và số điện thoại');
+        return;
+    }
+
+    const btn = document.getElementById('btnSaveNewPatient');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin me-2"></i>Đang lưu...';
+
+    try {
+        const res = await fetch(`${API_BASE_URL}/patients`, {
+            method: 'POST',
+            headers: jsonHeaders(),
+            body: JSON.stringify({ soCCCD, hoTen, ngaySinh, soDienThoai })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message || 'Không tạo được bệnh nhân');
+
+        selectPatientInModal(data.data);
+        hideNewPatientForm();
+        showToast('success', 'Đã tạo bệnh nhân mới');
+
+        ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+    } catch (e) {
+        showToast('error', e.message);
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa fa-save me-2"></i>Lưu bệnh nhân';
+    }
 }
 
 function clearSelectedPatient() {
@@ -683,6 +747,11 @@ function resetModalForm() {
     document.getElementById('modalSearchInput').value = '';
     document.getElementById('modalSearchResults').style.display = 'none';
     document.getElementById('modalSearchResults').innerHTML = '';
+    hideNewPatientForm();
+    ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
     document.getElementById('appointmentList').innerHTML = '';
     document.getElementById('modalSpecialtySelect').value = '';
     const dr = document.getElementById('modalDoctorSelect');
@@ -701,6 +770,9 @@ window.selectTicketType      = selectTicketType;
 window.handleSpecialtyChange = handleSpecialtyChange;
 window.selectPatientInModal  = selectPatientInModal;
 window.clearSelectedPatient  = clearSelectedPatient;
+window.showNewPatientForm    = showNewPatientForm;
+window.hideNewPatientForm    = hideNewPatientForm;
+window.createPatientFromTicketModal = createPatientFromTicketModal;
 window.selectAppointment     = selectAppointment;
 window.createTicket          = createTicket;
 window.cancelTicket          = cancelTicket;

@@ -218,12 +218,7 @@ function getMockDashboardData(range = "month") {
 }
 
 async function loadDashboardData(range) {
-    try {
-        return await fetchDashboardJson(`${DASHBOARD_API_BASE}?range=${encodeURIComponent(range)}`);
-    } catch (error) {
-        console.warn("Dashboard API unavailable, using mock data:", error);
-        return getMockDashboardData(range);
-    }
+    return await fetchDashboardJson(`${DASHBOARD_API_BASE}?range=${encodeURIComponent(range)}`);
 }
 
 function renderSummary(summary) {
@@ -498,7 +493,25 @@ function updateRangeButtons() {
 async function renderDashboard() {
     updateRangeButtons();
 
-    const data = await loadDashboardData(dashboardState.currentRange);
+    let data;
+    try {
+        data = await loadDashboardData(dashboardState.currentRange);
+    } catch (error) {
+        console.error("Dashboard API error:", error);
+        renderSummary({});
+        renderTrendChart({ labels: [], revenue: [], visits: [] });
+        renderRevenueStructureChart([]);
+        renderDoctorPerformance([]);
+        renderTopServices([]);
+        renderRecentActivities([
+            {
+                title: "Không tải được dữ liệu dashboard",
+                meta: error.message || "Vui lòng kiểm tra backend hoặc kết nối CSDL",
+                value: ""
+            }
+        ]);
+        return;
+    }
 
     renderSummary(data.summary || {});
     renderTrendChart(data.trend || { labels: [], revenue: [], visits: [] });

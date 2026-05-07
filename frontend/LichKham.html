@@ -438,7 +438,7 @@
                 window.location.href = 'signin.html';
                 return;
             }
-            const username = localStorage.getItem('username');
+            const username = localStorage.getItem('fullName') || localStorage.getItem('username');
             console.log("Username from localStorage:", username);
             if (username) {
                 const usernameSidebar = document.getElementById('usernameSidebar');

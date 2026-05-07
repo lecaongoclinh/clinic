@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const username = localStorage.getItem('username') || '';
+    const username = localStorage.getItem('fullName') || localStorage.getItem('username') || '';
     const usernameSidebar = document.getElementById('usernameSidebar');
     if (usernameSidebar) {
         usernameSidebar.textContent = username;

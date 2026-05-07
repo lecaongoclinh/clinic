@@ -1,4 +1,5 @@
 import db from "../config/db.js";
+import InvoicesService from "../services/invoicesService.js";
 
 const PrescriptionModel = {
 
@@ -144,6 +145,12 @@ const PrescriptionModel = {
                     VALUES (?, ?, ?, ?)
                 `, [maDT, item.maThuoc, item.soLuong, item.lieuDung || '']);
             }
+
+            await InvoicesService.syncPrescriptionToInvoice({
+                MaBA: maBA,
+                MaPK: maPK,
+                connection
+            });
 
             await connection.commit();
             return maDT;

@@ -1144,7 +1144,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const username = localStorage.getItem('username') || 'Nguyen The Anh';
+            const username = localStorage.getItem('fullName') || localStorage.getItem('username');
             const sidebarUser = document.getElementById('usernameSidebar');
             const navbarUser = document.getElementById('usernameNavbar');
 

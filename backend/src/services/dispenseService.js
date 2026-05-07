@@ -1,5 +1,6 @@
 import db from "../config/db.js";
 import DispenseModel from "../models/dispenseModel.js";
+import InvoicesService from "./invoicesService.js";
 
 const NEAR_EXPIRY_DAYS = 90;
 
@@ -371,6 +372,13 @@ const DispenseService = {
                 },
                 connection
             });
+
+            if (draft.MaDT) {
+                await InvoicesService.syncDispenseToInvoice({
+                    MaDT: draft.MaDT,
+                    connection
+                });
+            }
 
             await connection.commit();
 

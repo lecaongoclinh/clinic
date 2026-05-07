@@ -63,6 +63,20 @@ function getStockThreshold() {
     return selected > 0 ? selected : 20;
 }
 
+function getCurrentUser() {
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    const userId = localStorage.getItem('userId') || storedUser?.MaNV || storedUser?.id;
+    return userId ? { MaNV: Number(userId) } : null;
+}
+
+function getAuthHeaders(extra = {}) {
+    const token = localStorage.getItem('token');
+    return {
+        ...extra,
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+}
+
 function getWarningSearchKeyword() {
     return document.getElementById('warningSearchInput')?.value.trim().toLowerCase() || '';
 }
@@ -114,7 +128,7 @@ function renderInventoryTable(data) {
             <td class="text-center" onclick="event.stopPropagation()">
                 <button class="action-icon btn-edit" onclick="editItem(${item.MaLo}); event.stopPropagation()" title="Chỉnh sửa"><i class="fa fa-edit"></i></button>
                 <button class="action-icon btn-transfer" onclick="transferStock(${item.MaLo}); event.stopPropagation()" title="Điều chuyển"><i class="fa fa-exchange-alt"></i></button>
-                <button class="action-icon btn-delete" onclick="deleteItem(${item.MaLo}); event.stopPropagation()" title="Hủy"><i class="fa fa-trash"></i></button>
+                <button class="action-icon btn-delete" onclick="deleteItem(${item.MaLo}); event.stopPropagation()" title="Hủy lô / lập phiếu hủy"><i class="fa fa-ban"></i></button>
             </td>
         </tr>
     `).join('');
@@ -238,7 +252,7 @@ function renderWarnings() {
         { render: (row) => row.TenThuoc },
         { render: (row) => Number(row.TongTon) || 0, className: 'text-center' },
         { render: (row) => Number(row.DinhMucToiThieu) || warningData.minStock, className: 'text-center' }
-    ], 'Không có thuốc dưới định mức');
+    ], `Không có thuốc dưới định mức mặc định ${warningData.minStock || getStockThreshold()}`);
 
     renderSimpleWarningTable('#recalledWarningTable', recalledRows, [
         { render: (row) => row.TenThuoc },
@@ -247,7 +261,7 @@ function renderWarnings() {
         { render: (row) => Number(row.SoLuong) || 0, className: 'text-center' },
         { render: (row) => row.LyDo || '', className: 'text-center' },
         { render: (row) => row.TenKho || '', className: 'text-center' }
-    ], 'Chưa có lô bị đình chỉ hoặc thu hồi');
+    ], 'Chưa có lịch sử hủy thuốc');
 }
 
 async function loadWarnings() {
@@ -395,6 +409,10 @@ function updateAuditDiff(index, systemQty) {
 async function openAuditModal() {
     try {
         const MaKho = document.getElementById('auditWarehouseFilter').value;
+        if (!MaKho) {
+            alert('Vui lòng chọn kho trước khi tạo phiếu kiểm kê');
+            return;
+        }
         const query = MaKho ? `?MaKho=${MaKho}` : '';
         const response = await fetch(`${API}/audit-template${query}`);
         auditTemplateData = await response.json();
@@ -408,18 +426,27 @@ async function openAuditModal() {
 async function submitAudit() {
     try {
         const MaKho = document.getElementById('auditWarehouseFilter').value || null;
-        const user = JSON.parse(localStorage.getItem('user') || 'null');
+        const user = getCurrentUser();
+        if (!MaKho) {
+            alert('Vui lòng chọn kho kiểm kê');
+            return;
+        }
         const details = auditTemplateData.map((row, index) => ({
             MaLo: row.MaLo,
             SoLuongThucTe: Number(document.getElementById(`auditActual_${index}`).value) || 0,
             LyDo: document.getElementById(`auditReason_${index}`).value.trim()
         }));
 
-        await fetch(`${API}/audits`, {
+        const response = await fetch(`${API}/audits`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ MaKho, MaNhanVien: user?.MaNV || null, details })
         });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            alert(data.message || data.error || 'Không thể tạo phiếu kiểm kê');
+            return;
+        }
 
         bootstrap.Modal.getInstance(document.getElementById('auditCreateModal')).hide();
         loadAudits();
@@ -579,6 +606,9 @@ async function deleteItem(id) {
     const data = await fetchLotDetail(id);
     document.getElementById('deleteQty').value = Number(data.Ton || 0);
     document.getElementById('deleteQty').max = Number(data.Ton || 0);
+    document.getElementById('deleteReason').value = '';
+    document.getElementById('deleteApprover').value = '';
+    document.getElementById('deleteDocument').value = '';
     document.getElementById('deleteLotInfo').innerText = `Lô ${data.SoLo || ''} - ${data.TenThuoc || ''}`;
     new bootstrap.Modal(document.getElementById('deleteModal')).show();
 }
@@ -588,26 +618,32 @@ async function confirmDelete() {
     const maxQty = Number(currentLotDetail?.Ton || 0);
     const approver = document.getElementById('deleteApprover').value.trim();
     const documentCode = document.getElementById('deleteDocument').value.trim();
+    const reason = document.getElementById('deleteReason').value.trim();
 
     if (qty <= 0 || qty > maxQty) {
         alert('Số lượng hủy phải lớn hơn 0 và không vượt quá tồn hiện tại');
         return;
     }
 
-    if (!approver && !documentCode) {
-        alert('Vui lòng nhập người xác nhận hoặc mã biên bản hủy');
+    if (!reason) {
+        alert('Vui lòng nhập lý do hủy thuốc');
         return;
     }
 
-    await fetch(`${API}/delete`, {
+    const response = await fetch(`${API}/delete`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({
             MaLo: currentLotId,
             SoLuong: qty,
-            LyDo: `${document.getElementById('deleteReason').value}${approver ? ` | Người xác nhận: ${approver}` : ''}${documentCode ? ` | Mã biên bản: ${documentCode}` : ''}`
+            LyDo: `${reason}${approver ? ` | Người xác nhận: ${approver}` : ''}${documentCode ? ` | Mã biên bản: ${documentCode}` : ''}`
         })
     });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        alert(data.message || data.error || 'Không thể lập phiếu hủy thuốc');
+        return;
+    }
 
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
     await Promise.all([loadInventory(), loadWarnings(), loadAudits()]);
@@ -628,6 +664,10 @@ async function fillSelect(url, selectors, placeholder, valueKey, labelKey) {
 
 async function loadFilters() {
     await fillSelect(API_KHO, ['warehouseFilter', 'historyWarehouseFilter', 'auditWarehouseFilter', 'transferKho'], 'Tất cả kho', 'MaKho', 'TenKho');
+    const auditWarehouseFilter = document.getElementById('auditWarehouseFilter');
+    if (auditWarehouseFilter?.options?.[0]) {
+        auditWarehouseFilter.options[0].textContent = 'Chọn kho kiểm kê';
+    }
     await fillSelect(API_SUPPLIERS, ['providerFilter'], 'Tất cả NCC', 'MaNCC', 'TenNCC');
     await fillSelect(API_MEDICINES, ['historyMedicineFilter'], 'Tất cả thuốc', 'MaThuoc', 'TenThuoc');
 }

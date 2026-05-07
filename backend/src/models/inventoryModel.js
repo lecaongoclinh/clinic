@@ -141,11 +141,11 @@ const InventoryModel = {
                     ELSE CONCAT('LS-', ls.MaLS)
                 END AS SoChungTu,
                 CASE
-                    WHEN ls.Loai = 'Nhap' THEN CONCAT('Nh?p hàng', CASE WHEN ncc.TenNCC IS NOT NULL THEN CONCAT(' t? ', ncc.TenNCC) ELSE '' END)
-                    WHEN ls.Loai = 'Xuat' THEN 'Xu?t kho'
-                    WHEN ls.Loai = 'Huy' THEN CONCAT('Xu?t h?y', CASE WHEN huy.LyDo IS NOT NULL THEN CONCAT(' - ', huy.LyDo) ELSE '' END)
-                    WHEN ls.Loai = 'KiemKe' THEN 'Ði?u ch?nh ki?m kê'
-                    ELSE 'Bi?n d?ng kho'
+                    WHEN ls.Loai = 'Nhap' THEN CONCAT('Nhập hàng', CASE WHEN ncc.TenNCC IS NOT NULL THEN CONCAT(' từ ', ncc.TenNCC) ELSE '' END)
+                    WHEN ls.Loai = 'Xuat' THEN 'Xuất kho'
+                    WHEN ls.Loai = 'Huy' THEN CONCAT('Xuất hủy', CASE WHEN huy.LyDo IS NOT NULL THEN CONCAT(' - ', huy.LyDo) ELSE '' END)
+                    WHEN ls.Loai = 'KiemKe' THEN 'Điều chỉnh kiểm kê'
+                    ELSE 'Biến động kho'
                 END AS DienGiai
             FROM LichSuKho ls
             LEFT JOIN PhieuNhapThuoc pn ON ls.Loai = 'Nhap' AND pn.MaPN = ls.ThamChieuID
@@ -160,7 +160,7 @@ const InventoryModel = {
         return rows;
     },
 
-    getWarnings: async ({ minStock = 10 } = {}) => {
+    getWarnings: async ({ minStock = 20 } = {}) => {
         const [expired] = await db.query(`
             SELECT l.MaLo, t.TenThuoc, l.SoLo, l.HanSuDung, ${STOCK_EXPR} AS Ton, k.TenKho, ncc.TenNCC
             FROM LoThuoc l
@@ -203,7 +203,7 @@ const InventoryModel = {
             GROUP BY t.MaThuoc, t.TenThuoc
             HAVING TongTon < ?
             ORDER BY TongTon ASC, t.TenThuoc ASC
-        `, [Number(minStock) || 10, Number(minStock) || 10]);
+        `, [Number(minStock) || 20, Number(minStock) || 20]);
 
         const [recalled] = await db.query(`
             SELECT
@@ -218,8 +218,6 @@ const InventoryModel = {
             JOIN LoThuoc l ON huy.MaLo = l.MaLo
             JOIN Thuoc t ON l.MaThuoc = t.MaThuoc
             LEFT JOIN Kho k ON l.MaKho = k.MaKho
-            WHERE LOWER(COALESCE(huy.LyDo, '')) LIKE '%thu%'
-               OR LOWER(COALESCE(huy.LyDo, '')) LIKE '%dinh%'
             ORDER BY huy.NgayHuy DESC, huy.MaHuy DESC
         `);
 
@@ -230,7 +228,7 @@ const InventoryModel = {
             near9Months: nearExpiry,
             lowStock,
             recalled,
-            minStock: Number(minStock) || 10
+            minStock: Number(minStock) || 20
         };
     },
 
@@ -324,11 +322,11 @@ const InventoryModel = {
                     ELSE CONCAT('LS-', ls.MaLS)
                 END AS SoChungTu,
                 CASE
-                    WHEN ls.Loai = 'Nhap' THEN CONCAT('Nh?p hàng', CASE WHEN ncc.TenNCC IS NOT NULL THEN CONCAT(' t? ', ncc.TenNCC) ELSE '' END)
-                    WHEN ls.Loai = 'Xuat' THEN 'Xu?t kho cho b?nh nhân / c?p phát'
-                    WHEN ls.Loai = 'Huy' THEN CONCAT('Xu?t h?y', CASE WHEN huy.LyDo IS NOT NULL THEN CONCAT(' - ', huy.LyDo) ELSE '' END)
-                    WHEN ls.Loai = 'KiemKe' THEN CONCAT('Ði?u ch?nh ki?m kê', CASE WHEN ls.GhiChu IS NOT NULL THEN CONCAT(' - ', ls.GhiChu) ELSE '' END)
-                    ELSE 'Bi?n d?ng kho'
+                    WHEN ls.Loai = 'Nhap' THEN CONCAT('Nhập hàng', CASE WHEN ncc.TenNCC IS NOT NULL THEN CONCAT(' từ ', ncc.TenNCC) ELSE '' END)
+                    WHEN ls.Loai = 'Xuat' THEN 'Xuất kho cho bệnh nhân / cấp phát'
+                    WHEN ls.Loai = 'Huy' THEN CONCAT('Xuất hủy', CASE WHEN huy.LyDo IS NOT NULL THEN CONCAT(' - ', huy.LyDo) ELSE '' END)
+                    WHEN ls.Loai = 'KiemKe' THEN CONCAT('Điều chỉnh kiểm kê', CASE WHEN ls.GhiChu IS NOT NULL THEN CONCAT(' - ', ls.GhiChu) ELSE '' END)
+                    ELSE 'Biến động kho'
                 END AS DienGiai
             FROM LichSuKho ls
             LEFT JOIN Thuoc t ON ls.MaThuoc = t.MaThuoc
@@ -459,6 +457,14 @@ const InventoryModel = {
         try {
             await connection.beginTransaction();
 
+            if (!MaKho) {
+                throw new Error("Vui lòng chọn kho kiểm kê");
+            }
+
+            if (!Array.isArray(details) || !details.length) {
+                throw new Error("Phiếu kiểm kê phải có ít nhất 1 dòng");
+            }
+
             const [auditResult] = await connection.query(`
                 INSERT INTO PhieuKiemKe (MaKho, MaNhanVien, TrangThai)
                 VALUES (?, ?, 'Nhap')
@@ -511,11 +517,11 @@ const InventoryModel = {
             `, [id]);
 
             if (!auditRows.length) {
-                throw new Error("Không tìm th?y phi?u ki?m kê");
+                throw new Error("Không tìm thấy phiếu kiểm kê");
             }
 
             if (auditRows[0].TrangThai === "DaDuyet") {
-                throw new Error("Phi?u ki?m kê dã du?c cân b?ng tru?c dó");
+                throw new Error("Phiếu kiểm kê đã được cân bằng trước đó");
             }
 
             const [detailRows] = await connection.query(`
@@ -540,7 +546,7 @@ const InventoryModel = {
                     await connection.query(`
                         INSERT INTO LichSuKho (MaThuoc, MaLo, Loai, SoLuong, ThamChieuID, GhiChu)
                         VALUES (?, ?, 'KiemKe', ?, ?, ?)
-                    `, [row.MaThuoc, row.MaLo, diff, id, row.LyDo || 'Cân b?ng kho t? phi?u ki?m kê']);
+                    `, [row.MaThuoc, row.MaLo, diff, id, row.LyDo || 'Cân bằng kho từ phiếu kiểm kê']);
                 }
             }
 
@@ -598,12 +604,70 @@ const InventoryModel = {
     },
 
     deleteLot: async ({ MaLo, SoLuong, LyDo, MaNhanVien = null }) => {
-        const [result] = await db.query(`
-            INSERT INTO PhieuHuyThuoc (MaLo, SoLuong, LyDo, MaNhanVien)
-            VALUES (?, ?, ?, ?)
-        `, [MaLo, SoLuong, LyDo || null, MaNhanVien]);
+        const connection = await db.getConnection();
 
-        return result;
+        try {
+            await connection.beginTransaction();
+
+            const qty = Number(SoLuong) || 0;
+            const reason = String(LyDo || "").trim();
+            if (!MaLo) {
+                throw new Error("Thiếu mã lô cần hủy");
+            }
+            if (qty <= 0) {
+                throw new Error("Số lượng hủy phải lớn hơn 0");
+            }
+            if (!reason) {
+                throw new Error("Vui lòng nhập lý do hủy thuốc");
+            }
+
+            const [lotRows] = await connection.query(`
+                SELECT
+                    MaThuoc,
+                    ${STOCK_EXPR} AS Ton
+                FROM LoThuoc l
+                WHERE MaLo = ?
+                LIMIT 1
+                FOR UPDATE
+            `, [MaLo]);
+
+            if (!lotRows.length) {
+                throw new Error("Không tìm thấy lô thuốc cần hủy");
+            }
+
+            const currentStock = Number(lotRows[0].Ton) || 0;
+            if (qty > currentStock) {
+                throw new Error("Số lượng hủy không được vượt quá tồn hiện tại");
+            }
+
+            const [result] = await connection.query(`
+                INSERT INTO PhieuHuyThuoc (MaLo, SoLuong, LyDo, MaNhanVien)
+                VALUES (?, ?, ?, ?)
+            `, [MaLo, qty, reason, MaNhanVien]);
+
+            await connection.query(`
+                UPDATE LoThuoc
+                SET SoLuongDaXuat = COALESCE(SoLuongDaXuat, 0) + ?,
+                    TrangThai = CASE
+                        WHEN GREATEST(COALESCE(SoLuongNhap, 0) - (COALESCE(SoLuongDaXuat, 0) + ?), 0) = 0 THEN 'DaHuy'
+                        ELSE TrangThai
+                    END
+                WHERE MaLo = ?
+            `, [qty, qty, MaLo]);
+
+            await connection.query(`
+                INSERT INTO LichSuKho (MaThuoc, MaLo, Loai, SoLuong, ThamChieuID, GhiChu)
+                VALUES (?, ?, 'Huy', ?, ?, ?)
+            `, [lotRows[0].MaThuoc, MaLo, qty, result.insertId, reason]);
+
+            await connection.commit();
+            return result;
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
     }
 };
 

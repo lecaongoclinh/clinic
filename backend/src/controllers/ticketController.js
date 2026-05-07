@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import pool from '../config/db.js';
+import InvoicesService from '../services/invoicesService.js';
 
 const WAITING_DB = 'ChoKham';
 const CANCELLED_DB = 'BoVe';
@@ -379,6 +380,12 @@ export const createWalkInTicket = async (req, res) => {
         );
 
         const ticket = await getTicket(connection, result.insertId);
+        await InvoicesService.ensureVisitInvoice({
+            MaPK: result.insertId,
+            MaNhanVien: user.MaNV,
+            MaChuyenKhoa,
+            connection
+        });
         await connection.commit();
         res.status(201).json({ success: true, message: 'Tao phieu kham thanh cong', ticket });
     } catch (error) {
@@ -455,6 +462,12 @@ export const createAppointmentTicket = async (req, res) => {
         }
 
         const ticket = await getTicket(connection, result.insertId);
+        await InvoicesService.ensureVisitInvoice({
+            MaPK: result.insertId,
+            MaNhanVien: user.MaNV,
+            MaChuyenKhoa: appointment.MaChuyenKhoa,
+            connection
+        });
         await connection.commit();
         res.status(201).json({ success: true, message: 'Tao phieu kham thanh cong', ticket });
     } catch (error) {
@@ -530,20 +543,23 @@ export const cancelTicket = async (req, res) => {
         }
         if (normalizeStatus(rows[0].TrangThai) !== 'WAITING') {
             await connection.rollback();
-            return res.status(400).json({ success: false, message: 'Chi duoc huy phieu dang WAITING' });
+            return res.status(400).json({ success: false, message: 'Chi duoc danh dau bo kham voi phieu dang cho kham' });
         }
 
+        await connection.query(
+            'UPDATE PhieuKham SET TrangThai = ? WHERE MaPK = ?',
+            [CANCELLED_DB, req.params.ticketId]
+        );
         const ticket = await getTicket(connection, req.params.ticketId);
-        await connection.query('DELETE FROM PhieuKham WHERE MaPK = ?', [req.params.ticketId]);
         await connection.commit();
-        res.json({ success: true, message: 'Da xoa phieu kham', ticket });
+        res.json({ success: true, message: 'Da danh dau benh nhan bo kham', ticket });
     } catch (error) {
         await connection.rollback();
         console.error('cancelTicket:', error);
-        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+        if (error?.code === 'ER_ROW_IS_REFERENCED_2') {
             return res.status(409).json({
                 success: false,
-                message: 'Phieu kham da phat sinh du lieu lien quan, khong the xoa'
+                message: 'Khong the bo kham vi server dang co thao tac xoa/sua khoa phieu kham cu. Hay restart backend de nap logic bo kham moi.'
             });
         }
         res.status(500).json({ success: false, message: 'Loi server' });

@@ -122,11 +122,11 @@ function extractPaymentHistory(invoice = {}) {
 
 function calculateLedger(paymentHistory = []) {
     const payments = paymentHistory
-        .filter(item => item?.type === "payment")
-        .reduce((sum, item) => sum + Math.max(toNumber(item.amount, 0), 0), 0);
+        .filter(item => item?.type === "payment" || item?.LoaiGiaoDich === "ThanhToan")
+        .reduce((sum, item) => sum + Math.max(toNumber(item.amount ?? item.SoTienThanhToan, 0), 0), 0);
     const refunds = paymentHistory
-        .filter(item => item?.type === "refund")
-        .reduce((sum, item) => sum + Math.max(toNumber(item.amount, 0), 0), 0);
+        .filter(item => item?.type === "refund" || item?.LoaiGiaoDich === "HoanTien")
+        .reduce((sum, item) => sum + Math.max(toNumber(item.amount ?? item.SoTienThanhToan, 0), 0), 0);
 
     return {
         totalPaid: Math.max(payments - refunds, 0),
@@ -197,10 +197,23 @@ function getDerivedStatus(invoice = {}, finalAmount = 0, totalPaid = 0) {
     return "ChuaThanhToan";
 }
 
-function decorateInvoice(invoice = {}, details = null) {
+function normalizePaymentHistoryRows(rows = [], fallbackInvoice = {}) {
+    return (rows || []).map(item => ({
+        LoaiGiaoDich: item.LoaiGiaoDich || (item.type === "refund" ? "HoanTien" : "ThanhToan"),
+        PhuongThucThanhToan: item.PhuongThucThanhToan || item.method || fallbackInvoice.PhuongThucThanhToan || "TienMat",
+        SoTienThanhToan: Math.max(toNumber(item.SoTienThanhToan ?? item.amount, 0), 0),
+        NgayThanhToan: item.NgayThanhToan || item.time || null,
+        MaNhanVien: item.MaNhanVien || null,
+        GhiChu: item.GhiChu || null
+    }));
+}
+
+function decorateInvoice(invoice = {}, details = null, paymentHistoryRows = null) {
     const { plainNote } = parseInvoiceMeta(invoice.GhiChu);
     const adjustments = extractAdjustments(invoice);
-    const paymentHistory = extractPaymentHistory(invoice);
+    const paymentHistory = paymentHistoryRows
+        ? normalizePaymentHistoryRows(paymentHistoryRows, invoice)
+        : normalizePaymentHistoryRows(extractPaymentHistory(invoice), invoice);
     const totals = details
         ? calculateInvoiceTotals(details, invoice.GiamGia, adjustments)
         : {
@@ -217,7 +230,7 @@ function decorateInvoice(invoice = {}, details = null) {
     const conNo = Math.max(totals.ThanhTienCuoi - totalPaid, 0);
     const latestPaymentMethod = [...paymentHistory]
         .reverse()
-        .find(item => item?.type === "payment" && item.method)?.method;
+        .find(item => item?.LoaiGiaoDich === "ThanhToan" && item.PhuongThucThanhToan)?.PhuongThucThanhToan;
 
     return {
         ...invoice,
@@ -230,13 +243,32 @@ function decorateInvoice(invoice = {}, details = null) {
         TrangThai: getDerivedStatus(invoice, totals.ThanhTienCuoi, totalPaid),
         LichSuThanhToan: paymentHistory
             .slice()
-            .sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0))
-            .map(item => ({
-                LoaiGiaoDich: item.type === "refund" ? "HoanTien" : "ThanhToan",
-                PhuongThucThanhToan: item.method || invoice.PhuongThucThanhToan || "TienMat",
-                SoTienThanhToan: Math.max(toNumber(item.amount, 0), 0),
-                NgayThanhToan: item.time || null
-            }))
+            .sort((a, b) => new Date(b.NgayThanhToan || 0) - new Date(a.NgayThanhToan || 0))
+    };
+}
+
+async function refreshInvoiceTotalsAndStatus(invoiceId, details, connection = db) {
+    const invoice = await InvoicesModel.getById(invoiceId, connection);
+    const paymentHistory = await InvoicesModel.getPaymentHistory(invoiceId, connection);
+    const adjustments = extractAdjustments(invoice);
+    const totals = calculateInvoiceTotals(details, invoice.GiamGia, adjustments);
+    const { totalPaid } = calculateLedger(paymentHistory);
+    const status = getDerivedStatus(invoice, totals.ThanhTienCuoi, totalPaid);
+    const latestPayment = paymentHistory.find(item => item.LoaiGiaoDich === "ThanhToan");
+
+    await InvoicesModel.updateTotalsAndStatus(invoiceId, {
+        TongTien: totals.TongTien,
+        GiamGia: toNumber(invoice.GiamGia, 0),
+        ThanhTienCuoi: totals.ThanhTienCuoi,
+        TrangThai: status === "ThanhToanMotPhan" ? "ChuaThanhToan" : status,
+        PhuongThucThanhToan: latestPayment?.PhuongThucThanhToan || invoice.PhuongThucThanhToan,
+        NgayThanhToan: status === "DaThanhToan" ? (invoice.NgayThanhToan || new Date()) : null,
+        connection
+    });
+
+    return {
+        invoice: await InvoicesModel.getById(invoiceId, connection),
+        paymentHistory
     };
 }
 
@@ -249,31 +281,82 @@ async function syncInvoiceDetailsAndTotals(invoiceId, connection = db) {
     await InvoicesModel.replaceDrugDetailsFromDispense(invoiceId, connection);
 
     const details = await InvoicesModel.getDetails(invoiceId, connection);
-    const adjustments = extractAdjustments(invoice);
-    const totals = calculateInvoiceTotals(details, invoice.GiamGia, adjustments);
-
-    await InvoicesModel.update(invoiceId, {
-        MaBA: invoice.MaBA,
-        MaPX: invoice.MaPX,
-        MaNhanVien: invoice.MaNhanVien,
-        PhuongThucThanhToan: invoice.PhuongThucThanhToan,
-        TrangThai: invoice.TrangThai,
-        MaHoaDon: invoice.MaHoaDon,
-        TongTien: totals.TongTien,
-        GiamGia: toNumber(invoice.GiamGia, 0),
-        ThanhTienCuoi: totals.ThanhTienCuoi,
-        HanThanhToan: invoice.HanThanhToan,
-        GhiChu: invoice.GhiChu,
-        connection
-    });
-
-    const refreshedInvoice = await InvoicesModel.getById(invoiceId, connection);
+    const refreshed = await refreshInvoiceTotalsAndStatus(invoiceId, details, connection);
     const refreshedDetails = await InvoicesModel.getDetails(invoiceId, connection);
 
     return {
-        invoice: decorateInvoice(refreshedInvoice, refreshedDetails),
+        invoice: decorateInvoice(refreshed.invoice, refreshedDetails, refreshed.paymentHistory),
         details: refreshedDetails
     };
+}
+
+async function getOrCreateInvoiceForVisit({
+    MaPK = null,
+    MaBA = null,
+    MaNhanVien = null,
+    MaChuyenKhoa = null,
+    connection = db
+} = {}) {
+    let invoice = await InvoicesModel.getByVisit({ MaPK, MaBA, connection, forUpdate: true });
+    if (invoice) {
+        if (MaBA && !invoice.MaBA) {
+            await InvoicesModel.update(invoice.MaHD, {
+                ...invoice,
+                MaBA,
+                MaPK: invoice.MaPK || MaPK,
+                GiamGia: toNumber(invoice.GiamGia, 0),
+                TongTien: toNumber(invoice.TongTien, 0),
+                ThanhTienCuoi: toNumber(invoice.ThanhTienCuoi, 0),
+                connection
+            });
+            invoice = await InvoicesModel.getById(invoice.MaHD, connection);
+        }
+        return invoice;
+    }
+
+    const insertId = await InvoicesModel.create({
+        MaBA: MaBA || null,
+        MaPK: MaPK || null,
+        MaPX: null,
+        MaNhanVien,
+        PhuongThucThanhToan: null,
+        TrangThai: "ChuaThanhToan",
+        TongTien: 0,
+        GiamGia: 0,
+        ThanhTienCuoi: 0,
+        HanThanhToan: null,
+        GhiChu: "Hoa don nhap tu dong theo luot kham",
+        connection
+    });
+
+    const created = await InvoicesModel.getById(insertId, connection);
+    await InvoicesModel.update(insertId, {
+        ...created,
+        MaHoaDon: buildInvoiceCode(insertId),
+        MaPK: MaPK || null,
+        MaBA: MaBA || null,
+        GiamGia: 0,
+        TongTien: 0,
+        ThanhTienCuoi: 0,
+        connection
+    });
+
+    const service = await InvoicesModel.getDefaultExamService({ MaChuyenKhoa, connection });
+    if (service) {
+        await InvoicesModel.upsertVisitServiceDetails(insertId, [{
+            MaDichVu: service.MaDichVu,
+            TenDichVu: service.TenDichVu,
+            DonGia: service.Gia,
+            SoLuong: 1,
+            ThanhTien: service.Gia,
+            DienGiai: "Tien kham"
+        }], { replace: true, onlyExam: true, connection });
+    }
+
+    const details = await InvoicesModel.getDetails(insertId, connection);
+    await refreshInvoiceTotalsAndStatus(insertId, details, connection);
+
+    return await InvoicesModel.getById(insertId, connection);
 }
 
 const InvoicesService = {
@@ -286,14 +369,20 @@ const InvoicesService = {
 
         return {
             summary,
-            invoices: invoices.map((invoice) => decorateInvoice(invoice)),
+            invoices: await Promise.all(invoices.map(async (invoice) => {
+                const history = await InvoicesModel.getPaymentHistory(invoice.MaHD);
+                return decorateInvoice(invoice, null, history.length ? history : null);
+            })),
             doctors
         };
     },
 
     getAll: async (filters = {}) => {
         const invoices = await InvoicesModel.getAll(filters);
-        return invoices.map((invoice) => decorateInvoice(invoice));
+        return await Promise.all(invoices.map(async (invoice) => {
+            const history = await InvoicesModel.getPaymentHistory(invoice.MaHD);
+            return decorateInvoice(invoice, null, history.length ? history : null);
+        }));
     },
 
     getById: async (id) => {
@@ -303,7 +392,8 @@ const InvoicesService = {
         }
 
         const details = await InvoicesModel.getDetails(id);
-        return decorateInvoice(invoice, details);
+        const paymentHistory = await InvoicesModel.getPaymentHistory(id);
+        return decorateInvoice(invoice, details, paymentHistory.length ? paymentHistory : null);
     },
 
     getDetails: async (id) => {
@@ -316,7 +406,7 @@ const InvoicesService = {
     },
 
     create: async (payload) => {
-        if (!payload.MaBA) {
+        if (!payload.MaBA && !payload.MaPK) {
             throw new Error("Thiếu mã bệnh án");
         }
 
@@ -343,6 +433,7 @@ const InvoicesService = {
 
             const insertId = await InvoicesModel.create({
                 MaBA: payload.MaBA,
+                MaPK: payload.MaPK || null,
                 MaPX: payload.MaPX || null,
                 MaNhanVien: payload.MaNhanVien,
                 PhuongThucThanhToan: phuongThucThanhToan,
@@ -359,6 +450,7 @@ const InvoicesService = {
 
             await InvoicesModel.update(insertId, {
                 MaBA: payload.MaBA,
+                MaPK: payload.MaPK || null,
                 MaPX: payload.MaPX || null,
                 MaNhanVien: payload.MaNhanVien,
                 PhuongThucThanhToan: phuongThucThanhToan,
@@ -431,6 +523,7 @@ const InvoicesService = {
 
             await InvoicesModel.update(id, {
                 MaBA: payload.MaBA || current.MaBA,
+                MaPK: payload.MaPK !== undefined ? payload.MaPK : current.MaPK,
                 MaPX: payload.MaPX !== undefined ? payload.MaPX : current.MaPX,
                 MaNhanVien: payload.MaNhanVien || current.MaNhanVien,
                 PhuongThucThanhToan: phuongThucThanhToan,
@@ -485,7 +578,7 @@ const InvoicesService = {
             await connection.beginTransaction();
 
             const synced = await syncInvoiceDetailsAndTotals(id, connection);
-            const paymentHistory = extractPaymentHistory(synced.invoice);
+            const paymentHistory = await InvoicesModel.getPaymentHistory(id, connection);
             const { totalPaid } = calculateLedger(paymentHistory);
             const remainAmount = Math.max(toNumber(synced.invoice.ThanhTienCuoi, 0) - totalPaid, 0);
             const soTienThanhToan = payload.SoTienThanhToan !== undefined && payload.SoTienThanhToan !== null
@@ -504,35 +597,32 @@ const InvoicesService = {
                 throw new Error("Số tiền thanh toán không được vượt quá số còn nợ");
             }
 
-            const parsedNote = parseInvoiceMeta(current.GhiChu);
-            const updatedHistory = [
-                ...(parsedNote.meta.paymentHistory || []),
-                {
-                    type: "payment",
-                    amount: soTienThanhToan,
-                    method: paymentMethod.displayMethod,
-                    time: new Date().toISOString()
-                }
-            ];
             const daThuMoi = totalPaid + soTienThanhToan;
             const conNoMoi = Math.max(toNumber(synced.invoice.ThanhTienCuoi, 0) - daThuMoi, 0);
+
+            await InvoicesModel.insertPaymentHistory(id, {
+                LoaiGiaoDich: "ThanhToan",
+                PhuongThucThanhToan: paymentMethod.displayMethod,
+                SoTienThanhToan: soTienThanhToan,
+                MaNhanVien: payload.MaNhanVien || current.MaNhanVien || null,
+                GhiChu: payload.GhiChu || null,
+                connection
+            });
 
             await InvoicesModel.updatePaymentState(id, {
                 TrangThai: conNoMoi === 0 ? "DaThanhToan" : "ChuaThanhToan",
                 PhuongThucThanhToan: paymentMethod.storageMethod,
                 NgayThanhToan: conNoMoi === 0 ? new Date() : null,
-                GhiChu: buildInvoiceNote(parsedNote.plainNote, {
-                    adjustments: parsedNote.meta.adjustments,
-                    paymentHistory: updatedHistory
-                }),
+                GhiChu: current.GhiChu,
                 connection
             });
 
             const finalInvoice = await InvoicesModel.getById(id, connection);
             const finalDetails = await InvoicesModel.getDetails(id, connection);
+            const finalHistory = await InvoicesModel.getPaymentHistory(id, connection);
 
             await connection.commit();
-            return decorateInvoice(finalInvoice, finalDetails);
+            return decorateInvoice(finalInvoice, finalDetails, finalHistory.length ? finalHistory : null);
         } catch (error) {
             await connection.rollback();
             throw error;
@@ -591,31 +681,130 @@ const InvoicesService = {
             throw new Error("Số tiền hoàn không được vượt quá số đã thu");
         }
 
-        const parsedNote = parseInvoiceMeta(current.GhiChu);
-        const updatedHistory = [
-            ...(parsedNote.meta.paymentHistory || []),
-            {
-                type: "refund",
-                amount: soTienHoan,
-                method: payload.PhuongThucThanhToan || currentDetail.PhuongThucThanhToan || "TienMat",
-                time: new Date().toISOString()
-            }
-        ];
         const daThuMoi = daThu - soTienHoan;
         const conNoMoi = Math.max(toNumber(currentDetail.ThanhTienCuoi, 0) - daThuMoi, 0);
         const currentMethod = normalizePaymentMethod(currentDetail.PhuongThucThanhToan);
+
+        await InvoicesModel.insertPaymentHistory(id, {
+            LoaiGiaoDich: "HoanTien",
+            PhuongThucThanhToan: payload.PhuongThucThanhToan || currentDetail.PhuongThucThanhToan || "TienMat",
+            SoTienThanhToan: soTienHoan,
+            MaNhanVien: payload.MaNhanVien || current.MaNhanVien || null,
+            GhiChu: payload.GhiChu || null
+        });
 
         await InvoicesModel.updatePaymentState(id, {
             TrangThai: conNoMoi === 0 ? "DaThanhToan" : "ChuaThanhToan",
             PhuongThucThanhToan: daThuMoi > 0 ? currentMethod.storageMethod : null,
             NgayThanhToan: conNoMoi === 0 ? (current.NgayThanhToan || new Date()) : null,
-            GhiChu: buildInvoiceNote(parsedNote.plainNote, {
-                adjustments: parsedNote.meta.adjustments,
-                paymentHistory: updatedHistory
-            })
+            GhiChu: current.GhiChu
         });
 
         return await InvoicesService.getById(id);
+    },
+
+    ensureVisitInvoice: async (payload = {}) => {
+        const connection = payload.connection || await db.getConnection();
+        const shouldManageTransaction = !payload.connection;
+
+        try {
+            if (shouldManageTransaction) await connection.beginTransaction();
+            const invoice = await getOrCreateInvoiceForVisit({ ...payload, connection });
+            if (shouldManageTransaction) await connection.commit();
+            return invoice;
+        } catch (error) {
+            if (shouldManageTransaction) await connection.rollback();
+            throw error;
+        } finally {
+            if (shouldManageTransaction) connection.release();
+        }
+    },
+
+    linkMedicalRecordToVisitInvoice: async ({ MaPK, MaBA, MaNhanVien, connection = db } = {}) => {
+        const [[ticket]] = await connection.query(
+            "SELECT MaChuyenKhoa FROM PhieuKham WHERE MaPK = ? LIMIT 1",
+            [MaPK]
+        );
+        return await getOrCreateInvoiceForVisit({
+            MaPK,
+            MaBA,
+            MaNhanVien,
+            MaChuyenKhoa: ticket?.MaChuyenKhoa || null,
+            connection
+        });
+    },
+
+    addServiceItemsForVisit: async (payload = {}) => {
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+            const invoice = await getOrCreateInvoiceForVisit({
+                MaPK: payload.MaPK,
+                MaBA: payload.MaBA,
+                MaNhanVien: payload.MaNhanVien,
+                connection
+            });
+
+            const rawItems = Array.isArray(payload.ChiTietDichVu)
+                ? payload.ChiTietDichVu
+                : Array.isArray(payload.DichVu)
+                    ? payload.DichVu
+                    : [];
+            const serviceIds = rawItems.map(item => item.MaDichVu || item.maDichVu);
+            const services = await InvoicesModel.getServicesByIds(serviceIds, connection);
+            const serviceMap = new Map(services.map(item => [Number(item.MaDichVu), item]));
+            const items = rawItems.map(item => {
+                const service = serviceMap.get(Number(item.MaDichVu || item.maDichVu));
+                if (!service) return null;
+                const soLuong = Math.max(toNumber(item.SoLuong ?? item.soLuong, 1), 1);
+                const donGia = toNumber(item.DonGia ?? service.Gia, 0);
+                return {
+                    MaDichVu: service.MaDichVu,
+                    TenDichVu: service.TenDichVu,
+                    SoLuong: soLuong,
+                    DonGia: donGia,
+                    ThanhTien: toNumber(item.ThanhTien, donGia * soLuong),
+                    DienGiai: item.DienGiai || service.TenDichVu
+                };
+            }).filter(Boolean);
+
+            await InvoicesModel.upsertVisitServiceDetails(invoice.MaHD, items, {
+                replace: Boolean(payload.Replace),
+                onlyExam: false,
+                connection
+            });
+
+            const details = await InvoicesModel.getDetails(invoice.MaHD, connection);
+            const refreshed = await refreshInvoiceTotalsAndStatus(invoice.MaHD, details, connection);
+            await connection.commit();
+            return decorateInvoice(refreshed.invoice, details, refreshed.paymentHistory);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    },
+
+    syncPrescriptionToInvoice: async ({ MaBA, MaPK = null, MaNhanVien = null, connection = db } = {}) => {
+        const invoice = await getOrCreateInvoiceForVisit({ MaBA, MaPK, MaNhanVien, connection });
+        await InvoicesModel.replaceDrugDetailsFromPrescription(invoice.MaHD, MaBA, connection);
+        const details = await InvoicesModel.getDetails(invoice.MaHD, connection);
+        return await refreshInvoiceTotalsAndStatus(invoice.MaHD, details, connection);
+    },
+
+    syncDispenseToInvoice: async ({ MaDT, MaBA = null, connection = db } = {}) => {
+        let maBA = MaBA;
+        if (!maBA && MaDT) {
+            const [[row]] = await connection.query("SELECT MaBA FROM DonThuoc WHERE MaDT = ? LIMIT 1", [MaDT]);
+            maBA = row?.MaBA || null;
+        }
+        if (!maBA) return null;
+
+        const invoice = await getOrCreateInvoiceForVisit({ MaBA: maBA, connection });
+        await InvoicesModel.replaceDrugDetailsFromDispense(invoice.MaHD, connection);
+        const details = await InvoicesModel.getDetails(invoice.MaHD, connection);
+        return await refreshInvoiceTotalsAndStatus(invoice.MaHD, details, connection);
     },
 
     remove: async (id) => {

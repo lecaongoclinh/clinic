@@ -471,10 +471,11 @@ DROP TABLE IF EXISTS `hoadon`;
 CREATE TABLE `hoadon` (
   `MaHD` int NOT NULL AUTO_INCREMENT,
   `MaBA` int DEFAULT NULL,
+  `MaPK` int DEFAULT NULL,
   `MaNhanVien` int DEFAULT NULL,
   `PhuongThucThanhToan` enum('TienMat','ChuyenKhoan') DEFAULT NULL,
   `NgayThanhToan` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `TrangThai` enum('ChuaThanhToan','DaThanhToan','QuaHan','Huy') DEFAULT 'ChuaThanhToan',
+  `TrangThai` enum('ChuaThanhToan','DaThanhToan','QuaHan','Huy','DaHuy') DEFAULT 'ChuaThanhToan',
   `MaHoaDon` varchar(30) DEFAULT NULL,
   `NgayTao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `TongTien` decimal(12,2) DEFAULT '0.00',
@@ -485,10 +486,13 @@ CREATE TABLE `hoadon` (
   `MaPX` int DEFAULT NULL,
   PRIMARY KEY (`MaHD`),
   UNIQUE KEY `MaHoaDon` (`MaHoaDon`),
+  UNIQUE KEY `uq_hoadon_mapk` (`MaPK`),
   KEY `MaBA` (`MaBA`),
+  KEY `idx_hoadon_mapk` (`MaPK`),
   KEY `MaNhanVien` (`MaNhanVien`),
   KEY `fk_hoadon_mapx` (`MaPX`),
   CONSTRAINT `fk_hoadon_mapx` FOREIGN KEY (`MaPX`) REFERENCES `phieuxuatthuoc` (`MaPX`),
+  CONSTRAINT `fk_hoadon_mapk` FOREIGN KEY (`MaPK`) REFERENCES `phieukham` (`MaPK`),
   CONSTRAINT `hoadon_ibfk_1` FOREIGN KEY (`MaBA`) REFERENCES `benhan` (`MaBA`),
   CONSTRAINT `hoadon_ibfk_2` FOREIGN KEY (`MaNhanVien`) REFERENCES `nhanvien` (`MaNV`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -500,7 +504,7 @@ CREATE TABLE `hoadon` (
 
 LOCK TABLES `hoadon` WRITE;
 /*!40000 ALTER TABLE `hoadon` DISABLE KEYS */;
-INSERT INTO `hoadon` VALUES (3,3,15,'TienMat',NULL,'ChuaThanhToan','HD00001','2026-04-17 07:00:24',1279000.00,20000.00,1259000.00,'2026-04-20','Hóa đơn khám ngoại trú',NULL);
+INSERT INTO `hoadon` VALUES (3,3,NULL,15,'TienMat',NULL,'ChuaThanhToan','HD00001','2026-04-17 07:00:24',1279000.00,20000.00,1259000.00,'2026-04-20','Hóa đơn khám ngoại trú',NULL);
 /*!40000 ALTER TABLE `hoadon` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -529,6 +533,39 @@ LOCK TABLES `kho` WRITE;
 /*!40000 ALTER TABLE `kho` DISABLE KEYS */;
 INSERT INTO `kho` VALUES (1,'Kho Chính',15,30,1);
 /*!40000 ALTER TABLE `kho` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `lichsuthanhtoan`
+--
+
+DROP TABLE IF EXISTS `lichsuthanhtoan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `lichsuthanhtoan` (
+  `MaLSTT` int NOT NULL AUTO_INCREMENT,
+  `MaHD` int NOT NULL,
+  `LoaiGiaoDich` enum('ThanhToan','HoanTien') DEFAULT 'ThanhToan',
+  `PhuongThucThanhToan` enum('TienMat','ChuyenKhoan','QRPay','The') DEFAULT 'TienMat',
+  `SoTienThanhToan` decimal(12,2) NOT NULL DEFAULT '0.00',
+  `NgayThanhToan` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `MaNhanVien` int DEFAULT NULL,
+  `GhiChu` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`MaLSTT`),
+  KEY `idx_lstt_mahd` (`MaHD`),
+  KEY `idx_lstt_manhanvien` (`MaNhanVien`),
+  CONSTRAINT `fk_lstt_hoadon` FOREIGN KEY (`MaHD`) REFERENCES `hoadon` (`MaHD`),
+  CONSTRAINT `fk_lstt_nhanvien` FOREIGN KEY (`MaNhanVien`) REFERENCES `nhanvien` (`MaNV`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `lichsuthanhtoan`
+--
+
+LOCK TABLES `lichsuthanhtoan` WRITE;
+/*!40000 ALTER TABLE `lichsuthanhtoan` DISABLE KEYS */;
+/*!40000 ALTER TABLE `lichsuthanhtoan` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --

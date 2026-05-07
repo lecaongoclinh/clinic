@@ -12,145 +12,175 @@ const supplierSelect = document.getElementById("supplierSelect");
 const khoSelect = document.getElementById("khoSelect");
 const medicineSelect = document.getElementById("medicineSelect");
 const unitSelect = document.getElementById("unitSelect");
-
 const quantity = document.getElementById("quantity");
 const realQty = document.getElementById("realQty");
 const price = document.getElementById("price");
-
 const soLo = document.getElementById("soLo");
 const nsx = document.getElementById("nsx");
 const hsd = document.getElementById("hsd");
-
 const cartTable = document.getElementById("cartTable");
 const totalMoney = document.getElementById("totalMoney");
 const importList = document.getElementById("importList");
 const loaiPhieu = document.getElementById("loaiPhieu");
-// ================= INIT =================
+
 document.addEventListener("DOMContentLoaded", async () => {
+    setCurrentStaff();
     await loadSuppliers();
     await loadKho();
-    loadImports();
+    await loadImports();
 });
 
-// ================= FORMAT =================
-function formatMoney(x) {
-    return Number(x).toLocaleString("vi-VN") + " đ";
+function getCurrentUser() {
+    const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+    const userId = localStorage.getItem("userId") || storedUser?.MaNV || storedUser?.id;
+    const fullName = localStorage.getItem("fullName") || storedUser?.HoTen || storedUser?.fullName || localStorage.getItem("username") || "";
+    return userId ? { MaNV: Number(userId), HoTen: fullName } : null;
 }
 
-// ================= LOAD NCC =================
+function getAuthHeaders(extra = {}) {
+    const token = localStorage.getItem("token");
+    return {
+        ...extra,
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+}
+
+function setCurrentStaff() {
+    const staffInput = document.getElementById("staffName");
+    const user = getCurrentUser();
+    if (staffInput) staffInput.value = user?.HoTen || "";
+}
+
+function formatMoney(value) {
+    return `${Number(value || 0).toLocaleString("vi-VN")} đ`;
+}
+
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.message || data.error || "Lỗi API");
+    }
+    return data;
+}
+
 async function loadSuppliers() {
-    const res = await fetch(API_SUP);
-    suppliers = await res.json();
-
-    supplierSelect.innerHTML =
-        suppliers.map(s => `<option value="${s.MaNCC}">${s.TenNCC}</option>`).join("");
-
+    suppliers = await fetchJson(API_SUP);
+    supplierSelect.innerHTML = suppliers.map(s => `<option value="${s.MaNCC}">${s.TenNCC}</option>`).join("");
     supplierSelect.addEventListener("change", loadMedicinesBySupplier);
-
     await loadMedicinesBySupplier();
 }
 
-// ================= LOAD KHO =================
 async function loadKho() {
-    const res = await fetch(API_KHO);
-    const data = await res.json();
-
-    khoSelect.innerHTML =
-        data.map(k => `<option value="${k.MaKho}">${k.TenKho}</option>`).join("");
+    const data = await fetchJson(API_KHO);
+    khoSelect.innerHTML = data.map(k => `<option value="${k.MaKho}">${k.TenKho}</option>`).join("");
 }
 
-// ================= LOAD THUỐC =================
 async function loadMedicinesBySupplier() {
     const MaNCC = supplierSelect.value;
+    medicines = await fetchJson(`${API_IMPORT}/by-supplier?MaNCC=${MaNCC}`);
+    medicineSelect.innerHTML = medicines.map(m => `<option value="${m.MaThuoc}">${m.TenThuoc}</option>`).join("");
 
-    const res = await fetch(`${API_IMPORT}/by-supplier?MaNCC=${MaNCC}`);
-    medicines = await res.json();
-
-    medicineSelect.innerHTML =
-        medicines.map(m => `<option value="${m.MaThuoc}">${m.TenThuoc}</option>`).join("");
-
-    // 🔥 load đơn vị của thuốc đầu tiên
     if (medicines.length > 0) {
-        loadUnits(medicines[0].MaThuoc);
+        await loadUnits(medicines[0].MaThuoc);
+    } else {
+        unitSelect.innerHTML = "";
+        units = [];
     }
+    calcRealQty();
 }
 
-// ================= LOAD QUY ĐỔI =================
 async function loadUnits(MaThuoc) {
-
     if (!MaThuoc) return;
 
     try {
-        const res = await fetch(`${API_QD}?MaThuoc=${MaThuoc}`);
-
-        if (!res.ok) {
-            unitSelect.innerHTML = `<option>Không có đơn vị</option>`;
+        const response = await fetch(`${API_QD}?MaThuoc=${MaThuoc}`);
+        if (!response.ok) {
+            unitSelect.innerHTML = `<option value="1" data-name="">Đơn vị cơ bản</option>`;
+            units = [];
             return;
         }
 
-        const data = await res.json();
-
-        units = data;
-
-        // 🔥 render dropdown
-        unitSelect.innerHTML = data.map(u => `
+        units = await response.json();
+        unitSelect.innerHTML = units.map(u => `
             <option value="${u.SoLuong}" data-name="${u.TenDonVi}">
                 ${u.TenDonVi}
             </option>
         `).join("");
-
-    } catch (err) {
-        console.error(err);
+    } catch (error) {
+        console.error(error);
+        unitSelect.innerHTML = `<option value="1" data-name="">Đơn vị cơ bản</option>`;
     }
 }
 
-medicineSelect.addEventListener("change", function () {
-    const MaThuoc = this.value;
-    loadUnits(MaThuoc);
+medicineSelect.addEventListener("change", async function () {
+    await loadUnits(this.value);
+    calcRealQty();
 });
 
-// ================= CALC =================
 function calcRealQty() {
     const factor = Number(unitSelect.value || 0);
     const qty = Number(quantity.value || 0);
-    realQty.value = factor * qty;
+    realQty.value = factor * qty || "";
 }
 
 quantity.addEventListener("input", calcRealQty);
 unitSelect.addEventListener("change", calcRealQty);
 
-// ================= ADD CART =================
+function parseMoneyInput(value) {
+    return Number(String(value || "").replace(/[^\d]/g, ""));
+}
+
 function addToCart() {
     const MaThuoc = medicineSelect.value;
-    const m = medicines.find(x => x.MaThuoc == MaThuoc);
+    const medicine = medicines.find(x => String(x.MaThuoc) === String(MaThuoc));
+    const factor = Number(unitSelect.value || 0);
+    const qty = Number(quantity.value || 0);
+    const priceValue = parseMoneyInput(price.value);
+    const DonViNhap = unitSelect.options[unitSelect.selectedIndex]?.dataset.name || "";
+    const lotCode = soLo.value.trim();
 
-    const factor = Number(unitSelect.value);
-    const qty = Number(quantity.value);
+    if (!MaThuoc || !medicine) {
+        alert("Vui lòng chọn thuốc");
+        return;
+    }
+    if (!qty || qty <= 0 || !factor || factor <= 0) {
+        alert("Số lượng nhập không hợp lệ");
+        return;
+    }
+    if (!priceValue || priceValue <= 0) {
+        alert("Giá nhập không hợp lệ");
+        return;
+    }
+    if (!lotCode || !nsx.value || !hsd.value) {
+        alert("Vui lòng nhập đầy đủ số lô, NSX và HSD");
+        return;
+    }
+    if (new Date(hsd.value) <= new Date(nsx.value)) {
+        alert("HSD phải sau NSX");
+        return;
+    }
 
-    // ✅ FIX FORMAT GIÁ
-    const priceValue = Number(price.value.replace(/\./g, ""));
-
-    const DonViNhap = unitSelect.options[unitSelect.selectedIndex].dataset.name;
-
-    // ❌ FIX BUG validate
-    if (!qty || !priceValue) {
-        alert("Thiếu số lượng hoặc giá");
+    const duplicatedInCart = cart.some(item =>
+        String(item.MaThuoc) === String(MaThuoc) &&
+        String(item.SoLo).toLowerCase() === lotCode.toLowerCase()
+    );
+    if (duplicatedInCart) {
+        alert("Số lô này đã có trong phiếu nhập hiện tại");
         return;
     }
 
     cart.push({
         MaThuoc,
-        TenThuoc: m.TenThuoc,
-
+        TenThuoc: medicine.TenThuoc,
         DonViNhap,
         SoLuongNhap: qty,
         HeSoQuyDoi: factor,
-
         SoLuong: qty * factor,
         GiaNhap: priceValue / factor,
+        GiaNhapDonViNhap: priceValue,
         ThanhTien: qty * priceValue,
-
-        SoLo: soLo.value,
+        SoLo: lotCode,
         HanSuDung: hsd.value,
         NgaySanXuat: nsx.value
     });
@@ -158,99 +188,92 @@ function addToCart() {
     renderCart();
 }
 
-// ================= RENDER =================
 function renderCart() {
-    cartTable.innerHTML = cart.map((i, idx) => `
+    cartTable.innerHTML = cart.map((item, idx) => `
         <tr>
-            <td>${i.TenThuoc}</td>
-            <td>${i.DonViNhap}</td>
-            <td>${i.SoLuongNhap}</td>
-            <td>${i.SoLuong}</td>
-            <td>${formatMoney(i.GiaNhap)}</td>
-            <td>${formatMoney(i.ThanhTien)}</td>
-            <td>${i.SoLo}</td>
-            <td>${i.HanSuDung}</td>
-            <td><button onclick="removeItem(${idx})">X</button></td>
+            <td>${item.TenThuoc}</td>
+            <td>${item.DonViNhap}</td>
+            <td>${item.SoLuongNhap}</td>
+            <td>${item.SoLuong}</td>
+            <td>${formatMoney(item.GiaNhap)}</td>
+            <td>${formatMoney(item.ThanhTien)}</td>
+            <td>${item.SoLo}</td>
+            <td>${item.HanSuDung}</td>
+            <td><button class="btn btn-sm btn-outline-danger" onclick="removeItem(${idx})">X</button></td>
         </tr>
     `).join("");
 
     calculateTotal();
 }
 
-function removeItem(i) {
-    cart.splice(i, 1);
+function removeItem(index) {
+    cart.splice(index, 1);
     renderCart();
 }
 
-// ================= TOTAL =================
 function calculateTotal() {
-    const total = cart.reduce((sum, i) => sum + i.ThanhTien, 0);
-    totalMoney.innerText = formatMoney(total);
+    totalMoney.innerText = formatMoney(cart.reduce((sum, item) => sum + item.ThanhTien, 0));
 }
 
-// ================= SUBMIT =================
 async function submitImport() {
-
     if (cart.length === 0) {
         alert("Chưa có thuốc");
         return;
     }
 
-    for (let i of cart) {
-        if (!i.SoLo || !i.HanSuDung || !i.NgaySanXuat) {
+    const user = getCurrentUser();
+    if (!user?.MaNV) {
+        alert("Chưa đăng nhập hoặc thiếu mã nhân viên");
+        return;
+    }
+
+    for (const item of cart) {
+        if (!item.SoLo || !item.HanSuDung || !item.NgaySanXuat) {
             alert("Thiếu thông tin lô");
             return;
         }
-    }
-
-    // ✅ LẤY USER ĐANG LOGIN
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (!user || !user.MaNV) {
-        alert("Chưa đăng nhập hoặc thiếu MaNV");
-        return;
+        if (new Date(item.HanSuDung) <= new Date(item.NgaySanXuat)) {
+            alert(`HSD phải sau NSX của lô ${item.SoLo}`);
+            return;
+        }
     }
 
     const payload = {
         MaNCC: supplierSelect.value,
         MaKho: khoSelect.value,
         LoaiPhieu: loaiPhieu.value,
-        MaNhanVien: user.MaNV, // 🔥 FIX CHÍNH
         details: cart
     };
 
-    console.log("Payload gửi lên:", payload); // debug
+    try {
+        await fetchJson(API_IMPORT, {
+            method: "POST",
+            headers: getAuthHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify(payload)
+        });
 
-    const res = await fetch(API_IMPORT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
-
-    if (!res.ok) {
-        const err = await res.json();
-        alert(err.message);
-        return;
+        alert("Thành công");
+        cart = [];
+        renderCart();
+        await loadImports();
+    } catch (error) {
+        alert(error.message || "Không thể tạo phiếu nhập");
     }
-
-    alert("Thành công");
-
-    cart = [];
-    renderCart();
-    loadImports();
 }
 
-// ================= LOAD LIST =================
 async function loadImports() {
-    const res = await fetch(API_IMPORT);
-    const data = await res.json();
-
-    importList.innerHTML =
-        data.map(p => `
+    const data = await fetchJson(API_IMPORT);
+    importList.innerHTML = data.map(p => `
         <tr>
             <td>${p.MaPN}</td>
-            <td>${p.TenNCC}</td>
-            <td>${new Date(p.NgayNhap).toLocaleDateString()}</td>
+            <td>${p.TenNCC || ""}</td>
+            <td>${new Date(p.NgayNhap).toLocaleDateString("vi-VN")}</td>
         </tr>
     `).join("");
 }
+
+Object.assign(window, {
+    addToCart,
+    removeItem,
+    submitImport
+});

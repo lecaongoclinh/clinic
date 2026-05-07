@@ -58,8 +58,7 @@ const DashboardModel = {
     let labelSql = `DATE_FORMAT(NgayKham, '%Y-%m-%d')`;
 
     if (range === "today") {
-        // DB thực tế của bạn chưa chắc có GioTao, nên gom toàn bộ hôm nay thành 1 mốc
-        labelSql = `DATE_FORMAT(NgayKham, '%Y-%m-%d')`;
+        labelSql = `DATE_FORMAT(COALESCE(ThoiGianTao, TIMESTAMP(NgayKham, '00:00:00')), '%H:00')`;
     }
 
     if (range === "year") {
@@ -111,7 +110,9 @@ const DashboardModel = {
             FROM NhanVien bs
             LEFT JOIN ChuyenKhoa ck ON ck.MaChuyenKhoa = bs.MaChuyenKhoa
             LEFT JOIN BenhAn ba ON ba.MaBacSi = bs.MaNV
-            LEFT JOIN PhieuKham pk ON pk.MaPK = ba.MaPK
+            LEFT JOIN PhieuKham pk
+                ON pk.MaPK = ba.MaPK
+               AND ${buildDateCondition("pk.NgayKham")}
             LEFT JOIN HoaDon hd
                 ON hd.MaBA = ba.MaBA
                AND hd.TrangThai = 'DaThanhToan'
@@ -120,7 +121,7 @@ const DashboardModel = {
             HAVING visits > 0 OR revenue > 0
             ORDER BY revenue DESC, visits DESC
             LIMIT 5
-        `, [startDate, endDate]);
+        `, [startDate, endDate, startDate, endDate]);
 
         return rows;
     },

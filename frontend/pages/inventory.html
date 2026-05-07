@@ -164,7 +164,7 @@
                     <div class="stat-card card-sky">
                         <div class="icon"><i class="fa fa-box"></i></div>
                         <div class="stat-content"><h6>TỒN KHO THẤP</h6><h4>0</h4></div>
-                        <small>Thuốc dưới định mức mặc định</small>
+                        <small>Thuốc dưới ngưỡng mặc định 20</small>
                     </div>
                 </div>
             </div>
@@ -232,11 +232,11 @@
                         <table class="table align-middle" id="nearWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>Còn lại</th></tr></thead><tbody></tbody></table>
                     </div>
                     <div class="section-card mb-4">
-                        <div class="section-header"><h5 class="section-title">Thuốc dưới định mức</h5><span class="section-note">Hiển thị theo mức tồn đang chọn ở bộ lọc</span></div>
+                        <div class="section-header"><h5 class="section-title">Thuốc dưới định mức</h5><span class="section-note">Nếu chưa chọn bộ lọc, hệ thống dùng ngưỡng mặc định 20</span></div>
                         <table class="table align-middle" id="lowStockWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Tồn thực tế</th><th>Định mức tối thiểu</th></tr></thead><tbody></tbody></table>
                     </div>
                     <div class="section-card">
-                        <div class="section-header"><h5 class="section-title">Lô thuốc bị đình chỉ / thu hồi</h5><span class="status-badge status-warning">Theo dữ liệu hủy / thu hồi hiện có</span></div>
+                        <div class="section-header"><h5 class="section-title">Lịch sử hủy thuốc</h5><span class="status-badge status-warning">Theo phiếu hủy đã lập</span></div>
                         <table class="table align-middle" id="recalledWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>Ngày xử lý</th><th>Số lượng</th><th>Lý do</th><th>Kho</th></tr></thead><tbody></tbody></table>
                     </div>
                 </div>
@@ -291,7 +291,7 @@
 <script src="../js/inventory.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const username = localStorage.getItem('username');
+    const username = localStorage.getItem('fullName') || localStorage.getItem('username');
     if (username) {
         document.getElementById('usernameSidebar').textContent = username;
         document.getElementById('usernameNavbar').textContent = username;
@@ -373,14 +373,15 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="mb-0">Hủy thuốc</h5>
+                <h5 class="mb-0">Hủy lô / lập phiếu hủy</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="static-box mb-3" id="deleteLotInfo">Thông tin lô</div>
                 <div class="mb-3">
-                    <label class="form-label">Lý do</label>
+                    <label class="form-label">Lý do *</label>
                     <select id="deleteReason" class="form-select">
+                        <option value="">Chọn lý do hủy</option>
                         <option>Hết hạn</option>
                         <option>Hỏng vỡ</option>
                         <option>Thu hồi</option>
@@ -388,7 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Số lượng hủy</label>
+                    <label class="form-label">Số lượng hủy *</label>
                     <input id="deleteQty" type="number" class="form-control" min="1">
                 </div>
                 <div class="mb-3">
@@ -402,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button class="btn btn-danger" onclick="confirmDelete()">Xác nhận hủy</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Lập phiếu hủy</button>
             </div>
         </div>
     </div>

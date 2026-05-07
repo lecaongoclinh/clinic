@@ -28,7 +28,7 @@ function buildFilterClause(filters = {}) {
 
     if (filters.doctor) {
         // hỗ trợ cả lọc theo MaNV hoặc theo tên bác sĩ
-        conditions.push(`(ba.MaBacSi = ? OR bs.HoTen = ?)`);
+        conditions.push(`(COALESCE(ba.MaBacSi, pk.MaBacSi) = ? OR bs.HoTen = ?)`);
         params.push(filters.doctor, filters.doctor);
     }
 
@@ -49,9 +49,10 @@ const InvoicesModel = {
                 COALESCE(SUM(CASE WHEN hd.TrangThai = 'QuaHan' THEN hd.ThanhTienCuoi ELSE 0 END), 0) AS QuaHan
             FROM HoaDon hd
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
-            LEFT JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
+            LEFT JOIN PhieuKham pk_direct ON hd.MaPK = pk_direct.MaPK
+            LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
-            LEFT JOIN NhanVien bs ON ba.MaBacSi = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
             ${whereClause}
         `, params);
 
@@ -86,6 +87,7 @@ const InvoicesModel = {
                 hd.MaHD,
                 hd.MaHoaDon,
                 hd.MaBA,
+                hd.MaPK,
                 hd.MaPX,
                 hd.MaNhanVien,
                 hd.PhuongThucThanhToan,
@@ -106,10 +108,10 @@ const InvoicesModel = {
                 bs.HoTen AS TenBacSi
             FROM HoaDon hd
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
-            LEFT JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
+            LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
             LEFT JOIN NhanVien nv ON hd.MaNhanVien = nv.MaNV
-            LEFT JOIN NhanVien bs ON ba.MaBacSi = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
             ${whereClause}
             ORDER BY hd.NgayTao DESC, hd.MaHD DESC
         `, params);
@@ -123,6 +125,7 @@ const InvoicesModel = {
                 hd.MaHD,
                 hd.MaHoaDon,
                 hd.MaBA,
+                hd.MaPK,
                 hd.MaPX,
                 hd.MaNhanVien,
                 hd.PhuongThucThanhToan,
@@ -134,6 +137,12 @@ const InvoicesModel = {
                 hd.ThanhTienCuoi,
                 hd.HanThanhToan,
                 hd.GhiChu,
+                pk.NgayKham,
+                pk.LoaiKham,
+                CONCAT('PK', LPAD(pk.MaPK, 6, '0')) AS MaPhieuKham,
+                ck.TenChuyenKhoa AS TenKhoa,
+                phong.TenPhong AS PhongKham,
+                ba.ChuanDoan AS ChanDoan,
 
                 bn.MaBN,
                 bn.HoTen,
@@ -148,14 +157,82 @@ const InvoicesModel = {
                 bs.HoTen AS TenBacSi
             FROM HoaDon hd
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
-            LEFT JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
+            LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
             LEFT JOIN NhanVien nv ON hd.MaNhanVien = nv.MaNV
-            LEFT JOIN NhanVien bs ON ba.MaBacSi = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN ChuyenKhoa ck ON pk.MaChuyenKhoa = ck.MaChuyenKhoa
+            LEFT JOIN PhongKham phong ON pk.MaPhong = phong.MaPhong
             WHERE hd.MaHD = ?
         `, [id]);
 
         return rows[0] || null;
+    },
+
+    getByVisit: async ({ MaPK = null, MaBA = null, connection = db, forUpdate = false } = {}) => {
+        if (!MaPK && !MaBA) return null;
+
+        const conditions = [];
+        const params = [];
+
+        if (MaPK) {
+            conditions.push("hd.MaPK = ?");
+            params.push(MaPK);
+        }
+        if (MaBA) {
+            conditions.push("hd.MaBA = ?");
+            params.push(MaBA);
+        }
+
+        const [rows] = await connection.query(`
+            SELECT hd.*
+            FROM HoaDon hd
+            WHERE ${conditions.join(" OR ")}
+            ORDER BY hd.MaHD DESC
+            LIMIT 1
+            ${forUpdate ? "FOR UPDATE" : ""}
+        `, params);
+
+        return rows[0] || null;
+    },
+
+    getDefaultExamService: async ({ MaChuyenKhoa = null, connection = db } = {}) => {
+        const params = [];
+        let specialtyOrder = "CASE WHEN d.MaChuyenKhoa IS NULL THEN 1 ELSE 0 END";
+        let specialtyFilter = "";
+
+        if (MaChuyenKhoa) {
+            specialtyFilter = "AND (d.MaChuyenKhoa = ? OR d.MaChuyenKhoa IS NULL)";
+            params.push(MaChuyenKhoa);
+            specialtyOrder = "CASE WHEN d.MaChuyenKhoa = ? THEN 0 WHEN d.MaChuyenKhoa IS NULL THEN 1 ELSE 2 END";
+            params.unshift(MaChuyenKhoa);
+        }
+
+        const [rows] = await connection.query(`
+            SELECT d.MaDichVu, d.TenDichVu, d.Gia
+            FROM DichVu d
+            WHERE d.Loai = 'KhamBenh'
+              AND COALESCE(d.TrangThai, 1) = 1
+              ${specialtyFilter}
+            ORDER BY ${specialtyOrder}, d.MaDichVu ASC
+            LIMIT 1
+        `, params);
+
+        return rows[0] || null;
+    },
+
+    getServicesByIds: async (ids = [], connection = db) => {
+        const cleanIds = [...new Set(ids.map(Number).filter(Boolean))];
+        if (!cleanIds.length) return [];
+
+        const [rows] = await connection.query(`
+            SELECT MaDichVu, TenDichVu, Gia
+            FROM DichVu
+            WHERE MaDichVu IN (?)
+              AND COALESCE(TrangThai, 1) = 1
+        `, [cleanIds]);
+
+        return rows;
     },
 
     getDetails: async (id, connection = db) => {
@@ -280,17 +357,17 @@ const InvoicesModel = {
     },
 
     replaceDrugDetailsFromDispense: async (invoiceId, connection = db) => {
-        await connection.query(`
-            DELETE FROM ChiTietHoaDon
-            WHERE MaHD = ?
-              AND LoaiMuc = 'Thuoc'
-        `, [invoiceId]);
-
         const dispenseRows = await InvoicesModel.getCompletedDispenseItemsByInvoice(invoiceId, connection);
 
         if (!dispenseRows.length) {
             return [];
         }
+
+        await connection.query(`
+            DELETE FROM ChiTietHoaDon
+            WHERE MaHD = ?
+              AND LoaiMuc = 'Thuoc'
+        `, [invoiceId]);
 
         const values = dispenseRows.map((row) => ([
             invoiceId,
@@ -369,8 +446,118 @@ const InvoicesModel = {
         `, [values]);
     },
 
+    upsertVisitServiceDetails: async (invoiceId, items = [], { replace = false, onlyExam = false, connection = db } = {}) => {
+        if (replace) {
+            await connection.query(`
+                DELETE cthd
+                FROM ChiTietHoaDon cthd
+                LEFT JOIN DichVu dv ON dv.MaDichVu = cthd.MaDichVu
+                WHERE cthd.MaHD = ?
+                  AND cthd.LoaiMuc = 'DichVu'
+                  AND ${onlyExam ? "dv.Loai = 'KhamBenh'" : "(dv.Loai <> 'KhamBenh' OR dv.Loai IS NULL)"}
+            `, [invoiceId]);
+        }
+
+        if (!Array.isArray(items) || !items.length) return;
+
+        const values = items.map((item) => {
+            const soLuong = Number(item.SoLuong || 1);
+            const donGia = Number(item.DonGia ?? item.Gia ?? item.SoTien ?? 0);
+            const thanhTien = Number(item.ThanhTien ?? (donGia * soLuong));
+            return [
+                invoiceId,
+                item.MaDichVu || null,
+                thanhTien,
+                null,
+                "DichVu",
+                soLuong,
+                donGia,
+                thanhTien,
+                item.DienGiai || item.TenDichVu || null,
+                null
+            ];
+        });
+
+        await connection.query(`
+            INSERT INTO ChiTietHoaDon (
+                MaHD,
+                MaDichVu,
+                SoTien,
+                MaThuoc,
+                LoaiMuc,
+                SoLuong,
+                DonGia,
+                ThanhTien,
+                DienGiai,
+                MaPX
+            )
+            VALUES ?
+        `, [values]);
+    },
+
+    replaceDrugDetailsFromPrescription: async (invoiceId, maBA, connection = db) => {
+        await connection.query(`
+            DELETE FROM ChiTietHoaDon
+            WHERE MaHD = ?
+              AND LoaiMuc = 'Thuoc'
+        `, [invoiceId]);
+
+        const [rows] = await connection.query(`
+            SELECT
+                dt.MaDT,
+                ct.MaThuoc,
+                ct.SoLuong,
+                t.TenThuoc,
+                COALESCE(t.GiaBan, 0) AS DonGia
+            FROM DonThuoc dt
+            INNER JOIN ChiTietDonThuoc ct ON ct.MaDT = dt.MaDT
+            INNER JOIN Thuoc t ON t.MaThuoc = ct.MaThuoc
+            WHERE dt.MaBA = ?
+            ORDER BY dt.MaDT DESC, ct.MaCTDT ASC
+        `, [maBA]);
+
+        if (!rows.length) return [];
+
+        const values = rows.map((row) => {
+            const soLuong = Number(row.SoLuong || 0);
+            const donGia = Number(row.DonGia || 0);
+            const thanhTien = soLuong * donGia;
+            return [
+                invoiceId,
+                null,
+                thanhTien,
+                row.MaThuoc,
+                "Thuoc",
+                soLuong,
+                donGia,
+                thanhTien,
+                `${row.TenThuoc || "Thuoc"} | Don #${row.MaDT}`,
+                null
+            ];
+        });
+
+        await connection.query(`
+            INSERT INTO ChiTietHoaDon (
+                MaHD,
+                MaDichVu,
+                SoTien,
+                MaThuoc,
+                LoaiMuc,
+                SoLuong,
+                DonGia,
+                ThanhTien,
+                DienGiai,
+                MaPX
+            )
+            VALUES ?
+        `, [values]);
+
+        return rows;
+    },
+
     create: async ({
         MaBA,
+        MaPK = null,
         MaPX = null,
         MaNhanVien,
         PhuongThucThanhToan,
@@ -385,6 +572,7 @@ const InvoicesModel = {
         const [result] = await connection.query(`
             INSERT INTO HoaDon (
                 MaBA,
+                MaPK,
                 MaPX,
                 MaNhanVien,
                 PhuongThucThanhToan,
@@ -396,9 +584,10 @@ const InvoicesModel = {
                 HanThanhToan,
                 GhiChu
             )
-            VALUES (?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?)
         `, [
             MaBA,
+            MaPK,
             MaPX,
             MaNhanVien,
             PhuongThucThanhToan,
@@ -415,6 +604,7 @@ const InvoicesModel = {
 
     update: async (id, {
         MaBA,
+        MaPK = null,
         MaPX = null,
         MaNhanVien,
         PhuongThucThanhToan,
@@ -431,6 +621,7 @@ const InvoicesModel = {
             UPDATE HoaDon
             SET
                 MaBA = ?,
+                MaPK = ?,
                 MaPX = ?,
                 MaNhanVien = ?,
                 PhuongThucThanhToan = ?,
@@ -444,6 +635,7 @@ const InvoicesModel = {
             WHERE MaHD = ?
         `, [
             MaBA,
+            MaPK,
             MaPX,
             MaNhanVien,
             PhuongThucThanhToan,
@@ -458,6 +650,80 @@ const InvoicesModel = {
         ]);
 
         return result.affectedRows;
+    },
+
+    updateTotalsAndStatus: async (id, {
+        TongTien,
+        GiamGia,
+        ThanhTienCuoi,
+        TrangThai,
+        PhuongThucThanhToan,
+        NgayThanhToan,
+        connection = db
+    }) => {
+        const [result] = await connection.query(`
+            UPDATE HoaDon
+            SET
+                TongTien = ?,
+                GiamGia = ?,
+                ThanhTienCuoi = ?,
+                TrangThai = ?,
+                PhuongThucThanhToan = ?,
+                NgayThanhToan = ?
+            WHERE MaHD = ?
+        `, [TongTien, GiamGia, ThanhTienCuoi, TrangThai, PhuongThucThanhToan, NgayThanhToan, id]);
+
+        return result.affectedRows;
+    },
+
+    getPaymentHistory: async (invoiceId, connection = db) => {
+        const [rows] = await connection.query(`
+            SELECT
+                MaLSTT,
+                MaHD,
+                LoaiGiaoDich,
+                PhuongThucThanhToan,
+                SoTienThanhToan,
+                NgayThanhToan,
+                MaNhanVien,
+                GhiChu
+            FROM LichSuThanhToan
+            WHERE MaHD = ?
+            ORDER BY NgayThanhToan DESC, MaLSTT DESC
+        `, [invoiceId]);
+
+        return rows;
+    },
+
+    insertPaymentHistory: async (invoiceId, {
+        LoaiGiaoDich = "ThanhToan",
+        PhuongThucThanhToan,
+        SoTienThanhToan,
+        MaNhanVien = null,
+        GhiChu = null,
+        connection = db
+    }) => {
+        const [result] = await connection.query(`
+            INSERT INTO LichSuThanhToan (
+                MaHD,
+                LoaiGiaoDich,
+                PhuongThucThanhToan,
+                SoTienThanhToan,
+                NgayThanhToan,
+                MaNhanVien,
+                GhiChu
+            )
+            VALUES (?, ?, ?, ?, NOW(), ?, ?)
+        `, [
+            invoiceId,
+            LoaiGiaoDich,
+            PhuongThucThanhToan,
+            SoTienThanhToan,
+            MaNhanVien,
+            GhiChu
+        ]);
+
+        return result.insertId;
     },
 
     updatePaymentState: async (id, {
@@ -485,6 +751,11 @@ const InvoicesModel = {
 
         try {
             await connection.beginTransaction();
+
+            await connection.query(`
+                DELETE FROM LichSuThanhToan
+                WHERE MaHD = ?
+            `, [id]);
 
             await connection.query(`
                 DELETE FROM ChiTietHoaDon

@@ -1,5 +1,23 @@
 import ImportsService from "../services/importsService.js";
 import MedicinesService from "../services/medicinesService.js";
+import jwt from "jsonwebtoken";
+
+function getAuthUser(req) {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+    if (!token) return null;
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_SECRET);
+        return {
+            MaNV: payload.id,
+            Username: payload.userName,
+            MaVaiTro: Number(payload.role)
+        };
+    } catch {
+        return null;
+    }
+}
 
 const ImportsController = {
 
@@ -52,7 +70,15 @@ const ImportsController = {
 
     create: async (req, res) => {
         try {
-            const id = await ImportsService.createImport(req.body);
+            const user = getAuthUser(req);
+            if (!user?.MaNV) {
+                return res.status(401).json({ message: "Vui lòng đăng nhập để tạo phiếu nhập" });
+            }
+
+            const id = await ImportsService.createImport({
+                ...req.body,
+                MaNhanVien: user.MaNV
+            });
 
             res.status(201).json({
                 message: "Tạo phiếu nhập thành công",

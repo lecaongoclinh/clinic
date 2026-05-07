@@ -1456,7 +1456,7 @@
 <script src="../js/invoice_detail.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const username = localStorage.getItem('username') || 'Nguyen The Anh';
+    const username = localStorage.getItem('fullName') || localStorage.getItem('username');
     const sidebar = document.getElementById('usernameSidebar');
     const navbar = document.getElementById('usernameNavbar');
     if (sidebar) sidebar.textContent = username;

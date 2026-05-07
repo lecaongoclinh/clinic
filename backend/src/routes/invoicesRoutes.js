@@ -9,6 +9,7 @@ router.get("/:id/details", InvoicesController.getDetails);
 router.get("/:id", InvoicesController.getById);
 
 router.post("/", InvoicesController.create);
+router.post("/visits/:ticketId/services", InvoicesController.addVisitServices);
 router.put("/:id", InvoicesController.update);
 router.put("/:id/pay", InvoicesController.pay);
 router.put("/:id/cancel", InvoicesController.cancel);

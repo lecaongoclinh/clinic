@@ -1,4 +1,5 @@
 import db from '../config/db.js';
+import InvoicesService from '../services/invoicesService.js';
 
 class MedicalRecordsModel {
     static async getMedicalRecords(tenBN = '', fromDate = null, toDate = null, limit = 10, offset = 0) {
@@ -435,6 +436,13 @@ class MedicalRecordsModel {
                 `UPDATE PhieuKham SET TrangThai = 'DaKham' WHERE MaPK = ?`,
                 [maPK]
             );
+
+            await InvoicesService.linkMedicalRecordToVisitInvoice({
+                MaPK: maPK,
+                MaBA: insertResult.insertId,
+                MaNhanVien: maBacSi,
+                connection
+            });
 
             await connection.commit();
 
