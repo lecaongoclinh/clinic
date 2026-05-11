@@ -325,7 +325,10 @@ function renderTable() {
     }
 
     tbody.innerHTML = state.items.map((item, index) => {
-        const lotHtml = item.allocations?.map((allocation) => `<div style="font-size:12px">${allocation.SoLo} (${allocation.SoLuongXuat})</div>`).join('') || item.SoLo || '';
+        const lotHtml = item.allocations?.map((allocation) => {
+            const kho = allocation.TenKho ? ` - ${escapeHtml(allocation.TenKho)}` : '';
+            return `<div style="font-size:12px">${escapeHtml(allocation.SoLo || '')} (${allocation.SoLuongXuat})${kho}</div>`;
+        }).join('') || item.SoLo || '';
         const hsdHtml = item.allocations?.map((allocation) => `<div style="font-size:12px">${formatDate(allocation.HanSuDung)}</div>`).join('') || formatDate(item.HanSuDung);
         const thanhTien = Number(item.ThanhTien || (Number(item.DonGia || 0) * Number(item.SoLuong || 0)));
         const noiDung = [
@@ -359,7 +362,7 @@ function removeItem(index) {
 
 async function loadPrescription(maDT) {
     try {
-        const data = await fetchJson(`${API}/prescriptions/${maDT}?MaKho=${$('khoSelect').value}`);
+        const data = await fetchJson(`${API}/prescriptions/${maDT}`);
         $('maDT').value = maDT;
         $('loaiXuat').value = 'BanChoBN';
         $('maBN').value = data.header?.MaBN || '';
@@ -378,7 +381,7 @@ async function loadPrescription(maDT) {
 
 async function openPendingPrescriptionDetail(maDT) {
     try {
-        const data = await fetchJson(`${API}/prescriptions/${maDT}?MaKho=${$('khoSelect').value}`);
+        const data = await fetchJson(`${API}/prescriptions/${maDT}`);
         state.selectedPrescription = data;
         const header = data.header || {};
         const listInfo = state.pendingPrescriptions.find((item) => String(item.MaDT) === String(maDT)) || {};
@@ -411,7 +414,10 @@ async function openPendingPrescriptionDetail(maDT) {
                                 <td><strong>${escapeHtml(item.TenThuoc || '')}</strong><br><small class="text-muted">${escapeHtml(item.HoatChat || '')}</small></td>
                                 <td class="text-center">${Number(item.SoLuong || 0)}</td>
                                 <td>${escapeHtml(item.DonViCoBan || item.DonVi || '')}</td>
-                                <td>${(item.allocations || []).map((lot) => `${escapeHtml(lot.SoLo || '')} (${Number(lot.SoLuongXuat || 0)}, HSD ${formatDate(lot.HanSuDung)})`).join('<br>')}</td>
+                                <td>${(item.allocations || []).map((lot) => {
+                                    const kho = lot.TenKho ? ` - ${escapeHtml(lot.TenKho)}` : '';
+                                    return `${escapeHtml(lot.SoLo || '')} (${Number(lot.SoLuongXuat || 0)}, HSD ${formatDate(lot.HanSuDung)})${kho}`;
+                                }).join('<br>')}</td>
                                 <td>${escapeHtml(item.LieuDung || '')}</td>
                                 <td class="text-end">${formatMoney(item.ThanhTien || 0)}</td>
                             </tr>
@@ -448,7 +454,7 @@ async function confirmPrescriptionDispense() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 MaNhanVien: user.MaNV,
-                MaKho: $('khoSelect').value,
+                MaKho: null,
                 LoaiXuat: 'BanChoBN',
                 MaBN: detail.header.MaBN || null,
                 MaDT: detail.header.MaDT,
@@ -541,7 +547,7 @@ function getPayload() {
     return {
         MaPX: state.currentDraftId,
         MaNhanVien: user.MaNV,
-        MaKho: $('khoSelect').value,
+        MaKho: $('maDT').value ? null : $('khoSelect').value,
         LoaiXuat: $('loaiXuat').value,
         MaBN: $('maBN').value || null,
         MaDT: $('maDT').value || null,

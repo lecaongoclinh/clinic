@@ -25,7 +25,7 @@ function parseDraftNote(rawNote) {
 }
 
 function validateHeader(payload) {
-    if (!payload.MaKho) throw new Error("Phiếu xuất phải chọn kho");
+    if (!payload.MaKho && !payload.MaDT) throw new Error("Phiếu xuất phải chọn kho");
     if (!payload.LoaiXuat) throw new Error("Phiếu xuất phải có loại xuất");
     if (!payload.MaNhanVien) throw new Error("Thiếu nhân viên thực hiện");
     if (payload.LoaiXuat === "BanChoBN" && !payload.MaBN && !payload.MaDT) throw new Error("Xuất cho bệnh nhân phải chọn bệnh nhân hoặc đơn thuốc");
@@ -97,6 +97,8 @@ async function buildAllocationPreview({ MaThuoc, SoLuong, MaKho, connection = db
         const allocateQty = Math.min(available, remaining);
         allocations.push({
             MaLo: lot.MaLo,
+            MaKho: lot.MaKho,
+            TenKho: lot.TenKho,
             SoLo: lot.SoLo,
             HanSuDung: lot.HanSuDung,
             NgaySanXuat: lot.NgaySanXuat,
@@ -208,10 +210,12 @@ const DispenseService = {
     }
 
     const items = normalizeItems(payload.items);
+    const allocationWarehouse = payload.MaDT ? null : payload.MaKho;
+    const requireFullStock = Boolean(payload.MaDT);
     const enrichedItems = [];
 
     for (const item of items) {
-        enrichedItems.push(await enrichItem(item, payload.MaKho, db, false));
+        enrichedItems.push(await enrichItem(item, allocationWarehouse, db, requireFullStock));
     }
 
     const tongTien = enrichedItems.reduce(
@@ -247,6 +251,7 @@ const DispenseService = {
 
     const payloadToSave = {
         ...payload,
+        MaKho: payload.MaDT ? null : payload.MaKho,
         NgayXuat: payload.NgayXuat || new Date().toISOString().slice(0, 19).replace("T", " "),
         TongTien: tongTien
     };
