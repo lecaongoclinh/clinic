@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 /********** Template CSS **********/
 :root {
@@ -11,7 +11,7 @@
 }
 
 body {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Inter', sans-serif !important;
     font-size: 14px !important;
     background-color: var(--light) !important;
     color: var(--dark) !important;
@@ -44,7 +44,7 @@ h1, h2, h3, h4, h5, h6 {
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     font-size: 13px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 .fc .fc-toolbar-title {
@@ -623,12 +623,19 @@ body {
 .table-schedule thead th {
     background: #F5F5F5 !important;
     color: #111 !important;
+    font-family: inherit;
     font-weight: 700;
     padding: 16px 10px;
     text-align: center;
     font-size: 14.5px;
     border-bottom: 2px solid #dee2e6;
     white-space: nowrap;
+}
+
+.table tbody td,
+.table-schedule tbody td {
+    font-family: inherit;
+    font-weight: 400;
 }
 
 .badge.bg-primary,
@@ -731,7 +738,7 @@ body {
     background: #ffffff;
     box-shadow: var(--shadow-soft);
     color: var(--dark);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 #calendarContainer {
@@ -757,7 +764,7 @@ body {
     --fc-event-bg-color: #0d6efd;
     --fc-event-border-color: #0d6efd;
     --fc-event-text-color: #ffffff;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 #calendar .fc-toolbar,
@@ -907,7 +914,7 @@ body {
     border-radius: 8px !important;
     background: #ffffff !important;
     box-shadow: var(--shadow-soft) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 .bootstrap-datetimepicker-widget table th {
@@ -1088,7 +1095,7 @@ body {
     border-color: #d8e2ef;
     color: #1e293b;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 400;
 }
 
 #pendingAppointmentsTable tbody tr {
