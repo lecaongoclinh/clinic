@@ -4,9 +4,10 @@
 :root {
     --primary: #0284c7;    /* Xanh lam thanh lịch (Sky 600) */
     --primary-light: #e0f2fe; /* Xanh lam nhạt (Sky 100) */
-    --light: #f4f9fd;      /* Xanh nhạt pha trắng dùng làm nền */
+    --light: #F5F5F5;      /* Nền xám nhạt */
     --dark: #1e293b;       /* Xám đen đậm cho chữ (Slate 800) */
     --border-color: #e2e8f0;
+    --top-navbar-height: 60px;
 }
 
 body {
@@ -131,6 +132,7 @@ h1, h2, h3, h4, h5, h6 {
 .content {
     margin-left: 250px;
     min-height: 100vh;
+    padding-top: var(--top-navbar-height);
     background: var(--light);
     transition: 0.5s;
 }
@@ -370,9 +372,20 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .content .navbar {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    left: 250px;
+    min-height: var(--top-navbar-height);
+    z-index: 998;
     background: #FFFFFF !important;
     box-shadow: 0 4px 20px rgba(0,0,0,0.03);
     border-bottom: 1px solid var(--border-color);
+    transition: left 0.5s, width 0.5s;
+}
+
+.content.open .navbar {
+    left: 0;
 }
 
 .content .navbar .navbar-nav .nav-link {
@@ -424,6 +437,12 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 575.98px) {
     .content .navbar .navbar-nav .nav-link {
         margin-left: 15px;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .content .navbar {
+        left: 0;
     }
 }
 
@@ -511,15 +530,15 @@ h1, h2, h3, h4, h5, h6 {
     --warning-rich: #f59e0b;
     --danger-rich: #ef4444;
     --success-rich: #10b981;
-    --light: #eef6ff;
+    --light: #F5F5F5;
     --border-color: #d8e2ef;
     --surface: #ffffff;
-    --surface-soft: #f8fbff;
+    --surface-soft: #F5F5F5;
     --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
 }
 
 body {
-    background: #f8fbff !important;
+    background: #F5F5F5 !important;
 }
 
 .bg-light,
@@ -602,7 +621,7 @@ body {
 
 .table thead th,
 .table-schedule thead th {
-    background: #f1f3f5 !important;
+    background: #F5F5F5 !important;
     color: #111 !important;
     font-weight: 700;
     padding: 16px 10px;
@@ -684,7 +703,7 @@ body {
 :root {
     --warehouse-bg: #f3f6f9;
     --warehouse-panel: #ffffff;
-    --warehouse-panel-soft: #f8fbff;
+    --warehouse-panel-soft: #F5F5F5;
     --warehouse-border: #dfe6ee;
     --warehouse-border-strong: #dee2e6;
     --warehouse-text: #111111;
@@ -812,7 +831,7 @@ body {
 #calendar .fc-col-header-cell,
 #scheduleCalendar .fc-col-header-cell {
     padding: 10px 0 !important;
-    background: #eef6ff !important;
+    background: #F5F5F5 !important;
 }
 
 #calendar .fc-col-header-cell-cushion,
@@ -1026,19 +1045,41 @@ body {
     padding-top: 16px;
 }
 
+.pending-appointments-panel {
+    background: #ffffff !important;
+    border: 1px solid rgba(216, 226, 239, 0.85);
+    border-radius: 8px;
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
+}
+
+.pending-appointments-panel .table-responsive {
+    background: #ffffff !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
 #pendingAppointmentsTable {
     margin-bottom: 0;
+    background: #ffffff !important;
     color: #1e293b;
     vertical-align: middle;
 }
 
+#pendingAppointmentsTable tbody,
+#pendingAppointmentsTable tbody tr,
+#pendingAppointmentsTable tbody td {
+    background: #ffffff !important;
+}
+
 #pendingAppointmentsTable thead th {
-    padding: 14px 12px;
-    border: 0;
-    background: #0d6efd !important;
-    color: #ffffff !important;
-    font-size: 13px;
-    font-weight: 800;
+    padding: 16px 10px;
+    border-bottom: 2px solid #dee2e6;
+    background: #F5F5F5 !important;
+    color: #111 !important;
+    font-size: 14.5px;
+    font-weight: 700;
+    text-align: center;
     white-space: nowrap;
 }
 
@@ -1055,12 +1096,29 @@ body {
 }
 
 #pendingAppointmentsTable tbody tr:hover {
-    background: #f8fbff;
+    background: #F5F5F5 !important;
+}
+
+#pendingAppointmentsTable tbody tr:hover td {
+    background: #F5F5F5 !important;
 }
 
 #pendingAppointmentsTable .btn {
     border-radius: 8px;
     font-weight: 700;
+}
+
+#pendingAppointmentsTable .btn-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#pendingAppointmentsTable .btn-icon + .btn-icon {
+    margin-left: 6px;
 }
 
 #createAppointmentModal .modal-content,
@@ -1091,7 +1149,7 @@ body {
 #createAppointmentModal .modal-footer,
 #editAppointmentModal .modal-footer {
     border-top: 1px solid #d8e2ef;
-    background: #f8fbff;
+    background: #F5F5F5;
 }
 
 #createAppointmentModal .form-label,

@@ -8,7 +8,7 @@
     border-radius: 16px;
     padding: 24px 16px;
     text-align: center;
-    border: none;
+    border: 1px solid transparent;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     transition: all 0.3s ease;
     min-height: 120px;
@@ -23,35 +23,43 @@
 }
 
 .stat-card.primary {
-    background: #3b82f6;
+    background: #FF537B;
+    border-color: #FF537B;
+    color: #ffffff;
 }
 
 .stat-card.primary:hover {
-    background: #2563eb;
+    background: #f04470;
 }
 
 .stat-card.warning {
-    background: #f97316;
+    background: #F2B50B;
+    border-color: #F2B50B;
+    color: #4a3200;
 }
 
 .stat-card.warning:hover {
-    background: #ea580c;
+    background: #dca508;
 }
 
 .stat-card.success {
-    background: #22c55e;
+    background: #25671E;
+    border-color: #25671E;
+    color: #ffffff;
 }
 
 .stat-card.success:hover {
-    background: #16a34a;
+    background: #1f5719;
 }
 
 .stat-card.purple {
-    background: #d946ef;
+    background: #DB1A1A;
+    border-color: #DB1A1A;
+    color: #ffffff;
 }
 
 .stat-card.purple:hover {
-    background: #c026d3;
+    background: #c01616;
 }
 
 .stat-number {
@@ -59,12 +67,12 @@
     font-weight: 800;
     line-height: 1.2;
     margin-bottom: 8px;
-    color: #ffffff;
+    color: inherit;
 }
 
 .stat-label {
     font-size: 0.875rem;
-    color: rgba(255, 255, 255, 0.9);
+    color: inherit;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
