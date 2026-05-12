@@ -100,7 +100,7 @@
             roles: [ROLE.ADMIN, ROLE.CASHIER],
             children: [
                 { label: "Hóa đơn", href: "pages/invoices.html", roles: [ROLE.ADMIN, ROLE.CASHIER] },
-                { label: "Thanh toán", href: "pages/invoices.html#thanh-toan", roles: [ROLE.ADMIN, ROLE.CASHIER] },
+                { label: "Thanh toán", href: "pages/invoices.html", roles: [ROLE.ADMIN, ROLE.CASHIER] },
                 { label: "Dịch vụ", href: "pages/services.html", roles: [ROLE.ADMIN, ROLE.CASHIER] }
             ]
         }
@@ -145,7 +145,11 @@
     }
 
     function normalizeHref(href) {
-        return href.toLowerCase().replace(/^\.?\//, "");
+        return (href || "")
+            .toLowerCase()
+            .replace(/^\.?\//, "")
+            .split("#")[0]
+            .split("?")[0];
     }
 
     function resolveHref(href) {
