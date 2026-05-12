@@ -152,7 +152,8 @@ class MedicalRecordsService {
             const result = await MedicalRecordsModel.createMedicalRecordWithTicketUpdate(maPK, maBacSi, {
                 trieuChung: String(data.trieuChung).trim(),
                 chuanDoan: String(data.chuanDoan).trim(),
-                ghiChu: data.ghiChu ? String(data.ghiChu).trim() : null
+                ghiChu: data.ghiChu ? String(data.ghiChu).trim() : null,
+                ChiTietDichVu: Array.isArray(data.ChiTietDichVu) ? data.ChiTietDichVu : []
             });
             
             return {

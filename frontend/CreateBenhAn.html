@@ -308,6 +308,21 @@
                             <textarea class="form-control" id="modalGhiChu" rows="2"></textarea>
                             <small class="text-muted">Hướng dẫn điều trị, liệu pháp, v.v.</small>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Chỉ định dịch vụ</label>
+                            <div class="input-group mb-2">
+                                <select class="form-select" id="serviceOrderSelect">
+                                    <option value="">Chọn dịch vụ xét nghiệm/siêu âm</option>
+                                </select>
+                                <input type="number" class="form-control" id="serviceOrderQty" min="1" value="1" style="max-width: 90px;">
+                                <button type="button" class="btn btn-outline-primary" id="btnAddServiceOrder">Thêm</button>
+                            </div>
+                            <div id="serviceOrderList" class="table-responsive"></div>
+                            <div class="d-flex justify-content-end mt-2">
+                                <strong>Tạm tính dịch vụ: <span id="serviceOrderTotal">0 đ</span></strong>
+                            </div>
+                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">

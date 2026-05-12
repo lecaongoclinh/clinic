@@ -102,18 +102,16 @@ function mergeTrend(range, revenueRows, visitRows) {
 
 function toRevenueStructurePercent(rows) {
     const total = rows.reduce((sum, row) => sum + Number(row.revenue || 0), 0);
+    const labels = ["Khám bệnh", "Cận lâm sàng", "Thuốc", "Khác"];
 
     if (!total) {
-        return [
-            { label: "Khám bệnh", value: 0 },
-            { label: "Cận lâm sàng", value: 0 },
-            { label: "Dịch vụ khác", value: 0 }
-        ];
+        return labels.map(label => ({ label, value: 0 }));
     }
 
-    return rows.map(row => ({
-        label: row.label,
-        value: Number(((Number(row.revenue || 0) / total) * 100).toFixed(1))
+    const revenueMap = new Map(rows.map(row => [row.label, Number(row.revenue || 0)]));
+    return labels.map(label => ({
+        label,
+        value: Number(((Number(revenueMap.get(label) || 0) / total) * 100).toFixed(1))
     }));
 }
 
@@ -121,14 +119,14 @@ function buildRecentActivities(summary, topServices) {
     const items = [];
 
     items.push({
-        title: "Doanh thu kỳ hiện tại",
-        meta: "Tổng doanh thu đã thanh toán",
+        title: "Doanh thu đã thanh toán",
+        meta: "Chỉ tính hóa đơn đã thanh toán trong kỳ",
         value: `${Number(summary.revenueGrowth || 0) >= 0 ? "+" : ""}${summary.revenueGrowth}%`
     });
 
     items.push({
-        title: "Bệnh nhân mới trong kỳ",
-        meta: "Tổng số hồ sơ mới tạo",
+        title: "Bệnh nhân mới",
+        meta: "Hồ sơ bệnh nhân tạo trong kỳ",
         value: `${Number(summary.newPatients || 0).toLocaleString("vi-VN")} BN`
     });
 
@@ -141,9 +139,9 @@ function buildRecentActivities(summary, topServices) {
     }
 
     items.push({
-        title: "Mức hài lòng giả lập",
-        meta: "Hiện CSDL chưa có bảng đánh giá riêng",
-        value: `${Number(summary.satisfactionRate || 0).toFixed(1)}%`
+        title: "Hóa đơn chờ thanh toán",
+        meta: "Chưa thanh toán, thanh toán một phần hoặc quá hạn",
+        value: `${Number(summary.pendingInvoices || 0).toLocaleString("vi-VN")} HĐ`
     });
 
     return items;
@@ -179,7 +177,8 @@ const DashboardService = {
             visitsGrowth: calcGrowth(currentSummary.totalVisits, previousSummary.totalVisits),
             newPatients: Number(currentSummary.newPatients || 0),
             newPatientsGrowth: calcGrowth(currentSummary.newPatients, previousSummary.newPatients),
-            satisfactionRate: 94.8
+            pendingInvoices: Number(currentSummary.pendingInvoices || 0),
+            pendingAmount: Number(currentSummary.pendingAmount || 0)
         };
 
         return {
@@ -191,7 +190,7 @@ const DashboardService = {
                 specialty: item.specialty || "Chưa cập nhật",
                 visits: Number(item.visits || 0),
                 revenue: Number(item.revenue || 0),
-                rating: Number(item.rating || 4.8)
+                rating: item.rating === null || item.rating === undefined ? null : Number(item.rating)
             })),
             topServices: topServices.map(item => ({
                 name: item.name,

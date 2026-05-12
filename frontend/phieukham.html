@@ -147,27 +147,27 @@
             <!-- Stats bar -->
             <div class="row g-3 mb-4" id="statsBar">
                 <div class="col-6 col-md-3">
-                    <div class="rounded-3 p-3 text-center" style="background:#e3f2fd">
-                        <div class="fs-4 fw-bold text-primary" id="cntTotal">0</div>
-                        <small class="text-muted">Tổng phiếu</small>
+                    <div class="stat-card primary">
+                        <div class="stat-number" id="cntTotal">0</div>
+                        <div class="stat-label">Tổng phiếu</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="rounded-3 p-3 text-center" style="background:#fff8e1">
-                        <div class="fs-4 fw-bold" style="color:#e65100" id="cntWaiting">0</div>
-                        <small class="text-muted">Đang chờ</small>
+                    <div class="stat-card warning">
+                        <div class="stat-number" id="cntWaiting">0</div>
+                        <div class="stat-label">Đang chờ</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="rounded-3 p-3 text-center" style="background:#e8f5e9">
-                        <div class="fs-4 fw-bold text-success" id="cntDone">0</div>
-                        <small class="text-muted">Đã khám</small>
+                    <div class="stat-card success">
+                        <div class="stat-number" id="cntDone">0</div>
+                        <div class="stat-label">Đã khám</div>
                     </div>
                 </div>
                 <div class="col-6 col-md-3">
-                    <div class="rounded-3 p-3 text-center" style="background:#f3e5f5">
-                        <div class="fs-4 fw-bold" style="color:#6a1b9a" id="cntInProgress">0</div>
-                        <small class="text-muted">Đang khám</small>
+                    <div class="stat-card purple">
+                        <div class="stat-number" id="cntInProgress">0</div>
+                        <div class="stat-label">Đang khám</div>
                     </div>
                 </div>
             </div>
@@ -252,6 +252,19 @@
                             <div class="col-md-6">
                                 <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
                                 <input id="newPatientPhone" class="form-control" placeholder="Nhập số điện thoại">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Gioi tinh <span class="text-danger">*</span></label>
+                                <select id="newPatientGender" class="form-select">
+                                    <option value="">-- Chon gioi tinh --</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nu">Nu</option>
+                                    <option value="Khac">Khac</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Dia chi <span class="text-danger">*</span></label>
+                                <input id="newPatientAddress" class="form-control" placeholder="Nhap dia chi">
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-3">

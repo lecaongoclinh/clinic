@@ -247,6 +247,11 @@ function decorateInvoice(invoice = {}, details = null, paymentHistoryRows = null
     };
 }
 
+function toInvoiceStoragePaymentMethod(value) {
+    if (value === undefined || value === null || value === "") return null;
+    return normalizePaymentMethod(value).storageMethod;
+}
+
 async function refreshInvoiceTotalsAndStatus(invoiceId, details, connection = db) {
     const invoice = await InvoicesModel.getById(invoiceId, connection);
     const paymentHistory = await InvoicesModel.getPaymentHistory(invoiceId, connection);
@@ -255,13 +260,16 @@ async function refreshInvoiceTotalsAndStatus(invoiceId, details, connection = db
     const { totalPaid } = calculateLedger(paymentHistory);
     const status = getDerivedStatus(invoice, totals.ThanhTienCuoi, totalPaid);
     const latestPayment = paymentHistory.find(item => item.LoaiGiaoDich === "ThanhToan");
+    const storedPaymentMethod = latestPayment
+        ? toInvoiceStoragePaymentMethod(latestPayment.PhuongThucThanhToan)
+        : (totalPaid > 0 ? toInvoiceStoragePaymentMethod(invoice.PhuongThucThanhToan) : null);
 
     await InvoicesModel.updateTotalsAndStatus(invoiceId, {
         TongTien: totals.TongTien,
         GiamGia: toNumber(invoice.GiamGia, 0),
         ThanhTienCuoi: totals.ThanhTienCuoi,
         TrangThai: status === "ThanhToanMotPhan" ? "ChuaThanhToan" : status,
-        PhuongThucThanhToan: latestPayment?.PhuongThucThanhToan || invoice.PhuongThucThanhToan,
+        PhuongThucThanhToan: storedPaymentMethod,
         NgayThanhToan: status === "DaThanhToan" ? (invoice.NgayThanhToan || new Date()) : null,
         connection
     });
@@ -735,21 +743,31 @@ const InvoicesService = {
     },
 
     addServiceItemsForVisit: async (payload = {}) => {
-        const connection = await db.getConnection();
+        const externalConnection = payload.connection;
+        const connection = externalConnection || await db.getConnection();
         try {
-            await connection.beginTransaction();
+            if (!externalConnection) await connection.beginTransaction();
             const invoice = await getOrCreateInvoiceForVisit({
                 MaPK: payload.MaPK,
                 MaBA: payload.MaBA,
                 MaNhanVien: payload.MaNhanVien,
                 connection
             });
+            const currentDetails = await InvoicesModel.getDetails(invoice.MaHD, connection);
+            const currentPayments = await InvoicesModel.getPaymentHistory(invoice.MaHD, connection);
+            const currentInvoice = decorateInvoice(invoice, currentDetails, currentPayments.length ? currentPayments : null);
+            if (currentInvoice.TrangThai === "DaThanhToan" || currentInvoice.TrangThai === "DaHuy") {
+                throw new Error("Không thể thêm chỉ định dịch vụ cho hóa đơn đã thanh toán hoặc đã hủy");
+            }
 
             const rawItems = Array.isArray(payload.ChiTietDichVu)
                 ? payload.ChiTietDichVu
                 : Array.isArray(payload.DichVu)
                     ? payload.DichVu
                     : [];
+            if (!rawItems.length) {
+                throw new Error("Chưa chọn dịch vụ chỉ định");
+            }
             const serviceIds = rawItems.map(item => item.MaDichVu || item.maDichVu);
             const services = await InvoicesModel.getServicesByIds(serviceIds, connection);
             const serviceMap = new Map(services.map(item => [Number(item.MaDichVu), item]));
@@ -767,6 +785,9 @@ const InvoicesService = {
                     DienGiai: item.DienGiai || service.TenDichVu
                 };
             }).filter(Boolean);
+            if (!items.length) {
+                throw new Error("Không có dịch vụ cận lâm sàng hợp lệ để thêm vào hóa đơn");
+            }
 
             await InvoicesModel.upsertVisitServiceDetails(invoice.MaHD, items, {
                 replace: Boolean(payload.Replace),
@@ -776,13 +797,13 @@ const InvoicesService = {
 
             const details = await InvoicesModel.getDetails(invoice.MaHD, connection);
             const refreshed = await refreshInvoiceTotalsAndStatus(invoice.MaHD, details, connection);
-            await connection.commit();
+            if (!externalConnection) await connection.commit();
             return decorateInvoice(refreshed.invoice, details, refreshed.paymentHistory);
         } catch (error) {
-            await connection.rollback();
+            if (!externalConnection) await connection.rollback();
             throw error;
         } finally {
-            connection.release();
+            if (!externalConnection) connection.release();
         }
     },
 

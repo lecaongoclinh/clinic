@@ -1,7 +1,7 @@
 import db from "../config/db.js";
 
 const STOCK_EXPR = "GREATEST(COALESCE(l.SoLuongNhap, 0) - COALESCE(l.SoLuongDaXuat, 0), 0)";
-const EXPORTABLE_LOT_CONDITION = "COALESCE(l.TrangThai, 'ConHan') NOT IN ('HetHan', 'DaHuy')";
+const EXPORTABLE_LOT_CONDITION = "COALESCE(l.TrangThai, 'ConHan') NOT IN ('HetHan', 'DaHuy') AND l.HanSuDung > CURDATE()";
 
 function buildCatalogFilters(filters = {}) {
     const conditions = [];
@@ -39,7 +39,43 @@ function buildCatalogFilters(filters = {}) {
 }
 
 const DispenseModel = {
+    getDispenseWarehouse: async (connection = db) => {
+        const [columns] = await connection.query(`
+            SELECT COLUMN_NAME
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'Kho'
+              AND COLUMN_NAME IN ('LoaiKho', 'IsDispenseWarehouse')
+        `);
+        const columnNames = new Set(columns.map(row => row.COLUMN_NAME));
+        const conditions = ["TenKho IN ('Kho Quầy Thuốc', 'Kho Quầy')"];
+        const orderParts = [
+            "WHEN TenKho = 'Kho Quầy Thuốc' THEN 3",
+            "WHEN TenKho = 'Kho Quầy' THEN 4"
+        ];
+
+        if (columnNames.has("IsDispenseWarehouse")) {
+            conditions.unshift("IsDispenseWarehouse = TRUE");
+            orderParts.unshift("WHEN IsDispenseWarehouse = TRUE THEN 1");
+        }
+        if (columnNames.has("LoaiKho")) {
+            conditions.unshift("LoaiKho = 'DISPENSE'");
+            orderParts.unshift("WHEN LoaiKho = 'DISPENSE' THEN 0");
+        }
+
+        const [rows] = await connection.query(`
+            SELECT MaKho, TenKho
+            FROM Kho
+            WHERE TrangThai = TRUE
+              AND (${conditions.join(" OR ")})
+            ORDER BY CASE ${orderParts.join(" ")} ELSE 9 END, TenKho ASC
+            LIMIT 1
+        `);
+        return rows[0] || null;
+    },
+
     getBootstrap: async (MaKho = null) => {
+        const dispenseWarehouse = await DispenseModel.getDispenseWarehouse();
         const [warehouses] = await db.query(`
             SELECT MaKho, TenKho, NhietDoToiThieu, NhietDoToiDa
             FROM Kho
@@ -83,14 +119,16 @@ const DispenseModel = {
         const [pendingPrescriptions] = await db.query(`
             SELECT
                 dt.MaDT,
+                COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSiKeDon,
                 dt.NgayKeDon,
                 COALESCE(dt.TrangThai, 'ChuaXuat') AS TrangThai,
                 bn.MaBN,
                 bn.HoTen,
                 COALESCE(ba.ChuanDoan, '') AS ChuanDoan,
                 COALESCE(ba.GhiChu, '') AS GhiChu,
-                ba.MaBacSi,
+                COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSi,
                 COALESCE(nv.HoTen, '') AS TenBacSi,
+                COALESCE(nv.HoTen, '') AS TenBacSiKeDon,
                 nv.MaChuyenKhoa,
                 COALESCE(ck.TenChuyenKhoa, '') AS TenChuyenKhoa,
                 COALESCE(ct.SoLoaiThuoc, 0) AS SoLoaiThuoc,
@@ -100,7 +138,7 @@ const DispenseModel = {
             JOIN BenhAn ba ON dt.MaBA = ba.MaBA
             JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
             JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
-            LEFT JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
+            LEFT JOIN NhanVien nv ON COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) = nv.MaNV
             LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
             LEFT JOIN (
                 SELECT
@@ -127,10 +165,15 @@ const DispenseModel = {
             px.TongTien,
             px.MaDT,
             bn.HoTen AS TenBenhNhan,
-            k.TenKho
+            k.TenKho,
+            nv.HoTen AS TenNhanVien,
+            nvx.HoTen AS TenNhanVienXuat,
+            nvx.HoTen AS TenDuocSi
         FROM PhieuXuatThuoc px
         LEFT JOIN BenhNhan bn ON px.MaBN = bn.MaBN
         LEFT JOIN Kho k ON px.MaKho = k.MaKho
+        LEFT JOIN NhanVien nv ON px.MaNhanVien = nv.MaNV
+        LEFT JOIN NhanVien nvx ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = nvx.MaNV
         WHERE px.TrangThai = 'HoanThanh'
         ORDER BY px.MaPX DESC
         LIMIT 10
@@ -140,6 +183,7 @@ const DispenseModel = {
             warehouses,
             suppliers,
             departments,
+            dispenseWarehouse,
             stats: stats || {
                 TongTon: 0,
                 GiaTriTon: 0,
@@ -154,9 +198,11 @@ const DispenseModel = {
     getCatalog: async (filters = {}) => {
         const { where, params } = buildCatalogFilters(filters);
         const warehouseFilter = filters.MaKho ? " AND l.MaKho = ?" : "";
-        const queryParams = filters.MaKho
-            ? [filters.MaKho, filters.MaKho, ...params]
-            : [...params];
+        const supplierFilter = filters.MaNCC ? " AND l.MaNCC = ?" : "";
+        const stockFilterParams = [];
+        if (filters.MaKho) stockFilterParams.push(filters.MaKho);
+        if (filters.MaNCC) stockFilterParams.push(filters.MaNCC);
+        const queryParams = [...stockFilterParams, ...stockFilterParams, ...params];
 
         const [rows] = await db.query(`
             SELECT
@@ -172,14 +218,14 @@ const DispenseModel = {
                 t.MaVach,
                 COALESCE(SUM(
                     CASE
-                        WHEN ${EXPORTABLE_LOT_CONDITION} ${warehouseFilter}
+                        WHEN ${EXPORTABLE_LOT_CONDITION} ${warehouseFilter} ${supplierFilter}
                         THEN ${STOCK_EXPR}
                         ELSE 0
                     END
                 ), 0) AS TongTon,
                 MIN(
                     CASE
-                        WHEN ${EXPORTABLE_LOT_CONDITION} AND ${STOCK_EXPR} > 0 ${warehouseFilter}
+                        WHEN ${EXPORTABLE_LOT_CONDITION} AND ${STOCK_EXPR} > 0 ${warehouseFilter} ${supplierFilter}
                         THEN l.HanSuDung
                         ELSE NULL
                     END
@@ -206,10 +252,12 @@ const DispenseModel = {
         return rows;
     },
 
-    getMedicineLots: async ({ MaThuoc, MaKho = null, connection = db }) => {
+    getMedicineLots: async ({ MaThuoc, MaKho = null, MaNCC = null, connection = db }) => {
         const params = [MaThuoc];
         const warehouseFilter = MaKho ? " AND l.MaKho = ?" : "";
         if (MaKho) params.push(MaKho);
+        const supplierFilter = MaNCC ? " AND l.MaNCC = ?" : "";
+        if (MaNCC) params.push(MaNCC);
 
         const [rows] = await connection.query(`
             SELECT
@@ -244,6 +292,7 @@ const DispenseModel = {
               AND ${EXPORTABLE_LOT_CONDITION}
               AND ${STOCK_EXPR} > 0
               ${warehouseFilter}
+              ${supplierFilter}
             ORDER BY l.HanSuDung ASC, l.MaLo ASC
         `, params);
 
@@ -254,14 +303,16 @@ const DispenseModel = {
     const [rows] = await db.query(`
         SELECT
             dt.MaDT,
+            COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSiKeDon,
             dt.NgayKeDon,
             COALESCE(dt.TrangThai, 'ChuaXuat') AS TrangThai,
             bn.MaBN,
             bn.HoTen,
             COALESCE(ba.ChuanDoan, '') AS ChuanDoan,
             COALESCE(ba.GhiChu, '') AS GhiChu,
-            ba.MaBacSi,
+            COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSi,
             COALESCE(nv.HoTen, '') AS TenBacSi,
+            COALESCE(nv.HoTen, '') AS TenBacSiKeDon,
             nv.MaChuyenKhoa,
             COALESCE(ck.TenChuyenKhoa, '') AS TenChuyenKhoa,
             COALESCE(ct.SoLoaiThuoc, 0) AS SoLoaiThuoc,
@@ -271,7 +322,7 @@ const DispenseModel = {
         JOIN BenhAn ba ON dt.MaBA = ba.MaBA
         JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
         JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
-        LEFT JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
+        LEFT JOIN NhanVien nv ON COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) = nv.MaNV
         LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
         LEFT JOIN (
             SELECT
@@ -290,16 +341,14 @@ const DispenseModel = {
     return rows;
 },
 
-    getPrescriptionDetail: async ({ MaDT, MaKho = null }) => {
-        const stockParams = [];
-        const stockWarehouseFilter = MaKho ? " AND l.MaKho = ?" : "";
-        if (MaKho) stockParams.push(MaKho);
-
+    getPrescriptionDetail: async ({ MaDT }) => {
         const [rows] = await db.query(`
             SELECT
                 dt.MaDT,
                 dt.NgayKeDon,
                 dt.TrangThai,
+                COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSiKeDon,
+                nv.HoTen AS TenBacSiKeDon,
                 bn.MaBN,
                 bn.HoTen,
                 t.MaThuoc,
@@ -310,30 +359,76 @@ const DispenseModel = {
                 t.DonViCoBan,
                 t.GiaBan,
                 t.NhietDoBaoQuan,
-                ct.SoLuong,
+                ct.SoLuong AS SoLuongKe,
                 ct.LieuDung,
-                COALESCE(stock.TongTon, 0) AS TongTon
+                0 AS TongTon
             FROM DonThuoc dt
             JOIN BenhAn ba ON dt.MaBA = ba.MaBA
             JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
             JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
+            LEFT JOIN NhanVien nv ON COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) = nv.MaNV
             JOIN ChiTietDonThuoc ct ON dt.MaDT = ct.MaDT
             JOIN Thuoc t ON ct.MaThuoc = t.MaThuoc
-            LEFT JOIN (
-                SELECT
-                    l.MaThuoc,
-                    SUM(${STOCK_EXPR}) AS TongTon
-                FROM LoThuoc l
-                WHERE ${EXPORTABLE_LOT_CONDITION}
-                  AND ${STOCK_EXPR} > 0
-                  ${stockWarehouseFilter}
-                GROUP BY l.MaThuoc
-            ) stock ON stock.MaThuoc = t.MaThuoc
             WHERE dt.MaDT = ?
             ORDER BY ct.MaCTDT ASC
-        `, [...stockParams, MaDT]);
+        `, [MaDT]);
 
         return rows;
+    },
+
+    getReturnableSupplierLots: async ({ search = "", MaKho, MaNCC, connection = db }) => {
+        const keyword = `%${search || ""}%`;
+        const [rows] = await connection.query(`
+            SELECT
+                l.MaLo,
+                l.MaThuoc,
+                l.SoLo,
+                l.NgaySanXuat,
+                l.HanSuDung,
+                l.GiaNhap,
+                l.MaNCC,
+                l.MaKho,
+                ${STOCK_EXPR} AS Ton,
+                t.TenThuoc,
+                t.HoatChat,
+                t.DonViCoBan,
+                ncc.TenNCC,
+                k.TenKho
+            FROM LoThuoc l
+            JOIN Thuoc t ON l.MaThuoc = t.MaThuoc
+            LEFT JOIN NhaCungCap ncc ON l.MaNCC = ncc.MaNCC
+            LEFT JOIN Kho k ON l.MaKho = k.MaKho
+            WHERE l.MaKho = ?
+              AND l.MaNCC = ?
+              AND ${EXPORTABLE_LOT_CONDITION}
+              AND ${STOCK_EXPR} > 0
+              AND (
+                  t.TenThuoc LIKE ?
+                  OR t.HoatChat LIKE ?
+                  OR l.SoLo LIKE ?
+              )
+            ORDER BY t.TenThuoc ASC, l.HanSuDung ASC, l.MaLo ASC
+            LIMIT 100
+        `, [MaKho, MaNCC, keyword, keyword, keyword]);
+
+        return rows;
+    },
+
+    getLotById: async ({ MaLo, connection = db, forUpdate = false }) => {
+        const [rows] = await connection.query(`
+            SELECT
+                l.*,
+                t.GiaBan,
+                t.TenThuoc,
+                t.HoatChat,
+                t.DonViCoBan,
+                COALESCE(l.SoLuongNhap, 0) - COALESCE(l.SoLuongDaXuat, 0) AS Ton
+            FROM LoThuoc l
+            JOIN Thuoc t ON l.MaThuoc = t.MaThuoc
+            WHERE l.MaLo = ?
+            ${forUpdate ? "FOR UPDATE" : ""}
+        `, [MaLo]);
+        return rows[0] || null;
     },
 
     getPrescriptionStatus: async ({ MaDT, connection = db, forUpdate = false }) => {
@@ -397,6 +492,9 @@ const DispenseModel = {
                 px.NgayXuat,
                 px.LoaiXuat,
                 bn.HoTen AS TenBenhNhan,
+                nvx.HoTen AS TenDuocSi,
+                nvx.HoTen AS TenNhanVienXuat,
+                k.TenKho AS KhoXuatThuoc,
                 t.TenThuoc,
                 l.SoLo,
                 ct.SoLuong,
@@ -418,6 +516,7 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
     const [result] = await connection.query(`
         INSERT INTO PhieuXuatThuoc (
             MaNhanVien,
+            MaNhanVienXuat,
             MaKho,
             LoaiXuat,
             MaBN,
@@ -429,9 +528,10 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
             MaNCC,
             LyDoHuy
         )
-        VALUES (?, ?, ?, ?, ?, ?, 'Nhap', ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'Nhap', ?, ?, ?, ?)
     `, [
         payload.MaNhanVien,
+        payload.MaNhanVienXuat || payload.MaDuocSi || payload.MaNhanVien,
         payload.MaKho,
         payload.LoaiXuat,
         payload.MaBN || null,
@@ -451,6 +551,7 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
         UPDATE PhieuXuatThuoc
         SET
             MaNhanVien = ?,
+            MaNhanVienXuat = ?,
             MaKho = ?,
             LoaiXuat = ?,
             MaBN = ?,
@@ -464,6 +565,7 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
           AND TrangThai = 'Nhap'
     `, [
         payload.MaNhanVien,
+        payload.MaNhanVienXuat || payload.MaDuocSi || payload.MaNhanVien,
         payload.MaKho,
         payload.LoaiXuat,
         payload.MaBN || null,
@@ -482,6 +584,8 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
             SELECT
                 px.MaPX,
                 px.MaNhanVien,
+                COALESCE(px.MaNhanVienXuat, px.MaNhanVien) AS MaNhanVienXuat,
+                COALESCE(px.MaNhanVienXuat, px.MaNhanVien) AS MaDuocSi,
                 px.MaKho,
                 px.LoaiXuat,
                 px.MaBN,
@@ -489,11 +593,25 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
                 px.GhiChu,
                 px.TrangThai,
                 px.MaDT,
+                px.MaNCC,
                 k.TenKho,
-                bn.HoTen AS TenBenhNhan
+                bn.HoTen AS TenBenhNhan,
+                nv.HoTen AS TenNhanVien,
+                nvx.HoTen AS TenNhanVienXuat,
+                nvx.HoTen AS TenDuocSi,
+                dt.NgayKeDon,
+                COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSiKeDon,
+                bs.HoTen AS TenBacSiKeDon
             FROM PhieuXuatThuoc px
             LEFT JOIN Kho k ON px.MaKho = k.MaKho
             LEFT JOIN BenhNhan bn ON px.MaBN = bn.MaBN
+            LEFT JOIN NhanVien nvx ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = nvx.MaNV
+            LEFT JOIN Kho k ON px.MaKho = k.MaKho
+            LEFT JOIN NhanVien nv ON px.MaNhanVien = nv.MaNV
+            LEFT JOIN NhanVien nvx ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = nvx.MaNV
+            LEFT JOIN DonThuoc dt ON px.MaDT = dt.MaDT
+            LEFT JOIN BenhAn ba ON dt.MaBA = ba.MaBA
+            LEFT JOIN NhanVien bs ON COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) = bs.MaNV
             WHERE px.MaPX = ?
             ${forUpdate ? "FOR UPDATE" : ""}
         `, [MaPX]);
@@ -527,7 +645,7 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
     }
 },
 
-    insertStockHistory: async ({ MaPX, MaLo, SoLuong, connection }) => {
+    insertStockHistory: async ({ MaPX, MaLo, SoLuong, connection, Loai = "Xuat", GhiChu = null }) => {
         const [rows] = await connection.query(`
             SELECT MaThuoc
             FROM LoThuoc
@@ -545,15 +663,66 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
                 MaLo,
                 Loai,
                 SoLuong,
-                ThamChieuID
+                ThamChieuID,
+                GhiChu
             )
-            VALUES (?, ?, 'Xuat', ?, ?)
-        `, [rows[0].MaThuoc, MaLo, SoLuong, MaPX]);
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [rows[0].MaThuoc, MaLo, Loai, SoLuong, MaPX, GhiChu]);
+    },
+
+    upsertTransferLot: async ({ sourceLot, MaKhoNhan, SoLuong, MaPX, connection }) => {
+        const [existing] = await connection.query(`
+            SELECT MaLo
+            FROM LoThuoc
+            WHERE MaThuoc = ?
+              AND SoLo = ?
+              AND MaKho = ?
+              AND COALESCE(TrangThai, 'ConHan') != 'DaHuy'
+            LIMIT 1
+            FOR UPDATE
+        `, [sourceLot.MaThuoc, sourceLot.SoLo, MaKhoNhan]);
+
+        if (existing.length) {
+            await connection.query(`
+                UPDATE LoThuoc
+                SET SoLuongNhap = COALESCE(SoLuongNhap, 0) + ?,
+                    GiaNhap = ?,
+                    HanSuDung = ?,
+                    NgaySanXuat = ?,
+                    MaNCC = COALESCE(?, MaNCC)
+                WHERE MaLo = ?
+            `, [SoLuong, sourceLot.GiaNhap || 0, sourceLot.HanSuDung, sourceLot.NgaySanXuat, sourceLot.MaNCC || null, existing[0].MaLo]);
+            return existing[0].MaLo;
+        }
+
+        const [created] = await connection.query(`
+            INSERT INTO LoThuoc (
+                MaThuoc, SoLo, HanSuDung, GiaNhap, MaCTPN,
+                NgaySanXuat, NhietDoBaoQuan, TrangThai,
+                SoLuongNhap, SoLuongDaXuat, GhiChu, MaKho, MaNCC
+            )
+            VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, 0, ?, ?, ?)
+        `, [
+            sourceLot.MaThuoc,
+            sourceLot.SoLo,
+            sourceLot.HanSuDung,
+            sourceLot.GiaNhap || 0,
+            sourceLot.NgaySanXuat,
+            sourceLot.NhietDoBaoQuan || null,
+            sourceLot.TrangThai || "ConHan",
+            SoLuong,
+            `Điều chuyển từ phiếu xuất #${MaPX}`,
+            MaKhoNhan,
+            sourceLot.MaNCC || null
+        ]);
+
+        return created.insertId;
     },
         completeDraftHeader: async ({ MaPX, TongTien, noteData, connection }) => {
             await connection.query(`
                 UPDATE PhieuXuatThuoc
                 SET TrangThai = 'HoanThanh',
+                    MaNhanVienXuat = COALESCE(MaNhanVienXuat, MaNhanVien),
                     GhiChu = ?,
                     TongTien = ?
                 WHERE MaPX = ?
@@ -564,6 +733,26 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
         await connection.query(`
             UPDATE DonThuoc
             SET TrangThai = 'DaXuat'
+            WHERE MaDT = ?
+        `, [MaDT]);
+    },
+
+    supportsPartialPrescriptionStatus: async ({ connection = db }) => {
+        const [rows] = await connection.query(`
+            SELECT COLUMN_TYPE
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'DonThuoc'
+              AND COLUMN_NAME = 'TrangThai'
+            LIMIT 1
+        `);
+        return String(rows[0]?.COLUMN_TYPE || "").includes("XuatMotPhan");
+    },
+
+    markPrescriptionPartiallyExported: async ({ MaDT, connection }) => {
+        await connection.query(`
+            UPDATE DonThuoc
+            SET TrangThai = 'XuatMotPhan'
             WHERE MaDT = ?
         `, [MaDT]);
     }

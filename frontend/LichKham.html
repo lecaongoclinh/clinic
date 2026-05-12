@@ -292,7 +292,14 @@
                                 <input type="text" class="form-control" id="newPatientAddress" placeholder="Nhập địa chỉ">
                             </div>
                             <div class="mb-3">
-                                <label for="newPatientDOB" class="form-label">Ngày sinh</label>
+                                <label for="newPatientGender" class="form-label">Gioi tinh</label>
+                                <select class="form-select mb-3" id="newPatientGender" aria-label="Gioi tinh">
+                                    <option value="">-- Chon gioi tinh --</option>
+                                    <option value="Nam">Nam</option>
+                                    <option value="Nu">Nu</option>
+                                    <option value="Khac">Khac</option>
+                                </select>
+                                <label for="newPatientDOB" class="form-label">Ngay sinh</label>
                                 <input type="date" class="form-control" id="newPatientDOB">
                             </div>
                         </div>
@@ -639,13 +646,13 @@
                 editBtn.className = 'btn btn-sm btn-warning position-absolute top-0 end-0';
                 editBtn.innerHTML = '✏️';
                 editBtn.style.display = 'none';
-                editBtn.onclick = () => openEditModal(event.extendedProps.id);
+                editBtn.onclick = () => openEditModal(event.id);
 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'btn btn-sm btn-danger position-absolute top-0 end-100';
                 deleteBtn.innerHTML = '🗑️';
                 deleteBtn.style.display = 'none';
-                deleteBtn.onclick = () => deleteAppointment(event.extendedProps.id);
+                deleteBtn.onclick = () => deleteAppointment(event.id);
 
                 info.el.style.position = 'relative';
                 if (canManageAppointments) {
@@ -811,6 +818,7 @@
             document.getElementById('newPatientId').value = '';
             document.getElementById('newPatientPhone').value = '';
             document.getElementById('newPatientAddress').value = '';
+            document.getElementById('newPatientGender').value = '';
             document.getElementById('newPatientDOB').value = '';
             
             updateStepsVisibility();
@@ -1046,9 +1054,10 @@
                 const newMaBN = document.getElementById('newPatientId').value.trim();
                 const soDienThoai = document.getElementById('newPatientPhone').value.trim();
                 const diaChi = document.getElementById('newPatientAddress').value.trim();
+                const gioiTinh = document.getElementById('newPatientGender').value;
                 const ngaySinh = document.getElementById('newPatientDOB').value;
 
-                if (!newMaBN || !hoTen || !soDienThoai || !diaChi || !ngaySinh) {
+                if (!newMaBN || !hoTen || !soDienThoai || !diaChi || !gioiTinh || !ngaySinh) {
                     alert('Vui lòng điền đầy đủ thông tin bệnh nhân mới');
                     return;
                 }
@@ -1063,6 +1072,7 @@
                             hoTen,
                             soDienThoai,
                             diaChi,
+                            gioiTinh,
                             ngaySinh
                         })
                     });

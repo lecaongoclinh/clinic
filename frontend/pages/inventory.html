@@ -187,7 +187,7 @@
                 <div class="tab-pane fade show active" id="current">
                     <div class="filter-bar mb-4 inventory-toolbar">
                         <div class="row g-3 align-items-center">
-                            <div class="col-md-4"><input id="searchInput" type="text" class="form-control" placeholder="Tìm theo tên thuốc, hoạt chất, số lô..."></div>
+                            <div class="col-lg-4 col-md-12"><input id="searchInput" type="text" class="form-control" placeholder="Tìm theo tên thuốc, hoạt chất, số lô..."></div>
                             <div class="col-md-2"><select id="warehouseFilter" class="form-select"><option value="">Tất cả kho</option></select></div>
                             <div class="col-md-2"><select id="statusFilter" class="form-select"><option value="">Tất cả trạng thái</option><option value="ConHan">Còn hạn</option><option value="SapHetHan">Sắp hết hạn</option><option value="HetHan">Hết hạn</option></select></div>
                             <div class="col-md-2"><select id="providerFilter" class="form-select"><option value="">Tất cả NCC</option></select></div>
@@ -225,15 +225,15 @@
                     </div>
                     <div class="section-card mb-4">
                         <div class="section-header"><h5 class="section-title">Thuốc hết hạn</h5><span class="status-badge status-danger">Ưu tiên xử lý</span></div>
-                        <table class="table align-middle" id="expiredWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>NCC</th></tr></thead><tbody></tbody></table>
+                        <table class="table align-middle" id="expiredWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>NCC</th><th>Xử lý</th></tr></thead><tbody></tbody></table>
                     </div>
                     <div class="section-card mb-4">
                         <div class="section-header"><h5 class="section-title">Thuốc sắp hết hạn</h5><span class="section-note">Hiển thị theo khoảng cận date đang chọn</span></div>
-                        <table class="table align-middle" id="nearWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>Còn lại</th></tr></thead><tbody></tbody></table>
+                        <table class="table align-middle" id="nearWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Số lô</th><th>HSD</th><th>Tồn</th><th>Kho</th><th>Còn lại</th><th>Xử lý</th></tr></thead><tbody></tbody></table>
                     </div>
                     <div class="section-card mb-4">
                         <div class="section-header"><h5 class="section-title">Thuốc dưới định mức</h5><span class="section-note">Nếu chưa chọn bộ lọc, hệ thống dùng ngưỡng mặc định 20</span></div>
-                        <table class="table align-middle" id="lowStockWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Tồn thực tế</th><th>Định mức tối thiểu</th></tr></thead><tbody></tbody></table>
+                        <table class="table align-middle" id="lowStockWarningTable" data-page-size="6"><thead><tr><th>Thuốc</th><th>Tồn thực tế</th><th>Định mức tối thiểu</th><th>Xử lý</th></tr></thead><tbody></tbody></table>
                     </div>
                     <div class="section-card">
                         <div class="section-header"><h5 class="section-title">Lịch sử hủy thuốc</h5><span class="status-badge status-warning">Theo phiếu hủy đã lập</span></div>
@@ -254,7 +254,7 @@
                     <div class="section-card">
                         <div class="section-header"><h5 class="section-title">Biến động tồn kho</h5><span class="section-note">Theo tên thuốc, kho và khoảng thời gian</span></div>
                         <table class="table align-middle" id="stockCardTable" data-page-size="8">
-                            <thead><tr><th>Thời gian</th><th>Số phiếu nhập</th><th>Thuốc</th><th>Nội dung</th><th>Số lượng nhập</th><th>Số lượng xuất</th><th>Tồn cuối</th></tr></thead>
+                            <thead><tr><th>Thời gian</th><th>Chứng từ</th><th>Thuốc</th><th>Nội dung</th><th>Số lượng nhập</th><th>Số lượng xuất</th><th>Tồn cuối</th></tr></thead>
                             <tbody></tbody>
                         </table>
                     </div>

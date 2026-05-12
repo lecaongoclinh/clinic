@@ -93,6 +93,74 @@ document.addEventListener('DOMContentLoaded', function () {
         return Number.isNaN(date.getTime()) ? text : date.toLocaleDateString('vi-VN');
     }
 
+    function formatCurrency(value) {
+        return Number(value || 0).toLocaleString('vi-VN') + ' đ';
+    }
+
+    function buildInvoiceUrl(maHD) {
+        return `pages/invoice_detail.html?id=${encodeURIComponent(maHD)}`;
+    }
+
+    function ensureRecordExtraSections() {
+        const modalBody = document.querySelector('#recordDetailModal .modal-body');
+        if (!modalBody || document.getElementById('recordPrescriptionSection')) return;
+        modalBody.insertAdjacentHTML('beforeend', `
+            <div class="mt-3" id="recordPrescriptionSection">
+                <h6>Đơn thuốc</h6>
+                <div id="recordPrescriptionItems" class="table-responsive"></div>
+            </div>
+            <div class="mt-3" id="recordServicesSection">
+                <h6>Dịch vụ cận lâm sàng</h6>
+                <div id="recordOrderedServices" class="table-responsive"></div>
+            </div>
+            <div class="mt-3" id="recordInvoiceLinkSection"></div>
+        `);
+    }
+
+    function renderSimpleTable(targetId, headers, rows, emptyText) {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+        if (!rows.length) {
+            target.innerHTML = `<div class="text-muted">${escapeHtml(emptyText)}</div>`;
+            return;
+        }
+        target.innerHTML = `
+            <table class="table table-sm table-bordered mb-0">
+                <thead><tr>${headers.map(item => `<th>${escapeHtml(item)}</th>`).join('')}</tr></thead>
+                <tbody>${rows.join('')}</tbody>
+            </table>
+        `;
+    }
+
+    function renderRecordExtras(data) {
+        ensureRecordExtraSections();
+        const prescriptionItems = Array.isArray(data.prescriptionItems) ? data.prescriptionItems : [];
+        renderSimpleTable('recordPrescriptionItems', ['Thuốc', 'Số lượng', 'Cách dùng'], prescriptionItems.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.TenThuoc || item.MaThuoc || '')}</td>
+                <td>${escapeHtml(item.SoLuongKe || item.SoLuong || 0)}</td>
+                <td>${escapeHtml(item.CachDung || item.LieuDung || '')}</td>
+            </tr>
+        `), 'Chưa có đơn thuốc');
+
+        const orderedServices = Array.isArray(data.orderedServices) ? data.orderedServices : [];
+        renderSimpleTable('recordOrderedServices', ['Dịch vụ', 'Loại', 'SL', 'Thành tiền'], orderedServices.map((item) => `
+            <tr>
+                <td>${escapeHtml(item.TenDichVu || item.DienGiai || '')}</td>
+                <td>${escapeHtml(item.LoaiDichVu || '')}</td>
+                <td>${escapeHtml(item.SoLuong || 1)}</td>
+                <td>${formatCurrency(item.ThanhTien || item.SoTien)}</td>
+            </tr>
+        `), 'Chưa có chỉ định dịch vụ');
+
+        const linkSection = document.getElementById('recordInvoiceLinkSection');
+        if (linkSection) {
+            linkSection.innerHTML = data.invoice?.MaHD
+                ? `<a class="btn btn-sm btn-outline-primary" href="${buildInvoiceUrl(data.invoice.MaHD)}">Mở hóa đơn #${escapeHtml(data.invoice.MaHD)}</a>`
+                : '<span class="text-muted">Chưa có hóa đơn liên quan</span>';
+        }
+    }
+
     function buildPatientQueryParams(page = 1) {
         const params = new URLSearchParams();
         const tenBN = tenBNInput.value.trim();
@@ -250,6 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <button class="btn btn-sm btn-warning detail-btn" data-maba="${escapeHtml(record.MaBA)}">
                                 <i class="fa fa-info-circle me-1"></i>Chi tiết
                             </button>
+                            ${record.MaHD ? `<a class="btn btn-sm btn-outline-primary ms-1" href="${buildInvoiceUrl(record.MaHD)}">Hóa đơn</a>` : ''}
                         </td>
                     `;
                     medicalHistoryBody.appendChild(row);
@@ -314,6 +383,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('invoiceSection').style.display = 'none';
                 btnEditRecord.disabled = false;
             }
+            renderRecordExtras(data);
 
             setRecordEditMode(false);
             recordDetailModal.show();

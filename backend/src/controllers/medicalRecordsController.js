@@ -172,7 +172,7 @@ class MedicalRecordsController {
     // Tạo bệnh án mới
     static async createMedicalRecord(req, res) {
         try {
-            const { maPK, maBacSi, trieuChung, chuanDoan, ghiChu } = req.body;
+            const { maPK, maBacSi, trieuChung, chuanDoan, ghiChu, ChiTietDichVu } = req.body;
             const currentDoctorId = req.user?.id || maBacSi;
 
             if (!maPK || !currentDoctorId) {
@@ -182,7 +182,8 @@ class MedicalRecordsController {
             const result = await MedicalRecordsService.createMedicalRecord(maPK, currentDoctorId, {
                 trieuChung,
                 chuanDoan,
-                ghiChu
+                ghiChu,
+                ChiTietDichVu
             });
 
             if (!result.success) {

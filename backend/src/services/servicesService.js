@@ -60,6 +60,10 @@ const ServicesService = {
         return service;
     },
 
+    getClinicalAssignable: async (filters = {}) => {
+        return await ServicesModel.getClinicalAssignable(filters);
+    },
+
     create: async (payload) => {
         if (!payload.TenDichVu?.trim()) {
             throw new Error("Tên dịch vụ không được để trống");
@@ -138,6 +142,15 @@ const ServicesService = {
     remove: async (id) => {
         const current = await ServicesModel.getById(id);
         if (!current) throw new Error("Không tìm thấy dịch vụ");
+
+        if (await ServicesModel.hasInvoiceUsage(id)) {
+            const affectedRows = await ServicesModel.deactivate(id);
+            if (!affectedRows) throw new Error("Ngừng áp dụng dịch vụ thất bại");
+            return {
+                message: "Dịch vụ đã phát sinh hóa đơn, đã chuyển sang ngừng áp dụng",
+                deactivated: true
+            };
+        }
 
         const affectedRows = await ServicesModel.remove(id);
         if (!affectedRows) throw new Error("Xóa dịch vụ thất bại");

@@ -200,6 +200,9 @@ function renderGroupTable(title, items) {
                                         ${item.DienGiai || "Không có diễn giải"}
                                         ${item.MaPX ? `<br>Phiếu xuất liên quan: PX-${String(item.MaPX).padStart(5, "0")}` : ""}
                                         ${item.SoLo ? `<br>Số lô: ${item.SoLo}` : ""}
+                                        ${item.TenDuocSiCapPhat ? `<br>Dược sĩ cấp phát: ${item.TenDuocSiCapPhat}` : ""}
+                                        ${item.NgayCapPhat ? `<br>Thời gian cấp phát: ${formatDateTime(item.NgayCapPhat)}` : ""}
+                                        ${item.KhoXuatThuoc ? `<br>Kho xuất: ${item.KhoXuatThuoc}` : ""}
                                     </div>
                                 </td>
                                 <td class="qty">${Number(item.SoLuong || 1).toLocaleString("vi-VN")}</td>
@@ -515,6 +518,11 @@ function renderInvoice(invoice, details) {
     setText("patientName", invoice.HoTen || "--");
     setText("patientCode", `Mã BN: ${invoice.MaBN || "--"}`);
     setText("doctorName", invoice.TenBacSi || "--");
+    setText("prescriberName", invoice.TenBacSiKeDon || invoice.TenBacSi || "--");
+    setText("prescribedAt", invoice.NgayKeDon ? `Thoi gian ke: ${formatDateTime(invoice.NgayKeDon)}` : "--");
+    setText("dispensedBy", invoice.TenDuocSiCapPhat || "--");
+    setText("dispensedAt", invoice.NgayCapPhat ? `Thoi gian cap: ${formatDateTime(invoice.NgayCapPhat)}` : "--");
+    setText("dispenseWarehouse", invoice.KhoXuatThuoc ? `Kho xuat: ${invoice.KhoXuatThuoc}` : "--");
     setText("medicalRecordCode", `Mã BA: ${invoice.MaBA || "--"}`);
     setText("patientBirthGender", buildPatientBirthGender(invoice));
     setText("patientPhone", invoice.SoDienThoai || "--");
@@ -534,6 +542,11 @@ function renderInvoice(invoice, details) {
     setFieldValue("patientName", toDisplayName(invoice.HoTen), { hideRowWhenEmpty: true });
     setFieldValue("patientCode", invoice.MaBN ? `MÃ£ BN: ${invoice.MaBN}` : "", { hideSelfWhenEmpty: true });
     setFieldValue("doctorName", toDisplayName(invoice.TenBacSi), { hideRowWhenEmpty: true });
+    setFieldValue("prescriberName", toDisplayName(invoice.TenBacSiKeDon || invoice.TenBacSi), { hideRowWhenEmpty: true });
+    setFieldValue("prescribedAt", invoice.NgayKeDon ? `Thoi gian ke: ${formatDateTime(invoice.NgayKeDon)}` : "", { hideSelfWhenEmpty: true });
+    setFieldValue("dispensedBy", toDisplayName(invoice.TenDuocSiCapPhat), { hideRowWhenEmpty: true });
+    setFieldValue("dispensedAt", invoice.NgayCapPhat ? `Thoi gian cap: ${formatDateTime(invoice.NgayCapPhat)}` : "", { hideSelfWhenEmpty: true });
+    setFieldValue("dispenseWarehouse", invoice.KhoXuatThuoc ? `Kho xuat: ${invoice.KhoXuatThuoc}` : "", { hideSelfWhenEmpty: true });
     setFieldValue("medicalRecordCode", invoice.MaBA ? `MÃ£ BA: ${invoice.MaBA}` : "", { hideSelfWhenEmpty: true });
     setFieldValue("patientBirthGender", buildPatientBirthGender(invoice), { hideRowWhenEmpty: true });
     setFieldValue("patientPhone", invoice.SoDienThoai, { hideRowWhenEmpty: true });

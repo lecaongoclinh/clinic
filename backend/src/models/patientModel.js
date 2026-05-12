@@ -37,7 +37,7 @@ const Patient = {
     // Tìm kiếm bệnh nhân theo tên
     searchByName: async (tenBN) => {
         const query = `
-            SELECT MaBN, HoTen, SoDienThoai, DiaChi, NgaySinh
+            SELECT MaBN, HoTen, SoDienThoai, DiaChi, NgaySinh, GioiTinh, Email
             FROM BenhNhan
             WHERE HoTen LIKE ?
             LIMIT 10
@@ -58,12 +58,12 @@ const Patient = {
     },
 
     // Tạo bệnh nhân mới
-    create: async (maBN, hoTen, soDienThoai, diaChi, ngaySinh) => {
+    create: async (maBN, hoTen, soDienThoai, diaChi, ngaySinh, gioiTinh) => {
         const query = `
-            INSERT INTO BenhNhan (MaBN, HoTen, SoDienThoai, DiaChi, NgaySinh)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO BenhNhan (MaBN, HoTen, SoDienThoai, DiaChi, NgaySinh, GioiTinh)
+            VALUES (?, ?, ?, ?, ?, ?)
         `;
-        await db.execute(query, [maBN, hoTen, soDienThoai, diaChi, ngaySinh]);
+        await db.execute(query, [maBN, hoTen, soDienThoai, diaChi, ngaySinh, gioiTinh]);
         return maBN;
     },
 

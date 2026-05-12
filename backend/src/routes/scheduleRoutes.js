@@ -23,6 +23,7 @@ scheduleRoutes.get('/doctor/:bacSiId', scheduleController.getSchedulesByDoctor);
 
 // ✅ Route động đặt SAU
 scheduleRoutes.get('/:maLich', scheduleController.getScheduleById);
+scheduleRoutes.put('/:maLich', scheduleController.updateSchedule);
 scheduleRoutes.delete('/:maLich', scheduleController.deleteSchedule);
 
 export default scheduleRoutes;

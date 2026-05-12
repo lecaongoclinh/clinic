@@ -631,6 +631,8 @@ function showNewPatientForm(cccd = '') {
     if (results) results.style.display = 'none';
 
     document.getElementById('newPatientCCCD').value = cccd || document.getElementById('modalSearchInput')?.value.trim() || '';
+    document.getElementById('newPatientGender').value = '';
+    document.getElementById('newPatientAddress').value = '';
     document.getElementById('newPatientName').focus();
 }
 
@@ -644,8 +646,10 @@ async function createPatientFromTicketModal() {
     const hoTen = document.getElementById('newPatientName').value.trim();
     const ngaySinh = document.getElementById('newPatientBirth').value;
     const soDienThoai = document.getElementById('newPatientPhone').value.trim();
+    const gioiTinh = document.getElementById('newPatientGender').value;
+    const diaChi = document.getElementById('newPatientAddress').value.trim();
 
-    if (!soCCCD || !hoTen || !ngaySinh || !soDienThoai) {
+    if (!soCCCD || !hoTen || !ngaySinh || !soDienThoai || !gioiTinh || !diaChi) {
         showToast('warning', 'Vui lòng nhập đầy đủ CCCD, họ tên, ngày sinh và số điện thoại');
         return;
     }
@@ -658,7 +662,7 @@ async function createPatientFromTicketModal() {
         const res = await fetch(`${API_BASE_URL}/patients`, {
             method: 'POST',
             headers: jsonHeaders(),
-            body: JSON.stringify({ soCCCD, hoTen, ngaySinh, soDienThoai })
+            body: JSON.stringify({ soCCCD, hoTen, ngaySinh, soDienThoai, gioiTinh, diaChi })
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Không tạo được bệnh nhân');
@@ -667,7 +671,7 @@ async function createPatientFromTicketModal() {
         hideNewPatientForm();
         showToast('success', 'Đã tạo bệnh nhân mới');
 
-        ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone'].forEach(id => {
+        ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone','newPatientGender','newPatientAddress'].forEach(id => {
             document.getElementById(id).value = '';
         });
     } catch (e) {
@@ -748,7 +752,7 @@ function resetModalForm() {
     document.getElementById('modalSearchResults').style.display = 'none';
     document.getElementById('modalSearchResults').innerHTML = '';
     hideNewPatientForm();
-    ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone'].forEach(id => {
+    ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone','newPatientGender','newPatientAddress'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });

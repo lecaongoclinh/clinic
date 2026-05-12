@@ -148,6 +148,54 @@ const ServicesModel = {
         return rows[0] || null;
     },
 
+    getClinicalAssignable: async (filters = {}) => {
+        const conditions = [
+            `d.Loai IN ('XetNghiem', 'SieuAm')`,
+            `COALESCE(d.TrangThai, 1) = 1`
+        ];
+        const params = [];
+
+        if (filters.keyword) {
+            conditions.push(`(d.MaDV LIKE ? OR d.TenDichVu LIKE ? OR COALESCE(d.MoTa, '') LIKE ?)`);
+            const keyword = `%${filters.keyword}%`;
+            params.push(keyword, keyword, keyword);
+        }
+
+        if (filters.loai) {
+            conditions.push(`d.Loai = ?`);
+            params.push(filters.loai);
+        }
+
+        if (filters.maChuyenKhoa !== undefined && filters.maChuyenKhoa !== "") {
+            conditions.push(`COALESCE(ch.MaChuyenKhoa, d.MaChuyenKhoa) = ?`);
+            params.push(Number(filters.maChuyenKhoa));
+        }
+
+        const [rows] = await db.query(`
+            SELECT
+                d.MaDichVu,
+                d.MaDV,
+                d.TenDichVu,
+                d.Gia,
+                d.Loai,
+                d.MoTa,
+                COALESCE(d.TrangThai, 1) AS TrangThai,
+                COALESCE(ch.CanChiDinhBacSi, d.CanChiDinhBacSi, 0) AS CanChiDinhBacSi,
+                COALESCE(ch.MaChuyenKhoa, d.MaChuyenKhoa) AS MaChuyenKhoa,
+                ck.TenChuyenKhoa
+            FROM DichVu d
+            LEFT JOIN CauHinhDichVu ch ON d.MaDichVu = ch.MaDichVu
+            LEFT JOIN ChuyenKhoa ck ON ck.MaChuyenKhoa = COALESCE(ch.MaChuyenKhoa, d.MaChuyenKhoa)
+            WHERE ${conditions.join(" AND ")}
+            ORDER BY
+                CASE WHEN COALESCE(ch.CanChiDinhBacSi, d.CanChiDinhBacSi, 0) = 1 THEN 0 ELSE 1 END,
+                d.Loai ASC,
+                d.TenDichVu ASC
+        `, params);
+
+        return rows;
+    },
+
     create: async ({ MaDV, TenDichVu, Gia, Loai, MoTa, TrangThai }) => {
         const [result] = await db.query(`
             INSERT INTO DichVu (
@@ -182,6 +230,26 @@ const ServicesModel = {
         `, [id]);
 
         return result.affectedRows;
+    },
+
+    deactivate: async (id) => {
+        const [result] = await db.query(`
+            UPDATE DichVu
+            SET TrangThai = 0
+            WHERE MaDichVu = ?
+        `, [id]);
+
+        return result.affectedRows;
+    },
+
+    hasInvoiceUsage: async (id) => {
+        const [[row]] = await db.query(`
+            SELECT COUNT(*) AS total
+            FROM ChiTietHoaDon
+            WHERE MaDichVu = ?
+        `, [id]);
+
+        return Number(row?.total || 0) > 0;
     },
 
     existsByCode: async (maDV, excludeId = null) => {

@@ -6,6 +6,7 @@ const router = express.Router();
 router.get("/by-supplier", ImportsController.getBySupplier);
 
 router.get("/", ImportsController.getAll);
+router.get("/:id/detail", ImportsController.getDetail);
 router.get("/:id/items", ImportsController.getItems);
 router.get("/:id", ImportsController.getById);
 

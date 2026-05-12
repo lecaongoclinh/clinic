@@ -1,58 +1,40 @@
-import db from "../config/db.js";
 import MedicinesModel from "../models/medicinesModel.js";
 
-const MedicinesService = {
+function normalizeMedicinePayload(data = {}) {
+    const payload = {
+        TenThuoc: String(data.TenThuoc || "").trim(),
+        DonViCoBan: String(data.DonViCoBan || "").trim(),
+        HoatChat: data.HoatChat || null,
+        HamLuong: data.HamLuong || null,
+        DangBaoChe: data.DangBaoChe || null,
+        QuyCachDongGoi: data.QuyCachDongGoi || null,
+        HangSanXuat: data.HangSanXuat || null,
+        NuocSanXuat: data.NuocSanXuat || null,
+        NhietDoBaoQuan: data.NhietDoBaoQuan || null,
+        GiaBan: Number(data.GiaBan),
+        MaVach: data.MaVach || null,
+        LoaiThuoc: data.LoaiThuoc || "",
+        TrangThai: data.TrangThai === 0 || data.TrangThai === "0" ? 0 : 1
+    };
 
-    getAllMedicines: async () => {
-        return await MedicinesModel.getAll();
-    },
-
-    getMedicineById: async (id) => {
-        return await MedicinesModel.getById(id);
-    },
-
-    createMedicine: async (data) => {
-        return await MedicinesModel.create(data);
-    },
-
-    updateMedicine: async (id, data) => {
-        return await MedicinesModel.update(id, data);
-    },
-
-    deleteMedicine: async (id) => {
-        return await MedicinesModel.delete(id);
-    },
-
-    getLowStock: async () => {
-        return await MedicinesModel.lowStock();
-    },
-
-    // ✅ FIX CHUẨN
-    getMedicinesBySupplier: async (MaNCC) => {
-        const [rows] = await db.query(`
-            SELECT 
-                t.MaThuoc,
-                t.TenThuoc,
-                t.DonViCoBan,
-                t.HoatChat,
-                t.HamLuong,
-                t.DangBaoChe,
-                tncc.GiaNhap,
-
-                COALESCE(SUM(l.SoLuongNhap - l.SoLuongDaXuat),0) AS TongTon
-
-            FROM Thuoc_NhaCungCap tncc
-            JOIN Thuoc t ON t.MaThuoc = tncc.MaThuoc
-            LEFT JOIN LoThuoc l ON l.MaThuoc = t.MaThuoc
-
-            WHERE tncc.MaNCC = ?
-
-            GROUP BY t.MaThuoc
-        `, [MaNCC]);
-
-        return rows;
+    if (!payload.TenThuoc) throw new Error("Tên thuốc là bắt buộc");
+    if (!payload.DonViCoBan) throw new Error("Đơn vị cơ bản là bắt buộc");
+    if (!payload.LoaiThuoc) throw new Error("Loại thuốc là bắt buộc");
+    if (!Number.isFinite(payload.GiaBan) || payload.GiaBan < 0) {
+        throw new Error("Giá bán phải lớn hơn hoặc bằng 0");
     }
 
+    return payload;
+}
+
+const MedicinesService = {
+    getAllMedicines: async (filters = {}) => MedicinesModel.getAll(filters),
+    getMedicineById: async (id) => MedicinesModel.getById(id),
+    createMedicine: async (data) => MedicinesModel.create(normalizeMedicinePayload(data)),
+    updateMedicine: async (id, data) => MedicinesModel.update(id, normalizeMedicinePayload(data)),
+    deleteMedicine: async (id) => MedicinesModel.delete(id),
+    getLowStock: async () => MedicinesModel.lowStock(),
+    getMedicinesBySupplier: async (filters = {}) => MedicinesModel.getBySupplier(filters)
 };
 
 export default MedicinesService;

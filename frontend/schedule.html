@@ -261,63 +261,148 @@
             background-color: #d4edda;
         }
        
-#scheduleCalendar {
-    background: #fff;
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-}
+        #calendarContainer {
+            background: #ffffff;
+            border: 1px solid #e4e9f2;
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
 
-.fc-event-custom {
-    padding: 2px 4px;
-    font-size: 12px;
-    line-height: 1.4;
-}
+        #scheduleCalendar {
+            min-height: 680px;
+        }
 
-/* Popup */
-.event-popup-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1040;
-}
+        #scheduleCalendar .fc-toolbar {
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
 
-.event-popup-card {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    z-index: 1050;
-    width: 320px;
-    overflow: hidden;
-}
+        #scheduleCalendar .fc-toolbar-title {
+            color: #1f2937;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
 
-.event-popup-header {
-    background: #3788d8;
-    color: #fff;
-    padding: 12px 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+        #scheduleCalendar .fc-button {
+            background: #ffffff;
+            border: 1px solid #cfd8e3;
+            color: #1f2937;
+            border-radius: 6px;
+            box-shadow: none;
+            font-weight: 600;
+            padding: 6px 12px;
+        }
 
-.event-popup-body {
-    padding: 16px;
-}
+        #scheduleCalendar .fc-button:hover,
+        #scheduleCalendar .fc-button-primary:not(:disabled).fc-button-active {
+            background: #009cff;
+            border-color: #009cff;
+            color: #ffffff;
+        }
 
-.event-popup-body p {
-    margin-bottom: 8px;
-}
+        #scheduleCalendar .fc-scrollgrid,
+        #scheduleCalendar .fc-theme-standard td,
+        #scheduleCalendar .fc-theme-standard th {
+            border-color: #e7edf5;
+        }
 
-.event-popup-footer {
-    padding: 12px 16px;
-    border-top: 1px solid #eee;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
+        #scheduleCalendar .fc-col-header-cell {
+            background: #f7fbff;
+            padding: 10px 0;
+        }
+
+        #scheduleCalendar .fc-col-header-cell-cushion,
+        #scheduleCalendar .fc-timegrid-axis-cushion,
+        #scheduleCalendar .fc-timegrid-slot-label-cushion {
+            color: #4b5563;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        #scheduleCalendar .fc-timegrid-slot {
+            height: 42px;
+        }
+
+        #scheduleCalendar .fc-event {
+            border: 0;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+        }
+
+        .fc-event-custom {
+            padding: 6px 8px;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+
+        .fc-event-custom strong,
+        .fc-event-custom small {
+            color: #ffffff;
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-popup-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1040;
+            background: rgba(15, 23, 42, 0.28);
+        }
+
+        .event-popup-card {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.22);
+            z-index: 1050;
+            width: min(380px, calc(100vw - 32px));
+            overflow: hidden;
+        }
+
+        .event-popup-header {
+            background: #009cff;
+            color: #fff;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-popup-body {
+            padding: 16px;
+        }
+
+        .event-popup-body p {
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .event-popup-footer {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            #calendarContainer {
+                padding: 8px;
+                overflow-x: auto;
+            }
+
+            #scheduleCalendar {
+                min-width: 760px;
+            }
+        }
 </style>
 </head>
 
@@ -585,7 +670,7 @@
                                     </select>
                                 </div>
                                 <div class="col-sm-12 col-xl-6">
-                                    <select id="filterDoctor" class="form-select mb-3" aria-label="Default select example" disabled>
+                                    <select id="filterDoctor" class="form-select mb-3" aria-label="Default select example">
                                             <option value="">-- Tất cả bác sĩ --</option>
                                     </select>
                                 </div>
@@ -633,6 +718,55 @@
 
         <!-- Back to Top -->
         <a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top"><i class="bi bi-arrow-up"></i></a>
+    </div>
+
+    <!-- Edit Schedule Modal -->
+    <div class="modal fade" id="editScheduleModal" tabindex="-1" aria-labelledby="editScheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editScheduleModalLabel">Sua lich lam viec</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="editScheduleForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="editScheduleId">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="editChuyenKhoa" class="form-label">Chuyen khoa</label>
+                                <select id="editChuyenKhoa" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editBacSiId" class="form-label">Bac si</label>
+                                <select id="editBacSiId" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editPhongKhamId" class="form-label">Phong kham</label>
+                                <select id="editPhongKhamId" class="form-select" required></select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editNgayLamViec" class="form-label">Ngay lam viec</label>
+                                <input type="date" id="editNgayLamViec" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editGioBatDau" class="form-label">Gio bat dau</label>
+                                <input type="time" id="editGioBatDau" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editGioKetThuc" class="form-label">Gio ket thuc</label>
+                                <input type="time" id="editGioKetThuc" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huy</button>
+                        <button type="submit" class="btn btn-primary" id="editScheduleSubmitBtn">
+                            <i class="fa fa-save me-2"></i>Cap nhat
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->

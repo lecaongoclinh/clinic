@@ -1,10 +1,9 @@
 import MedicinesService from "../services/medicinesService.js";
 
 const MedicinesController = {
-
     getAll: async (req, res) => {
         try {
-            const data = await MedicinesService.getAllMedicines();
+            const data = await MedicinesService.getAllMedicines(req.query);
             res.json(data);
         } catch (err) {
             res.status(500).json({ message: "Lỗi lấy danh sách thuốc", error: err.message });
@@ -13,13 +12,8 @@ const MedicinesController = {
 
     getById: async (req, res) => {
         try {
-            const { id } = req.params;
-            const data = await MedicinesService.getMedicineById(id);
-
-            if (!data) {
-                return res.status(404).json({ message: "Không tìm thấy thuốc" });
-            }
-
+            const data = await MedicinesService.getMedicineById(req.params.id);
+            if (!data) return res.status(404).json({ message: "Không tìm thấy thuốc" });
             res.json(data);
         } catch (err) {
             res.status(500).json({ message: "Lỗi lấy thuốc", error: err.message });
@@ -28,98 +22,55 @@ const MedicinesController = {
 
     create: async (req, res) => {
         try {
-            const { TenThuoc, GiaBan } = req.body;
-
-            if (!TenThuoc || !GiaBan) {
-                return res.status(400).json({
-                    message: "Thiếu dữ liệu (TenThuoc, GiaBan)"
-                });
-            }
-
             const result = await MedicinesService.createMedicine(req.body);
-
-            res.status(201).json({
-                message: "Thêm thuốc thành công",
-                data: result
-            });
-
+            res.status(201).json({ message: "Thêm thuốc thành công", data: result });
         } catch (err) {
-            res.status(500).json({ message: "Lỗi thêm thuốc", error: err.message });
+            res.status(400).json({ message: err.message || "Lỗi thêm thuốc", error: err.message });
         }
     },
 
     update: async (req, res) => {
         try {
-            const { id } = req.params;
-
-            const result = await MedicinesService.updateMedicine(id, req.body);
-
-            res.json({
-                message: "Cập nhật thuốc thành công",
-                data: result
-            });
-
+            const result = await MedicinesService.updateMedicine(req.params.id, req.body);
+            res.json({ message: "Cập nhật thuốc thành công", data: result });
         } catch (err) {
-            res.status(500).json({ message: "Lỗi cập nhật thuốc", error: err.message });
+            res.status(400).json({ message: err.message || "Lỗi cập nhật thuốc", error: err.message });
         }
     },
 
     delete: async (req, res) => {
         try {
-            const { id } = req.params;
-
-            const result = await MedicinesService.deleteMedicine(id);
-
+            const result = await MedicinesService.deleteMedicine(req.params.id);
             res.json({
-                message: "Xóa thuốc thành công",
+                message: result?.softDeleted
+                    ? "Thuốc đã phát sinh dữ liệu, đã chuyển sang ngừng kinh doanh"
+                    : "Xóa thuốc thành công",
                 data: result
             });
-
         } catch (err) {
             res.status(500).json({ message: "Lỗi xóa thuốc", error: err.message });
         }
     },
 
-    lowStock: async (req, res) => {
+    lowStock: async (_req, res) => {
         try {
             const data = await MedicinesService.getLowStock();
-
-            res.json({
-                message: "Danh sách thuốc sắp hết",
-                data
-            });
-
+            res.json({ message: "Danh sách thuốc sắp hết", data });
         } catch (err) {
             res.status(500).json({ message: "Lỗi kiểm tra tồn kho", error: err.message });
         }
     },
+
     getBySupplier: async (req, res) => {
-    try {
-        const { MaNCC } = req.query;
-
-        if (!MaNCC) {
-            return res.status(400).json({
-                message: "Thiếu MaNCC"
-            });
+        try {
+            const { MaNCC, MaKho } = req.query;
+            if (!MaNCC) return res.status(400).json({ message: "Thiếu MaNCC" });
+            const data = await MedicinesService.getMedicinesBySupplier({ MaNCC, MaKho });
+            res.json(data);
+        } catch (err) {
+            res.status(500).json({ message: "Lỗi lấy thuốc theo nhà cung cấp", error: err.message });
         }
-
-        // ✅ FIX ĐÚNG TÊN HÀM
-        const data = await MedicinesService.getMedicinesBySupplier(MaNCC);
-
-        res.json(data);
-
-    } catch (err) {
-        res.status(500).json({
-            message: "Lỗi lấy thuốc theo nhà cung cấp",
-            error: err.message
-        });
     }
-}
-
-
 };
 
 export default MedicinesController;
-
-
-

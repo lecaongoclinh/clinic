@@ -283,6 +283,9 @@ CREATE TABLE `chitietphieunhap` (
   `DonViNhap` varchar(50) DEFAULT NULL,
   `SoLuongNhap` int DEFAULT NULL,
   `HeSoQuyDoi` int DEFAULT NULL,
+  `SoLo` varchar(50) DEFAULT NULL,
+  `NgaySanXuat` date DEFAULT NULL,
+  `HanSuDung` date DEFAULT NULL,
   PRIMARY KEY (`MaCTPN`),
   KEY `MaPN` (`MaPN`),
   KEY `MaThuoc` (`MaThuoc`),
@@ -521,6 +524,8 @@ CREATE TABLE `kho` (
   `NhietDoToiThieu` float DEFAULT NULL,
   `NhietDoToiDa` float DEFAULT NULL,
   `TrangThai` tinyint(1) DEFAULT '1',
+  `LoaiKho` varchar(30) DEFAULT NULL,
+  `IsDispenseWarehouse` tinyint(1) DEFAULT '0',
   PRIMARY KEY (`MaKho`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -531,7 +536,7 @@ CREATE TABLE `kho` (
 
 LOCK TABLES `kho` WRITE;
 /*!40000 ALTER TABLE `kho` DISABLE KEYS */;
-INSERT INTO `kho` VALUES (1,'Kho Chính',15,30,1);
+INSERT INTO `kho` VALUES (1,'Kho Chính',15,30,1,'MAIN',0),(2,'Kho Quầy',15,30,1,'DISPENSE',1),(3,'Kho Thuốc Lạnh',2,8,1,'COLD',0),(4,'Kho Vật Tư Y Tế',15,30,1,'SUPPLY',0);
 /*!40000 ALTER TABLE `kho` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -690,7 +695,7 @@ CREATE TABLE `lothuoc` (
   `MaNCC` int DEFAULT NULL,
   PRIMARY KEY (`MaLo`),
   UNIQUE KEY `unique_ctpn` (`MaCTPN`),
-  UNIQUE KEY `unique_lo_thuoc` (`MaThuoc`,`SoLo`),
+  UNIQUE KEY `unique_lo_thuoc` (`MaThuoc`,`SoLo`,`MaKho`),
   KEY `MaKho` (`MaKho`),
   KEY `MaNCC` (`MaNCC`),
   KEY `idx_lo_hansudung` (`HanSuDung`),
@@ -921,9 +926,10 @@ CREATE TABLE `phieunhapthuoc` (
   `MaNhanVien` int DEFAULT NULL,
   `NgayNhap` date DEFAULT (curdate()),
   `TongTien` decimal(12,2) DEFAULT '0.00',
-  `LoaiPhieu` enum('NhapMua','NhapTra','NhapKhac') DEFAULT 'NhapMua',
+  `LoaiPhieu` enum('NhapMua','NhapTra','NhapKiemKe','NhapVienTro','NhapKhac') DEFAULT 'NhapMua',
   `GhiChu` text,
   `MaKho` int DEFAULT NULL,
+  `TrangThai` enum('Nhap','HoanThanh','DaHuy') DEFAULT 'Nhap',
   PRIMARY KEY (`MaPN`),
   KEY `MaNCC` (`MaNCC`),
   KEY `MaNhanVien` (`MaNhanVien`),
@@ -955,7 +961,7 @@ CREATE TABLE `phieuxuatthuoc` (
   `MaPX` int NOT NULL AUTO_INCREMENT,
   `MaNhanVien` int DEFAULT NULL,
   `MaKho` int DEFAULT NULL,
-  `LoaiXuat` enum('BanChoBN','NoiBo','TraNCC','Huy') DEFAULT NULL,
+  `LoaiXuat` enum('BanChoBN','DieuChuyenNoiBo','TraNCC','XuatHuy','VienTro','XuatKiemKe','NoiBo','Huy') DEFAULT NULL,
   `MaBN` int DEFAULT NULL,
   `NgayXuat` datetime DEFAULT CURRENT_TIMESTAMP,
   `GhiChu` text,

@@ -119,21 +119,83 @@ const scheduleService = {
             throw new Error(error.message);
         }
     },
-    deleteSchedule: async (maLich) => {
+    updateSchedule: async (maLich, bacSiId, phongKhamId, ngayLamViec, gioBatDau, gioKetThuc) => {
+        let connection;
+        let committed = false;
         try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
+
+            const current = await Schedule.getScheduleById(maLich);
+            if (!current) throw new Error("Lich lam viec khong ton tai");
+
+            const doctor = await Schedule.checkDoctorExists(bacSiId, connection, true);
+            if (!doctor) throw new Error("Bac si khong ton tai");
+
+            const room = await Schedule.checkRoomExists(phongKhamId, connection, true);
+            if (!room) throw new Error("Phong kham khong ton tai");
+
+            if (!room.MaChuyenKhoa || Number(room.MaChuyenKhoa) !== Number(doctor.MaChuyenKhoa)) {
+                throw new Error("Phong kham khong thuoc chuyen khoa cua bac si");
+            }
+
+            if (gioBatDau >= gioKetThuc) {
+                throw new Error("Gio bat dau phai nho hon gio ket thuc");
+            }
+
+            const conflict = await Schedule.checkScheduleConflict(bacSiId, ngayLamViec, gioBatDau, gioKetThuc, connection, maLich);
+            if (conflict) {
+                const existing = conflict[0];
+                throw new Error(`Bac si ${existing.TenBacSi} da co lich ngay ${ngayLamViec} tu ${existing.GioBatDau} den ${existing.GioKetThuc}`);
+            }
+
+            const roomConflict = await Schedule.checkRoomConflict(phongKhamId, ngayLamViec, gioBatDau, gioKetThuc, connection, maLich);
+            if (roomConflict) {
+                const existing = roomConflict[0];
+                throw new Error(`Phong ${existing.TenPhong} da duoc bac si ${existing.TenBacSi} su dung ngay ${ngayLamViec} tu ${existing.GioBatDau} den ${existing.GioKetThuc}`);
+            }
+
+            await Schedule.updateSchedule(maLich, bacSiId, phongKhamId, ngayLamViec, gioBatDau, gioKetThuc, connection);
+            await connection.commit();
+            committed = true;
+
+            return {
+                success: true,
+                message: "Lich lam viec da duoc cap nhat",
+                data: await Schedule.getScheduleById(maLich)
+            };
+        } catch (error) {
+            if (connection && !committed) await connection.rollback();
+            throw new Error(error.message);
+        } finally {
+            if (connection) connection.release();
+        }
+    },
+    deleteSchedule: async (maLich) => {
+        let connection;
+        let committed = false;
+        try {
+            connection = await db.getConnection();
+            await connection.beginTransaction();
             const schedule = await Schedule.getScheduleById(maLich);
             if (!schedule) {
                 throw new Error("Lịch làm việc không tồn tại");
             }
 
-            await Schedule.deleteSchedule(maLich);
+            await Schedule.unlinkAppointmentsFromSchedule(maLich, connection);
+            await Schedule.deleteSchedule(maLich, connection);
+            await connection.commit();
+            committed = true;
 
             return {
                 success: true,
                 message: "Lịch làm việc đã được xóa"
             };
         } catch (error) {
+            if (connection && !committed) await connection.rollback();
             throw new Error(error.message);
+        } finally {
+            if (connection) connection.release();
         }
     },
 

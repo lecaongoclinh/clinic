@@ -51,6 +51,20 @@ const ServicesController = {
         }
     },
 
+    getClinicalAssignable: async (req, res) => {
+        try {
+            const data = await ServicesService.getClinicalAssignable({
+                keyword: req.query.keyword || "",
+                loai: req.query.loai || "",
+                maChuyenKhoa: req.query.maChuyenKhoa || ""
+            });
+            res.json(data);
+        } catch (error) {
+            console.error("getClinicalAssignable services error:", error);
+            res.status(500).json({ message: error.message || "Lỗi lấy danh sách dịch vụ chỉ định" });
+        }
+    },
+
     create: async (req, res) => {
         try {
             const data = await ServicesService.create(req.body);

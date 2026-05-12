@@ -507,7 +507,7 @@
                                     <button class="segment-btn" data-range="year">Năm nay</button>
                                 </div>
                                 <button class="btn btn-primary btn-modern" id="exportDashboardBtn">
-                                    <i class="fa fa-download me-2"></i>Xuất báo cáo
+                                    <i class="fa fa-download me-2"></i>Xuất JSON
                                 </button>
                             </div>
                         </div>
@@ -521,10 +521,10 @@
         <div class="stat-card card-blue">
             <div class="icon"><i class="fa fa-wallet"></i></div>
             <div class="stat-content">
-                <h6>Tổng doanh thu</h6>
+                <h6>Doanh thu đã thanh toán</h6>
                 <h4 id="metricRevenue">0 đ</h4>
             </div>
-            <small id="metricRevenueNote">Doanh thu trong kỳ đã chọn</small>
+            <small id="metricRevenueNote">Doanh thu đã thanh toán trong kỳ</small>
         </div>
     </div>
 
@@ -552,12 +552,12 @@
 
     <div class="col-xl-3 col-md-6">
         <div class="stat-card card-sky">
-            <div class="icon"><i class="fa fa-star"></i></div>
+            <div class="icon"><i class="fa fa-file-invoice-dollar"></i></div>
             <div class="stat-content">
-                <h6>Tỷ lệ hài lòng</h6>
-                <h4 id="metricSatisfaction">0%</h4>
+                <h6>Hóa đơn chờ thanh toán</h6>
+                <h4 id="metricPendingInvoices">0</h4>
             </div>
-            <small>Mức hài lòng trung bình của bệnh nhân</small>
+            <small>Giá trị chờ thu: <span id="pendingInvoiceAmount">0 đ</span></small>
         </div>
     </div>
 </div>
@@ -618,12 +618,11 @@
                                             <th>Chuyên khoa</th>
                                             <th>Lượt khám</th>
                                             <th>Doanh thu</th>
-                                            <th>Đánh giá</th>
                                         </tr>
                                     </thead>
                                     <tbody id="doctorPerformanceBody">
                                         <tr>
-                                            <td colspan="5" class="empty-state">Đang tải dữ liệu...</td>
+                                            <td colspan="4" class="empty-state">Đang tải dữ liệu...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -637,8 +636,8 @@
                                 <div class="section-card">
                                     <div class="section-header">
                                         <div>
-                                            <h5 class="section-title">Top dịch vụ phổ biến</h5>
-                                            <p class="section-subtitle">Những dịch vụ có lượt sử dụng cao</p>
+                                            <h5 class="section-title">Top dịch vụ y tế</h5>
+                                            <p class="section-subtitle">Dịch vụ y tế có lượt sử dụng cao</p>
                                         </div>
                                     </div>
                                     <div id="topServicesList">

@@ -1,5 +1,6 @@
 import db from '../config/db.js';
 import InvoicesService from '../services/invoicesService.js';
+import InvoicesModel from './invoicesModel.js';
 
 class MedicalRecordsModel {
     static async getMedicalRecords(tenBN = '', fromDate = null, toDate = null, limit = 10, offset = 0) {
@@ -20,7 +21,9 @@ class MedicalRecordsModel {
                     bn.GioiTinh,
                     nv.HoTen as TenBacSi,
                     ck.TenChuyenKhoa,
-                    phong.TenPhong
+                    phong.TenPhong,
+                    hd.MaHD,
+                    hd.TrangThai AS TrangThaiHoaDon
                 FROM BenhAn ba
                 INNER JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
                 LEFT JOIN LichKham lk ON pk.MaLK = lk.MaLK
@@ -28,6 +31,7 @@ class MedicalRecordsModel {
                 INNER JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
                 LEFT JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
                 LEFT JOIN PhongKham phong ON pk.MaPhong = phong.MaPhong
+                LEFT JOIN HoaDon hd ON hd.MaBA = ba.MaBA OR hd.MaPK = ba.MaPK
                 WHERE 1=1
             `;
             const params = [];
@@ -296,7 +300,9 @@ class MedicalRecordsModel {
                     pk.TrangThai as TrangThaiPhieuKham,
                     nv.HoTen as TenBacSi,
                     ck.TenChuyenKhoa,
-                    phong.TenPhong
+                    phong.TenPhong,
+                    hd.MaHD,
+                    hd.TrangThai AS TrangThaiHoaDon
                 FROM BenhAn ba
                 INNER JOIN PhieuKham pk ON ba.MaPK = pk.MaPK
                 LEFT JOIN LichKham lk ON pk.MaLK = lk.MaLK
@@ -304,6 +310,7 @@ class MedicalRecordsModel {
                 INNER JOIN NhanVien nv ON ba.MaBacSi = nv.MaNV
                 INNER JOIN ChuyenKhoa ck ON nv.MaChuyenKhoa = ck.MaChuyenKhoa
                 LEFT JOIN PhongKham phong ON pk.MaPhong = phong.MaPhong
+                LEFT JOIN HoaDon hd ON hd.MaBA = ba.MaBA OR hd.MaPK = ba.MaPK
                 WHERE bn.MaBN = ?
                 ORDER BY ba.NgayLap DESC
             `;
@@ -341,32 +348,65 @@ class MedicalRecordsModel {
             const [medicalRecords] = await db.execute(medicalRecordQuery, [maBA]);
             const medicalRecord = medicalRecords[0] || null;
 
-            // Lấy đơn thuốc
+            if (!medicalRecord) {
+                return {
+                    medicalRecord: null,
+                    prescription: null,
+                    prescriptionItems: [],
+                    invoice: null,
+                    invoiceDetails: [],
+                    orderedServices: []
+                };
+            }
+
             const prescriptionQuery = `
                 SELECT dt.*, ba.MaBA
                 FROM DonThuoc dt
                 INNER JOIN BenhAn ba ON dt.MaBA = ba.MaBA
                 WHERE ba.MaBA = ?
+                ORDER BY dt.MaDT DESC
+                LIMIT 1
             `;
 
             const [prescriptions] = await db.execute(prescriptionQuery, [maBA]);
             const prescription = prescriptions[0] || null;
+            let prescriptionItems = [];
+            if (prescription?.MaDT) {
+                const [items] = await db.execute(`
+                    SELECT
+                        ct.MaDT,
+                        ct.MaThuoc,
+                        t.TenThuoc,
+                        t.HoatChat,
+                        ct.SoLuong AS SoLuongKe,
+                        ct.LieuDung,
+                        ct.LieuDung AS CachDung
+                    FROM ChiTietDonThuoc ct
+                    LEFT JOIN Thuoc t ON t.MaThuoc = ct.MaThuoc
+                    WHERE ct.MaDT = ?
+                    ORDER BY ct.MaCTDT ASC
+                `, [prescription.MaDT]);
+                prescriptionItems = items;
+            }
 
-            // Lấy hóa đơn
             const invoiceQuery = `
-                SELECT
-                    hd.*,
-                    SUM(cthd.SoTien) as TongTien
+                SELECT hd.*
                 FROM HoaDon hd
-                LEFT JOIN ChiTietHoaDon cthd ON hd.MaHD = cthd.MaHD
-                WHERE hd.MaBA = ?
-                GROUP BY hd.MaHD
+                WHERE hd.MaBA = ? OR hd.MaPK = ?
+                ORDER BY hd.MaHD DESC
+                LIMIT 1
             `;
 
-            const [invoices] = await db.execute(invoiceQuery, [maBA]);
+            const [invoices] = await db.execute(invoiceQuery, [maBA, medicalRecord.MaPK]);
             const invoice = invoices[0] || null;
+            const invoiceDetails = invoice?.MaHD
+                ? await InvoicesModel.getDetails(invoice.MaHD)
+                : [];
+            const orderedServices = invoiceDetails.filter((item) =>
+                item.LoaiMuc === 'DichVu' && ['XetNghiem', 'SieuAm'].includes(item.LoaiDichVu)
+            );
 
-            return { medicalRecord, prescription, invoice };
+            return { medicalRecord, prescription, prescriptionItems, invoice, invoiceDetails, orderedServices };
         } catch (error) {
             throw error;
         }
@@ -443,6 +483,17 @@ class MedicalRecordsModel {
                 MaNhanVien: maBacSi,
                 connection
             });
+
+            const serviceItems = Array.isArray(data.ChiTietDichVu) ? data.ChiTietDichVu : [];
+            if (serviceItems.length) {
+                await InvoicesService.addServiceItemsForVisit({
+                    MaPK: maPK,
+                    MaBA: insertResult.insertId,
+                    MaNhanVien: maBacSi,
+                    ChiTietDichVu: serviceItems,
+                    connection
+                });
+            }
 
             await connection.commit();
 

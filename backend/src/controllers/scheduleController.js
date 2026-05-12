@@ -180,6 +180,46 @@ const scheduleController = {
         }
     },
 
+    updateSchedule: async (req, res) => {
+        try {
+            const { maLich } = req.params;
+            const { bacSiId, phongKhamId, ngayLamViec, gioBatDau, gioKetThuc } = req.body;
+
+            if (!maLich || isNaN(maLich)) {
+                return res.status(400).json({ error: "maLich khong hop le" });
+            }
+
+            if (!bacSiId || !phongKhamId || !ngayLamViec || !gioBatDau || !gioKetThuc) {
+                return res.status(400).json({ error: "Thieu thong tin bat buoc" });
+            }
+
+            if (isNaN(bacSiId) || isNaN(phongKhamId)) {
+                return res.status(400).json({ error: "bacSiId/phongKhamId khong hop le" });
+            }
+
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(ngayLamViec)) {
+                return res.status(400).json({ error: "ngayLamViec khong hop le (YYYY-MM-DD)" });
+            }
+
+            if (!/^\d{2}:\d{2}(:\d{2})?$/.test(gioBatDau) || !/^\d{2}:\d{2}(:\d{2})?$/.test(gioKetThuc)) {
+                return res.status(400).json({ error: "Gio khong hop le (HH:mm)" });
+            }
+
+            const result = await scheduleService.updateSchedule(
+                parseInt(maLich),
+                parseInt(bacSiId),
+                parseInt(phongKhamId),
+                ngayLamViec,
+                gioBatDau,
+                gioKetThuc
+            );
+
+            res.status(200).json(result);
+        } catch (error) {
+            res.status(400).json({ error: error.message });
+        }
+    },
+
     // Delete schedule
     deleteSchedule: async (req, res) => {
         try {

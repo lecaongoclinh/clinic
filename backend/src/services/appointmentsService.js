@@ -12,8 +12,8 @@ const appointmentsService = {
 
     createAppointment: async (maBN, maBacSi, ngayHen, gioHen, lyDoKham) => {
         try {
-            await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
-            const appointmentId = await Appointment.createAppointment(maBN, maBacSi, ngayHen, gioHen, lyDoKham);
+            const workingSchedule = await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
+            const appointmentId = await Appointment.createAppointment(maBN, maBacSi, ngayHen, gioHen, lyDoKham, workingSchedule.MaLich);
             return appointmentId;
         } catch (error) {
             throw new Error(error.message);
@@ -22,8 +22,8 @@ const appointmentsService = {
 
     updateAppointment: async (maLK, maBN, maBacSi, ngayHen, gioHen, lyDoKham, trangThai) => {
         try {
-            await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
-            const success = await Appointment.updateAppointment(maLK, maBN, maBacSi, ngayHen, gioHen, lyDoKham, trangThai);
+            const workingSchedule = await appointmentsService.validateDoctorWorkingTime(maBacSi, ngayHen, gioHen);
+            const success = await Appointment.updateAppointment(maLK, maBN, maBacSi, ngayHen, gioHen, lyDoKham, trangThai, workingSchedule.MaLich);
             return success;
         } catch (error) {
             throw new Error(error.message);

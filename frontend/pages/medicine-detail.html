@@ -1,99 +1,36 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
     <title>Chi tiết thuốc</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
     <link href="../img/favicon.ico" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/style.css" rel="stylesheet">
-
     <style>
         body { font-family: 'Inter', sans-serif !important; }
         .card { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
-        .filter-bar, .info-panel {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-        }
-        .info-item {
-    font-size: 14px;
-    color: #111;
-    line-height: 1.6;
-}
-
-.info-item .label {
-    font-weight: 500;
-    margin-right: 4px;
-    color: #111;
-}
-
-.info-item .value {
-    font-weight: 400;
-    color: #111;
-}
-
-.btn-back {
-    border: 1px solid #009CFF;
-    color: #009CFF;
-    background: #fff;
-}
-
-.btn-back:hover {
-    background: #009CFF;
-    color: #fff;
-}
+        .filter-bar, .info-panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+        .info-item { font-size: 14px; color: #111; line-height: 1.6; }
+        .info-item .label { font-weight: 600; margin-right: 4px; color: #111; }
+        .info-item .value { font-weight: 400; color: #111; }
+        .btn-back { border: 1px solid #009CFF; color: #009CFF; background: #fff; }
+        .btn-back:hover { background: #009CFF; color: #fff; }
         .form-control, .form-select { height: 42px; border-radius: 8px; font-size: 14px; }
         .table { border-collapse: separate; border-spacing: 0; }
-        .table thead th {
-            background: #f1f3f5 !important;
-            color: #111 !important;
-            font-weight: 700;
-            padding: 16px 10px;
-            text-align: center;
-            font-size: 14.5px;
-            border-bottom: 2px solid #dee2e6;
-            white-space: nowrap;
-        }
-        .table td {
-            padding: 14px 10px;
-            vertical-align: middle;
-            color: #111 !important;
-            font-size: 14px;
-        }
+        .table thead th { background: #f1f3f5 !important; color: #111 !important; font-weight: 700; padding: 16px 10px; text-align: center; font-size: 14.5px; border-bottom: 2px solid #dee2e6; white-space: nowrap; }
+        .table td { padding: 14px 10px; vertical-align: middle; color: #111 !important; font-size: 14px; }
         .table tbody tr:hover { background: #f8fbff; }
-        .badge {
-    font-size: 13px !important;
-    padding: 5px 12px !important;
-    border-radius: 999px !important; /* bo tròn pill */
-    font-weight: 500;
-}
-
-/* gradient nhẹ */
-.badge-success {
-    background: #06f83a !important;
-    color: #ffffff !important;
-}
-
-.badge-warning {
-    background: #fde807 !important;
-    color: #ffffff !important;
-}
-
-.badge-danger {
-    background: #e11616 !important;
-    color: #ffffff !important;
-}
-
-.badge-secondary {
-    background: #e5e7eb !important;
-    color: #374151 !important;
-}
+        .badge { font-size: 13px !important; padding: 5px 12px !important; border-radius: 999px !important; font-weight: 500; }
+        .badge-success { background: #e8f5e9 !important; color: #166534 !important; }
+        .badge-warning { background: #fff7ed !important; color: #c2410c !important; }
+        .badge-danger { background: #fee2e2 !important; color: #b91c1c !important; }
+        .badge-secondary { background: #e5e7eb !important; color: #374151 !important; }
+        .action-strip { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+        .form-check-label { font-size: 14px; }
     </style>
 </head>
 <body>
@@ -102,10 +39,7 @@
         <nav class="navbar bg-light navbar-light">
             <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
             <div class="d-flex align-items-center ms-4 mb-4">
-                <div class="position-relative">
-                    <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
-                </div>
+                <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
                 <div class="ms-3"><h6 class="mb-0" id="usernameSidebar"></h6></div>
             </div>
             <div class="navbar-nav w-100">
@@ -131,9 +65,7 @@
                     </div>
                 </div>
                 <div class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
-                    </a>
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ</a>
                     <div class="dropdown-menu bg-transparent border-0">
                         <a href="services.html" class="dropdown-item">Dịch vụ</a>
                         <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
@@ -164,122 +96,59 @@
         <div class="container-fluid pt-4 px-4">
             <div class="info-panel mb-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h5 class="mb-1">Thông tin thuốc</h5>
-                       
-                    </div>
+                    <h5 class="mb-1">Thông tin thuốc</h5>
                     <a href="medicines.html" class="btn btn-back btn-sm">Quay lại</a>
                 </div>
                 <div class="row g-2">
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Tên thuốc:</span>
-            <span class="value" id="TenThuoc"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Hoạt chất:</span>
-            <span class="value" id="HoatChat"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Hàm lượng:</span>
-            <span class="value" id="HamLuong"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Dạng bào chế:</span>
-            <span class="value" id="DangBaoChe"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Quy cách đóng gói:</span>
-            <span class="value" id="QuyCach"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Giá bán:</span>
-            <span class="value" id="GiaBan"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Hãng sản xuất:</span>
-            <span class="value" id="Hang"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Nước sản xuất:</span>
-            <span class="value" id="Nuoc"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Nhiệt độ bảo quản:</span>
-            <span class="value" id="NhietDo"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Mã vạch:</span>
-            <span class="value" id="MaVach"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Loại thuốc:</span>
-            <span class="value" id="Loai"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Trạng thái:</span>
-            <span class="value" id="TrangThai"></span>
-        </div>
-    </div>
-
-    <div class="col-lg-4 col-md-6">
-        <div class="info-item">
-            <span class="label">Tổng tồn:</span>
-            <span class="value" id="TongTon"></span>
-        </div>
-    </div>
-</div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Tên thuốc:</span><span class="value" id="TenThuoc"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Hoạt chất:</span><span class="value" id="HoatChat"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Hàm lượng:</span><span class="value" id="HamLuong"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Dạng bào chế:</span><span class="value" id="DangBaoChe"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Quy cách:</span><span class="value" id="QuyCach"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Đơn vị cơ bản:</span><span class="value" id="DonViCoBan"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Giá bán:</span><span class="value" id="GiaBan"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Hãng sản xuất:</span><span class="value" id="Hang"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Nước sản xuất:</span><span class="value" id="Nuoc"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Nhiệt độ bảo quản:</span><span class="value" id="NhietDo"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Mã vạch:</span><span class="value" id="MaVach"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Loại thuốc:</span><span class="value" id="Loai"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Trạng thái:</span><span class="value" id="TrangThai"></span></div></div>
+                    <div class="col-lg-4 col-md-6"><div class="info-item"><span class="label">Tổng tồn:</span><span class="value" id="TongTon"></span></div></div>
+                </div>
+                <div class="action-strip mt-3">
+                    <button class="btn btn-primary btn-sm" onclick="goImport()">Nhập thêm thuốc</button>
+                    <button class="btn btn-outline-primary btn-sm" onclick="goDispense()">Xuất kho / điều chuyển</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="goInventory()">Xem tồn kho</button>
+                </div>
             </div>
 
             <div class="filter-bar mb-4">
                 <div class="row g-3 align-items-center">
-                    <div class="col-lg-5 col-md-12">
-                        <input id="searchBatch" type="text" class="form-control" placeholder="Tìm theo số lô, kho hoặc nhiệt độ bảo quản...">
+                    <div class="col-lg-4 col-md-12">
+                        <input id="searchBatch" type="text" class="form-control" placeholder="Tìm theo số lô, kho, nhà cung cấp..." oninput="applyBatchFilter()">
                     </div>
-                    <div class="col-lg-3 col-md-6">
+                    <div class="col-lg-2 col-md-6">
                         <select id="statusFilter" class="form-select">
                             <option value="">Tất cả trạng thái lô</option>
                             <option value="ConHan">Còn hạn</option>
                             <option value="SapHetHan">Sắp hết hạn</option>
                             <option value="HetHan">Hết hạn</option>
+                            <option value="DaHuy">Đã hủy</option>
                         </select>
                     </div>
-                    <div class="col-lg-4 col-md-6 d-flex gap-2">
-                        <button id="applyBatchSearch" class="btn btn-primary flex-fill">Tìm kiếm</button>
-                        <button id="resetBatchSearch" class="btn btn-outline-secondary flex-fill">Làm mới</button>
+                    <div class="col-lg-3 col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeZeroStock">
+                            <label class="form-check-label" for="includeZeroStock">Hiện lô hết tồn</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeCancelled">
+                            <label class="form-check-label" for="includeCancelled">Hiện lô đã hủy</label>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-12 d-flex gap-2">
+                        <button id="applyBatchSearch" class="btn btn-primary flex-fill" onclick="loadBatches()">Tìm kiếm</button>
+                        <button id="resetBatchSearch" class="btn btn-outline-secondary flex-fill" onclick="resetBatchFilter()">Làm mới</button>
                     </div>
                 </div>
             </div>
@@ -288,17 +157,18 @@
                 <h5 class="mb-3">Danh sách lô thuốc</h5>
                 <table class="table align-middle table-hover" id="batchListTable" data-page-size="8">
                     <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Số lô</th>
-                            <th>Ngày sản xuất</th>
-                            <th>Hạn dùng</th>
-                            <th>Tồn</th>
-                            <th>Giá nhập</th>
-                            <th>Kho</th>
-                            <th>Nhiệt độ</th>
-                            <th>Trạng thái</th>
-                        </tr>
+                    <tr>
+                        <th>Mã lô</th>
+                        <th>Số lô</th>
+                        <th>Ngày sản xuất</th>
+                        <th>Hạn sử dụng</th>
+                        <th>Tồn hiện tại</th>
+                        <th>Giá nhập</th>
+                        <th>Kho</th>
+                        <th>Nhà cung cấp</th>
+                        <th>Nhiệt độ</th>
+                        <th>Trạng thái lô</th>
+                    </tr>
                     </thead>
                     <tbody id="batchTable"></tbody>
                 </table>

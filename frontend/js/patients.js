@@ -128,7 +128,7 @@ async function savePatient() {
         DiaChi: $('patientAddress').value.trim()
     };
 
-    if (!payload.HoTen || !payload.SoDienThoai) {
+    if (!payload.HoTen || !payload.SoDienThoai || !payload.NgaySinh || !payload.GioiTinh || !payload.DiaChi) {
         alert('Vui lòng nhập họ tên và số điện thoại');
         return;
     }

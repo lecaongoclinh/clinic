@@ -1,145 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="vi">
 <head>
     <meta charset="utf-8">
-    <title>CLINIC</title>
+    <title>Danh mục thuốc - Clinic</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-
     <link href="../img/favicon.ico" rel="icon">
-
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
-
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/style.css" rel="stylesheet">
-
-    <!-- CUSTOM CSS -->
-<style>
-    body {
-        font-family: 'Inter', sans-serif !important;
-    }
-
-    .card {
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    }
-
-    .form-control, .form-select {
-        height: 42px;
-        border-radius: 8px;
-        font-size: 14px;
-    }
-
-    .filter-bar {
-        background: white;
-        border-radius: 12px;
-        padding: 16px 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-    }
-
-    /* ================= TABLE ================= */
-    .table {
-        border-collapse: separate;
-        border-spacing: 0;
-    }
-
-    .table thead th {
-        background: #f1f3f5 !important;
-        color: #111 !important;
-        font-weight: 700;
-        padding: 16px 10px;
-        text-align: center;
-        font-size: 14.5px;
-        border-bottom: 2px solid #dee2e6;
-        white-space: nowrap;
-    }
-
-    .table td {
-        padding: 14px 10px;
-        vertical-align: middle;
-        color: #111 !important;
-        font-size: 14px;
-    }
-
-    .table tbody tr:hover {
-        background: #f8fbff;
-    }
-
-    /* Cột Hành động rộng hơn để chứa 3 icon */
-    .table th:last-child,
-    .table td:last-child {
-        width: 110px;
-        min-width: 110px;
-    }
-
-    /* Icon hành động */
-    .action-icon {
-        width: 30px;
-        height: 30px;
-        border-radius: 6px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 3px;
-        font-size: 15px;
-        border: none;
-        transition: all 0.2s;
-    }
-
-    .btn-view   { background: #E3F2FD; color: #2196F3; }
-    .btn-edit   { background: #E3F2FD; color: #1976D2; }
-    .btn-delete { background: #FFEBEE; color: #f36d64; }
-
-    .action-icon:hover {
-        transform: scale(1.1);
-    }
-
-    .btn-sm {
-    font-size: 13px;
-    border-radius: 6px;
-}
-</style>
+    <style>
+        body { font-family: 'Inter', sans-serif !important; }
+        .card { box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08); }
+        .form-control, .form-select { height: 42px; border-radius: 8px; font-size: 14px; }
+        .filter-bar { background: white; border-radius: 12px; padding: 16px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
+        .table { border-collapse: separate; border-spacing: 0; }
+        .table thead th { background: #f1f3f5 !important; color: #111 !important; font-weight: 700; padding: 16px 10px; text-align: center; font-size: 14.5px; border-bottom: 2px solid #dee2e6; white-space: nowrap; }
+        .table td { padding: 14px 10px; vertical-align: middle; color: #111 !important; font-size: 14px; }
+        .table tbody tr:hover { background: #f8fbff; }
+        .table th:last-child, .table td:last-child { width: 110px; min-width: 110px; white-space: nowrap; }
+        .action-icon { width: 30px; height: 30px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; margin: 0 3px; font-size: 15px; border: none; transition: all 0.2s; }
+        .btn-edit { background: #E3F2FD; color: #1976D2; }
+        .btn-delete { background: #FFEBEE; color: #f36d64; }
+        .action-icon:hover { transform: scale(1.1); }
+        .status-badge { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; background: #e8f5e9; color: #166534; }
+        .status-badge.off { background: #f1f3f5; color: #495057; }
+    </style>
 </head>
-
 <body>
 <div class="container-xxl position-relative bg-white d-flex p-0">
-
-    <!-- Sidebar giữ nguyên -->
     <div class="sidebar pe-4 pb-3">
         <nav class="navbar bg-light navbar-light">
             <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
-
             <div class="d-flex align-items-center ms-4 mb-4">
-                <div class="position-relative">
-                    <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
-                    <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
-                </div>
-                <div class="ms-3">
-                    <h6 class="mb-0" id="usernameSidebar"></h6>
-                </div>
+                <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
+                <div class="ms-3"><h6 class="mb-0" id="usernameSidebar"></h6></div>
             </div>
-
             <div class="navbar-nav w-100">
-                <a href="../index.html" class="nav-item nav-link">
-                    <i class="fa fa-tachometer-alt me-2"></i>Thống kê
-                </a>
-
-                <a href="../schedule.html" class="nav-item nav-link">
-                    <i class="fa fa-th me-2"></i>Lịch làm việc
-                </a>
-
-                <a href="../LichKham.html" class="nav-item nav-link">
-                    <i class="fa fa-keyboard me-2"></i>Lịch khám
-                </a>
-                <a href="../phieukham.html" class="nav-item nav-link">
-                    <i class="fa fa-ticket-alt me-2"></i>Phiếu khám
-                </a>
-
-                <a href="../BenhAn.html" class="nav-item nav-link">
-                    <i class="fa fa-table me-2"></i>Bệnh án
-                </a>
+                <a href="../index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                <a href="../schedule.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
+                <a href="../LichKham.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
+                <a href="../phieukham.html" class="nav-item nav-link"><i class="fa fa-ticket-alt me-2"></i>Phiếu khám</a>
+                <a href="../BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle active" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                     <div class="dropdown-menu bg-transparent border-0">
@@ -157,9 +60,7 @@
                     </div>
                 </div>
                 <div class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ
-                    </a>
+                    <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="fas fa-file-invoice-dollar me-2"></i>Hóa đơn & Dịch vụ</a>
                     <div class="dropdown-menu bg-transparent border-0">
                         <a href="services.html" class="dropdown-item">Dịch vụ</a>
                         <a href="invoices.html" class="dropdown-item">Hóa đơn</a>
@@ -169,15 +70,9 @@
         </nav>
     </div>
 
-    <!-- Content -->
     <div class="content">
-
-        <!-- Navbar giữ nguyên -->
         <nav class="navbar navbar-expand bg-white navbar-light sticky-top px-4 py-0">
-            <a href="#" class="sidebar-toggler">
-                <i class="fa fa-bars"></i>
-            </a>
-
+            <a href="#" class="sidebar-toggler"><i class="fa fa-bars"></i></a>
             <div class="navbar-nav ms-auto">
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
@@ -193,182 +88,107 @@
             </div>
         </nav>
 
-<!-- MAIN -->
-<div class="container-fluid pt-4 px-4">
+        <div class="container-fluid pt-4 px-4">
+            <div class="filter-bar mb-4">
+                <div class="row g-3 align-items-center">
+                    <div class="col-lg-5 col-md-12">
+                        <input id="searchInput" type="text" class="form-control" placeholder="Tìm tên thuốc, hoạt chất, mã vạch...">
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select id="typeFilter" class="form-select">
+                            <option value="">Tất cả loại thuốc</option>
+                            <option value="ThuocKeDon">Thuốc kê đơn</option>
+                            <option value="KhongKeDon">Không kê đơn</option>
+                            <option value="VatTuYTe">Vật tư y tế</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-6">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">Tất cả trạng thái</option>
+                            <option value="1">Đang kinh doanh</option>
+                            <option value="0">Ngừng kinh doanh</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-12 d-flex gap-2">
+                        <button class="btn btn-primary flex-fill" onclick="applyFilter()">Tìm kiếm</button>
+                        <button class="btn btn-primary flex-fill" onclick="openAddModal()"><i class="fa fa-plus me-1"></i>Thêm mới</button>
+                    </div>
+                </div>
+            </div>
 
-    <div class="d-flex justify-content-end align-items-center mb-3">
-    <!-- <button class="btn btn-primary btn-sm px-3" onclick="openAddModal()">
-        <i class="fa fa-plus me-1"></i>Thêm mới
-    </button> -->
-</div>
-
-    <!-- Filter Bar -->
-    <div class="filter-bar mb-4">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-3">
-                <input id="searchInput" type="text" class="form-control" placeholder="Tìm kiếm thuốc...">
-            </div>
-            <div class="col-md-2">
-                <select id="typeFilter" class="form-select">
-                    <option value="">Thuốc kê đơn</option>
-                    <option value="ThuocKeDon">Thuốc kê đơn</option>
-                    <option value="KhongKeDon">Không kê đơn</option>
-                    <option value="VatTuYTe">Vật tư y tế</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input type="date" id="dateFilter" class="form-control">
-            </div>
-            <div class="col-md-2">
-                <select id="sortFilter" class="form-select">
-                    <option value="">Sắp xếp</option>
-                    <option value="name_asc">Tên A → Z</option>
-                    <option value="name_desc">Tên Z → A</option>
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary flex-fill " onclick="applyFilter()">Áp dụng</button>
-                <!-- <button class="btn btn-outline-secondary flex-fill" onclick="resetFilter()">Hủy lọc</button> -->
-                <button class="btn btn-primary btn-sm px-3" onclick="openAddModal()">
-        <i class="fa fa-plus me-1"></i>Thêm mới
-    </button>
+            <div class="bg-white rounded p-4 shadow-sm card">
+                <table class="table align-middle table-hover" id="medicineTable" data-page-size="8">
+                    <thead>
+                    <tr>
+                        <th>Mã thuốc</th>
+                        <th>Tên thuốc</th>
+                        <th>Hoạt chất</th>
+                        <th>Hàm lượng</th>
+                        <th>Dạng bào chế</th>
+                        <th>Giá bán</th>
+                        <th>Tổng tồn</th>
+                        <th>Trạng thái</th>
+                        <th>Hành động</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
-    </div>
-
-    <!-- Table -->
-    <div class="bg-white rounded p-4 shadow-sm card">
-        <table class="table align-middle table-hover" id="medicineTable">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Tên thuốc</th>
-            <th>Hoạt chất</th>
-            <th>Hàm lượng</th>
-            <th>Dạng</th>
-            <th>Giá</th>
-            <th>Tồn</th>
-            <th>Hành động</th>
-        </tr>
-    </thead>
-    <tbody></tbody>
-</table>
-    </div>
-</div>
-
-        <!-- Footer giữ nguyên -->
-        <!-- <div class="container-fluid pt-4 px-4">
-            <div class="bg-light rounded p-3 text-center">
-                © Clinic 2026
-            </div>
-        </div> -->
-
     </div>
 </div>
 
 <div class="modal fade" id="medicineModal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-
             <div class="modal-header">
                 <h5 class="modal-title">Thêm thuốc</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-
             <div class="modal-body">
                 <input type="hidden" id="MaThuoc">
-
                 <div class="row">
-
-                    <!-- Tên -->
+                    <div class="col-md-6 mb-3"><label>Tên thuốc *:</label><input class="form-control" id="TenThuoc"></div>
+                    <div class="col-md-6 mb-3"><label>Giá bán *:</label><input type="number" class="form-control" id="GiaBan" min="0"></div>
+                    <div class="col-md-6 mb-3"><label>Đơn vị cơ bản *:</label><input class="form-control" id="DonViCoBan" placeholder="Viên, lọ, gói..."></div>
+                    <div class="col-md-6 mb-3"><label>Hoạt chất:</label><input class="form-control" id="HoatChat"></div>
+                    <div class="col-md-6 mb-3"><label>Hàm lượng:</label><input class="form-control" id="HamLuong"></div>
+                    <div class="col-md-6 mb-3"><label>Dạng bào chế:</label><input class="form-control" id="DangBaoChe"></div>
+                    <div class="col-md-6 mb-3"><label>Quy cách đóng gói:</label><input class="form-control" id="QuyCachDongGoi"></div>
+                    <div class="col-md-6 mb-3"><label>Hãng sản xuất:</label><input class="form-control" id="HangSanXuat"></div>
+                    <div class="col-md-6 mb-3"><label>Nước sản xuất:</label><input class="form-control" id="NuocSanXuat"></div>
+                    <div class="col-md-6 mb-3"><label>Nhiệt độ bảo quản:</label><input class="form-control" id="NhietDoBaoQuan"></div>
+                    <div class="col-md-6 mb-3"><label>Mã vạch:</label><input class="form-control" id="MaVach"></div>
                     <div class="col-md-6 mb-3">
-                        <label>Tên thuốc *:</label>
-                        <input class="form-control" id="TenThuoc">
-                    </div>
-
-                    <!-- Giá -->
-                    <div class="col-md-6 mb-3">
-                        <label>Giá bán *:</label>
-                        <input type="number" class="form-control" id="GiaBan">
-                    </div>
-
-                    <!-- Hoạt chất -->
-                    <div class="col-md-6 mb-3">
-                        <label>Hoạt chất *:</label>
-                        <input class="form-control" id="HoatChat">
-                    </div>
-
-                    <!-- Hàm lượng -->
-                    <div class="col-md-6 mb-3">
-                        <label>Hàm lượng *:</label>
-                        <input class="form-control" id="HamLuong">
-                    </div>
-
-                    <!-- Dạng -->
-                    <div class="col-md-6 mb-3">
-                        <label>Dạng bào chế *:</label>
-                        <input class="form-control" id="DangBaoChe">
-                    </div>
-
-                    <!-- Quy cách -->
-                    <div class="col-md-6 mb-3">
-                        <label>Quy cách đóng gói *:</label>
-                        <input class="form-control" id="QuyCachDongGoi">
-                    </div>
-
-                    <!-- Hãng -->
-                    <div class="col-md-6 mb-3">
-                        <label>Hãng sản xuất *:</label>
-                        <input class="form-control" id="HangSanXuat">
-                    </div>
-
-                    <!-- Nước -->
-                    <div class="col-md-6 mb-3">
-                        <label>Nước sản xuất *:</label>
-                        <input class="form-control" id="NuocSanXuat">
-                    </div>
-
-                    <!-- Nhiệt độ -->
-                    <div class="col-md-6 mb-3">
-                        <label>Nhiệt độ bảo quản *:</label>
-                        <input class="form-control" id="NhietDoBaoQuan">
-                    </div>
-
-                    <!-- Mã vạch -->
-                    <div class="col-md-6 mb-3">
-                        <label>Mã vạch *:</label>
-                        <input class="form-control" id="MaVach">
-                    </div>
-
-                    <!-- Loại thuốc -->
-                    <div class="col-md-6 mb-3">
-                        <label>Loại *:</label>
+                        <label>Loại thuốc *:</label>
                         <select class="form-control" id="LoaiThuoc">
                             <option value="ThuocKeDon">Thuốc kê đơn</option>
                             <option value="KhongKeDon">Không kê đơn</option>
                             <option value="VatTuYTe">Vật tư y tế</option>
                         </select>
                     </div>
-
+                    <div class="col-md-6 mb-3">
+                        <label>Trạng thái kinh doanh:</label>
+                        <select class="form-control" id="TrangThai">
+                            <option value="1">Đang kinh doanh</option>
+                            <option value="0">Ngừng kinh doanh</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-
             <div class="modal-footer">
                 <button class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button class="btn btn-primary" onclick="saveMedicine()">Lưu</button>
             </div>
-
         </div>
     </div>
 </div>
 
 <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
-
 <script src="../js/main.js"></script>
 <script src="../js/table_pagination.js"></script>
 <script src="../js/medicines.js"></script>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const username = localStorage.getItem('fullName') || localStorage.getItem('username');
@@ -378,6 +198,5 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-
 </body>
 </html>

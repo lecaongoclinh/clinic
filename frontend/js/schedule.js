@@ -16,6 +16,16 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const filterDoctorSelect = document.getElementById('filterDoctor');
 const deleteModal = document.getElementById('deleteModal');
 const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+const editScheduleModalEl = document.getElementById('editScheduleModal');
+const editScheduleForm = document.getElementById('editScheduleForm');
+const editScheduleIdInput = document.getElementById('editScheduleId');
+const editChuyenKhoaSelect = document.getElementById('editChuyenKhoa');
+const editBacSiIdSelect = document.getElementById('editBacSiId');
+const editPhongKhamIdSelect = document.getElementById('editPhongKhamId');
+const editNgayLamViecInput = document.getElementById('editNgayLamViec');
+const editGioBatDauInput = document.getElementById('editGioBatDau');
+const editGioKetThucInput = document.getElementById('editGioKetThuc');
+const editScheduleSubmitBtn = document.getElementById('editScheduleSubmitBtn');
 
 // Shift Matrix Elements
 const shiftCheckboxes = document.querySelectorAll('.shift-checkbox');
@@ -204,6 +214,12 @@ function addDaysToDateString(dateString, dayOffset) {
     const [year, month, day] = dateString.split('-').map(Number);
     const date = new Date(Date.UTC(year, month - 1, day + dayOffset));
     return date.toISOString().slice(0, 10);
+}
+
+function isMondayDateString(dateString) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return false;
+    return new Date(Date.UTC(year, month - 1, day)).getUTCDay() === 1;
 }
 
 function normalizeDateString(dateValue) {
@@ -427,7 +443,9 @@ function populateDoctorFilter(maChuyenKhoa) {
         filterDoctorSelect.appendChild(option);
     });
 
-    if (isDoctorRole && currentUserId) {
+    filterDoctorSelect.disabled = doctorList.length === 0;
+
+    if (isDoctorRole && currentUserId && doctorList.some(doctor => Number(doctor.MaNV) === currentUserId)) {
         filterDoctorSelect.value = String(currentUserId);
         // Không disable — bác sĩ vẫn có thể chọn xem bác sĩ khác
     }
@@ -441,7 +459,7 @@ async function loadSchedules() {
         if (loadingSpinner) loadingSpinner.style.display = 'block';
 
         const maChuyenKhoa = selectKhoa.value || null;
-        const maBacSi = isDoctorRole && currentUserId ? currentUserId : (filterDoctorSelect.value || null);
+        const maBacSi = filterDoctorSelect.value || null;
 
         // ✅ Build query params
         const params = new URLSearchParams();
@@ -577,7 +595,9 @@ function schedulesToEvents(schedules) {
                 NgayLam: ngayLam,
                 GioBatDau: schedule.GioBatDau,
                 GioKetThuc: schedule.GioKetThuc,
-                MaBacSi: schedule.MaBacSi
+                MaBacSi: schedule.MaBacSi,
+                MaPhong: schedule.MaPhong,
+                MaChuyenKhoa: schedule.MaChuyenKhoa
             }
         };
     // ✅ Lọc bỏ null
@@ -696,8 +716,7 @@ function validateForm() {
         showFieldError('ngayLamViec', 'Vui lòng chọn ngày làm việc');
         isValid = false;
     } else {
-        const dateObj = new Date(ngayLamViecInput.value);
-        if (dateObj.getDay() !== 1) {
+        if (!isMondayDateString(ngayLamViecInput.value)) {
             showFieldError('ngayLamViec', 'Ngày bắt đầu phải là Thứ 2');
             isValid = false;
         }
@@ -893,6 +912,121 @@ scheduleForm.addEventListener('submit', async function(e) {
     }
 });
 
+function populateEditSpecialties(selectedValue = '') {
+    if (!editChuyenKhoaSelect) return;
+    editChuyenKhoaSelect.innerHTML = '<option value="">-- Chon chuyen khoa --</option>';
+    specialties.forEach(specialty => {
+        editChuyenKhoaSelect.add(new Option(specialty.TenChuyenKhoa, specialty.MaChuyenKhoa));
+    });
+    editChuyenKhoaSelect.value = selectedValue ? String(selectedValue) : '';
+}
+
+function populateEditDoctors(maChuyenKhoa, selectedValue = '') {
+    if (!editBacSiIdSelect) return;
+    const doctorList = maChuyenKhoa ? (doctorsBySpecialty[maChuyenKhoa] || []) : [];
+    editBacSiIdSelect.innerHTML = '<option value="">-- Chon bac si --</option>';
+    doctorList.forEach(doctor => {
+        editBacSiIdSelect.add(new Option(doctor.HoTen, doctor.MaNV));
+    });
+    editBacSiIdSelect.disabled = doctorList.length === 0;
+    editBacSiIdSelect.value = selectedValue ? String(selectedValue) : '';
+}
+
+function populateEditRooms(maChuyenKhoa, selectedValue = '') {
+    if (!editPhongKhamIdSelect) return;
+    const roomList = maChuyenKhoa
+        ? rooms.filter(room => String(room.MaChuyenKhoa) === String(maChuyenKhoa))
+        : rooms;
+    editPhongKhamIdSelect.innerHTML = '<option value="">-- Chon phong kham --</option>';
+    roomList.forEach(room => {
+        editPhongKhamIdSelect.add(new Option(room.TenPhong, room.MaPhong));
+    });
+    editPhongKhamIdSelect.disabled = roomList.length === 0;
+    editPhongKhamIdSelect.value = selectedValue ? String(selectedValue) : '';
+}
+
+async function openEditScheduleModal(scheduleId) {
+    if (!canManageSchedules || !editScheduleModalEl) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/schedules/${scheduleId}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Khong tai duoc lich lam viec');
+
+        const schedule = result.data || result;
+        const maChuyenKhoa = schedule.MaChuyenKhoa || schedule.MaChuyenKhoaPhong || '';
+        editScheduleIdInput.value = schedule.MaLich;
+        populateEditSpecialties(maChuyenKhoa);
+        populateEditDoctors(maChuyenKhoa, schedule.MaBacSi);
+        populateEditRooms(maChuyenKhoa, schedule.MaPhong);
+        editNgayLamViecInput.value = normalizeDateString(schedule.NgayLam);
+        editGioBatDauInput.value = String(schedule.GioBatDau || '').substring(0, 5);
+        editGioKetThucInput.value = String(schedule.GioKetThuc || '').substring(0, 5);
+
+        new bootstrap.Modal(editScheduleModalEl).show();
+    } catch (error) {
+        console.error('Error loading schedule for edit:', error);
+        showAlert(error.message || 'Loi khi tai lich lam viec', 'danger');
+    }
+}
+
+if (editChuyenKhoaSelect) {
+    editChuyenKhoaSelect.addEventListener('change', function() {
+        populateEditDoctors(this.value);
+        populateEditRooms(this.value);
+    });
+}
+
+if (editScheduleForm) {
+    editScheduleForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const ngayLamViec = editNgayLamViecInput.value;
+        const gioBatDau = editGioBatDauInput.value;
+        const gioKetThuc = editGioKetThucInput.value;
+
+        if (!editBacSiIdSelect.value || !editPhongKhamIdSelect.value || !ngayLamViec || !gioBatDau || !gioKetThuc) {
+            showAlert('Vui long nhap day du thong tin lich lam viec', 'warning');
+            return;
+        }
+
+        if (gioBatDau >= gioKetThuc) {
+            showAlert('Gio bat dau phai nho hon gio ket thuc', 'warning');
+            return;
+        }
+
+        try {
+            editScheduleSubmitBtn.disabled = true;
+            editScheduleSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Dang cap nhat...';
+
+            const response = await fetch(`${API_BASE_URL}/schedules/${editScheduleIdInput.value}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bacSiId: editBacSiIdSelect.value,
+                    phongKhamId: editPhongKhamIdSelect.value,
+                    ngayLamViec,
+                    gioBatDau,
+                    gioKetThuc
+                })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Cap nhat lich lam viec that bai');
+
+            const modalInstance = bootstrap.Modal.getInstance(editScheduleModalEl);
+            if (modalInstance) modalInstance.hide();
+            showAlert('Cap nhat lich lam viec thanh cong!', 'success');
+            await loadSchedules();
+        } catch (error) {
+            console.error('Error updating schedule:', error);
+            showAlert(error.message || 'Loi khi cap nhat lich lam viec', 'danger');
+        } finally {
+            editScheduleSubmitBtn.disabled = false;
+            editScheduleSubmitBtn.innerHTML = '<i class="fa fa-save me-2"></i>Cap nhat';
+        }
+    });
+}
+
 /**
  * Open delete confirmation modal
  */
@@ -937,13 +1071,6 @@ confirmDeleteBtn.addEventListener('click', async function() {
         confirmDeleteBtn.innerHTML = 'Xóa';
         selectedScheduleId = null;
     }
-});
-
-/**
- * Filter schedules by doctor
- */
-filterDoctorSelect.addEventListener('change', function() {
-    loadSchedules();
 });
 
 /**
@@ -1063,6 +1190,9 @@ function showEventPopup(eventId, schedule, anchorEl) {
                 <p><i class="fa fa-clock me-2"></i><strong>Giờ:</strong> ${formatTime(schedule.GioBatDau)} - ${formatTime(schedule.GioKetThuc)}</p>
             </div>
             <div class="event-popup-footer" style="${canManageSchedules ? '' : 'display:none'}">
+                <button class="btn btn-primary btn-sm" onclick="closeEventPopup(); openEditScheduleModal(${eventId})">
+                    <i class="fa fa-edit me-1"></i>Sua
+                </button>
                 <button class="btn btn-danger btn-sm" onclick="closeEventPopup(); openDeleteModal(${eventId})">
                     <i class="fa fa-trash me-1"></i>Xóa
                 </button>
@@ -1119,7 +1249,9 @@ function schedulesToEvents(schedules) {
                 NgayLam: ngayLam,
                 GioBatDau: schedule.GioBatDau,
                 GioKetThuc: schedule.GioKetThuc,
-                MaBacSi: schedule.MaBacSi
+                MaBacSi: schedule.MaBacSi,
+                MaPhong: schedule.MaPhong,
+                MaChuyenKhoa: schedule.MaChuyenKhoa
             }
         };
     }).filter(Boolean);

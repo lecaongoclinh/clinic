@@ -63,6 +63,48 @@ function getStockThreshold() {
     return selected > 0 ? selected : 20;
 }
 
+function getWarehouseTypeText(row = {}) {
+    if (row.IsDispenseWarehouse) return 'Kho Quầy Thuốc';
+    switch (row.LoaiKho) {
+        case 'MAIN': return 'Kho Chính';
+        case 'DISPENSE': return 'Kho Quầy Thuốc';
+        case 'COLD': return 'Kho Thuốc Lạnh';
+        case 'SUPPLY': return 'Kho Vật Tư';
+        default: return row.LoaiKho || '';
+    }
+}
+
+function createDispenseUrl(type, params = {}) {
+    const query = new URLSearchParams({ type, ...params });
+    window.location.href = `dispense.html?${query.toString()}`;
+}
+
+function createTransferForLowStock(maKhoNhan = '', maThuoc = '') {
+    createDispenseUrl('DieuChuyenNoiBo', {
+        MaKhoNhan: maKhoNhan || '',
+        MaThuoc: maThuoc || ''
+    });
+}
+
+async function createDestroyVoucher(maLo) {
+    const lot = await fetchLotDetail(maLo);
+    createDispenseUrl('XuatHuy', {
+        lotId: maLo,
+        MaKho: lot.MaKho || '',
+        SoLuong: lot.Ton || ''
+    });
+}
+
+async function createTransferVoucher(maLo, targetKho = '') {
+    const lot = await fetchLotDetail(maLo);
+    createDispenseUrl('DieuChuyenNoiBo', {
+        lotId: maLo,
+        MaKho: lot.MaKho || '',
+        MaKhoNhan: targetKho || '',
+        SoLuong: lot.Ton || ''
+    });
+}
+
 function getCurrentUser() {
     const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
     const userId = localStorage.getItem('userId') || storedUser?.MaNV || storedUser?.id;
@@ -95,6 +137,8 @@ function filterWarningRows(rows = [], quantityKey = 'Ton') {
 }
 
 function getStockCardDescription(row) {
+    if (row.DienGiai) return row.DienGiai;
+
     switch (row.Loai) {
         case 'Nhap': return `Nhập hàng${row.GhiChu ? ` - ${row.GhiChu}` : ''}`;
         case 'Xuat': return `Xuất kho${row.GhiChu ? ` - ${row.GhiChu}` : ''}`;
@@ -127,8 +171,8 @@ function renderInventoryTable(data) {
             <td class="text-center"><span class="status-badge ${getStatusClass(item.TrangThai)}">${getStatusText(item.TrangThai)}</span></td>
             <td class="text-center" onclick="event.stopPropagation()">
                 <button class="action-icon btn-edit" onclick="editItem(${item.MaLo}); event.stopPropagation()" title="Chỉnh sửa"><i class="fa fa-edit"></i></button>
-                <button class="action-icon btn-transfer" onclick="transferStock(${item.MaLo}); event.stopPropagation()" title="Điều chuyển"><i class="fa fa-exchange-alt"></i></button>
-                <button class="action-icon btn-delete" onclick="deleteItem(${item.MaLo}); event.stopPropagation()" title="Hủy lô / lập phiếu hủy"><i class="fa fa-ban"></i></button>
+                <button class="action-icon btn-transfer" onclick="createTransferVoucher(${item.MaLo}); event.stopPropagation()" title="Tạo phiếu điều chuyển"><i class="fa fa-exchange-alt"></i></button>
+                <button class="action-icon btn-delete" onclick="createDestroyVoucher(${item.MaLo}); event.stopPropagation()" title="Tạo phiếu hủy"><i class="fa fa-ban"></i></button>
             </td>
         </tr>
     `).join('');
@@ -236,7 +280,8 @@ function renderWarnings() {
         { render: (row) => formatDate(row.HanSuDung), className: 'text-center' },
         { render: (row) => Number(row.Ton) || 0, className: 'text-center' },
         { render: (row) => row.TenKho || '', className: 'text-center' },
-        { render: (row) => row.TenNCC || '', className: 'text-center' }
+        { render: (row) => row.TenNCC || '', className: 'text-center' },
+        { render: (row) => `<button class="btn btn-sm btn-outline-danger" onclick="createDestroyVoucher(${row.MaLo})">Tạo phiếu hủy</button>`, className: 'text-center' }
     ], 'Không có lô hết hạn');
 
     renderSimpleWarningTable('#nearWarningTable', nearRows, [
@@ -245,13 +290,15 @@ function renderWarnings() {
         { render: (row) => formatDate(row.HanSuDung), className: 'text-center' },
         { render: (row) => Number(row.Ton) || 0, className: 'text-center' },
         { render: (row) => row.TenKho || '', className: 'text-center' },
-        { render: (row) => `${Math.max(Number(row.ConLaiNgay) || 0, 0)} ngày`, className: 'text-center' }
+        { render: (row) => `${Math.max(Number(row.ConLaiNgay) || 0, 0)} ngày`, className: 'text-center' },
+        { render: (row) => `<button class="btn btn-sm btn-outline-danger" onclick="createDestroyVoucher(${row.MaLo})">Tạo phiếu hủy</button>`, className: 'text-center' }
     ], 'Không có lô cận date trong khoảng đã chọn');
 
     renderSimpleWarningTable('#lowStockWarningTable', lowRows, [
         { render: (row) => row.TenThuoc },
         { render: (row) => Number(row.TongTon) || 0, className: 'text-center' },
-        { render: (row) => Number(row.DinhMucToiThieu) || warningData.minStock, className: 'text-center' }
+        { render: (row) => Number(row.DinhMucToiThieu) || warningData.minStock, className: 'text-center' },
+        { render: (row) => row.LoaiKho === 'DISPENSE' || row.IsDispenseWarehouse ? `<button class="btn btn-sm btn-outline-primary" onclick="createTransferForLowStock('${row.MaKho || ''}', '${row.MaThuoc || ''}')">Tạo phiếu điều chuyển</button>` : '', className: 'text-center' }
     ], `Không có thuốc dưới định mức mặc định ${warningData.minStock || getStockThreshold()}`);
 
     renderSimpleWarningTable('#recalledWarningTable', recalledRows, [
@@ -531,122 +578,38 @@ async function editItem(id) {
     document.getElementById('editPrice').value = Number(data.GiaNhap || 0);
     document.getElementById('editUnit').value = data.DonViCoBan || '';
     document.getElementById('editNote').value = data.GhiChu || '';
+    document.getElementById('editExpiry').disabled = true;
+    document.getElementById('editPrice').disabled = true;
+    document.getElementById('editUnit').disabled = true;
     new bootstrap.Modal(document.getElementById('editModal')).show();
 }
 
 async function saveEdit() {
-    try {
-        await fetch(`${API_BATCH}/${currentLotId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                HanSuDung: document.getElementById('editExpiry').value,
-                GiaNhap: Number(document.getElementById('editPrice').value) || 0
-            })
-        });
-
-        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-        await Promise.all([loadInventory(), loadWarnings()]);
-    } catch (error) {
-        console.error('Lỗi cập nhật lô:', error);
-        alert('Không thể cập nhật thông tin lô');
-    }
+    alert('Inventory không cho sửa trực tiếp giá nhập/HSD. Các thay đổi tồn kho phải đi qua phiếu nhập, phiếu xuất hoặc kiểm kê.');
 }
 
 async function transferStock(id) {
-    currentLotId = id;
-    const data = await fetchLotDetail(id);
-    document.getElementById('transferLotInfo').innerHTML = `
-        <div><b>Mã lô:</b> ${data.SoLo || ''}</div>
-        <div><b>Hạn dùng:</b> ${formatDate(data.HanSuDung)}</div>
-        <div><b>Tồn hiện tại:</b> ${Number(data.Ton || 0).toLocaleString('vi-VN')} ${data.DonViCoBan || ''}</div>
-    `;
-    document.getElementById('transferQty').value = Number(data.Ton || 0);
-    document.getElementById('transferQty').max = Number(data.Ton || 0);
-    new bootstrap.Modal(document.getElementById('transferModal')).show();
+    await createTransferVoucher(id);
 }
 
 async function confirmTransfer() {
-    const qty = Number(document.getElementById('transferQty').value) || 0;
-    const maxQty = Number(currentLotDetail?.Ton || 0);
-
-    if (qty <= 0) {
-        alert('Số lượng điều chuyển phải lớn hơn 0');
+    if (!currentLotId) {
+        alert('Vui lòng chọn lô cần điều chuyển');
         return;
     }
-
-    if (qty > maxQty) {
-        alert('Số lượng điều chuyển không được vượt quá số lượng tồn của lô');
-        return;
-    }
-
-    const response = await fetch(`${API}/transfer`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            MaLo: currentLotId,
-            MaKhoMoi: document.getElementById('transferKho').value,
-            SoLuong: qty,
-            LyDo: document.getElementById('transferReason').value
-        })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        alert(data.error || data.message || 'Không thể điều chuyển lô thuốc');
-        return;
-    }
-
-    bootstrap.Modal.getInstance(document.getElementById('transferModal')).hide();
-    await loadInventory();
+    await createTransferVoucher(currentLotId, document.getElementById('transferKho')?.value || '');
 }
 
 async function deleteItem(id) {
-    currentLotId = id;
-    const data = await fetchLotDetail(id);
-    document.getElementById('deleteQty').value = Number(data.Ton || 0);
-    document.getElementById('deleteQty').max = Number(data.Ton || 0);
-    document.getElementById('deleteReason').value = '';
-    document.getElementById('deleteApprover').value = '';
-    document.getElementById('deleteDocument').value = '';
-    document.getElementById('deleteLotInfo').innerText = `Lô ${data.SoLo || ''} - ${data.TenThuoc || ''}`;
-    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    await createDestroyVoucher(id);
 }
 
 async function confirmDelete() {
-    const qty = Number(document.getElementById('deleteQty').value) || 0;
-    const maxQty = Number(currentLotDetail?.Ton || 0);
-    const approver = document.getElementById('deleteApprover').value.trim();
-    const documentCode = document.getElementById('deleteDocument').value.trim();
-    const reason = document.getElementById('deleteReason').value.trim();
-
-    if (qty <= 0 || qty > maxQty) {
-        alert('Số lượng hủy phải lớn hơn 0 và không vượt quá tồn hiện tại');
+    if (!currentLotId) {
+        alert('Vui lòng chọn lô cần hủy');
         return;
     }
-
-    if (!reason) {
-        alert('Vui lòng nhập lý do hủy thuốc');
-        return;
-    }
-
-    const response = await fetch(`${API}/delete`, {
-        method: 'POST',
-        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-            MaLo: currentLotId,
-            SoLuong: qty,
-            LyDo: `${reason}${approver ? ` | Người xác nhận: ${approver}` : ''}${documentCode ? ` | Mã biên bản: ${documentCode}` : ''}`
-        })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        alert(data.message || data.error || 'Không thể lập phiếu hủy thuốc');
-        return;
-    }
-
-    bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
-    await Promise.all([loadInventory(), loadWarnings(), loadAudits()]);
+    await createDestroyVoucher(currentLotId);
 }
 
 async function fillSelect(url, selectors, placeholder, valueKey, labelKey) {
@@ -705,7 +668,11 @@ function createImport() {
     window.location.href = 'imports.html';
 }
 
-function createExport() {
+function createExport(type = '', params = {}) {
+    if (type) {
+        createDispenseUrl(type, params);
+        return;
+    }
     window.location.href = 'dispense.html';
 }
 
@@ -769,6 +736,10 @@ Object.assign(window, {
     balanceAudit,
     createImport,
     createExport,
+    createDispenseUrl,
+    createDestroyVoucher,
+    createTransferVoucher,
+    createTransferForLowStock,
     exportReport,
     editItem,
     saveEdit,

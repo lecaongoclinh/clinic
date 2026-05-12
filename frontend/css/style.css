@@ -205,21 +205,111 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(-50%) rotate(-180deg);
 }
 
+.sidebar .navbar .dropdown-menu {
+    position: relative;
+    padding: 4px 0 6px;
+    margin: 2px 0 6px;
+}
+
+.sidebar .navbar .dropdown-menu::before {
+    position: absolute;
+    top: 6px;
+    bottom: 8px;
+    left: 29px;
+    width: 1px;
+    background: rgba(54, 89, 244, 0.12);
+    content: "";
+}
+
 .sidebar .navbar .dropdown-item {
-    padding-left: 45px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    padding: 8px 12px 8px 18px;
     color: var(--dark);
     font-size: 13px;
     font-weight: 500;
-    border-radius: 8px;
-    margin: 2px 15px;
-    transition: all 0.2s;
+    border-radius: 10px;
+    margin: 3px 14px 3px 28px;
+    transition: all 0.2s ease;
 }
 
 .sidebar .navbar .dropdown-item:hover,
 .sidebar .navbar .dropdown-item.active {
     color: var(--primary);
-    background: transparent;
+    background: rgba(54, 89, 244, 0.08);
     font-weight: 600;
+    transform: translateX(2px);
+}
+
+.sidebar .navbar .dropdown-item::before {
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 26px;
+    border-radius: 8px;
+    color: var(--primary);
+    background: rgba(54, 89, 244, 0.1);
+    font-family: "Font Awesome 5 Free";
+    font-size: 12px;
+    font-weight: 900;
+    content: "\f105";
+    transition: all 0.2s ease;
+}
+
+.sidebar .navbar .dropdown-item:hover::before,
+.sidebar .navbar .dropdown-item.active::before {
+    color: #fff;
+    background: var(--primary);
+    box-shadow: 0 6px 14px rgba(54, 89, 244, 0.22);
+}
+
+.sidebar .navbar .dropdown-item[href$="BenhAn.html"]::before {
+    content: "\f46d";
+}
+
+.sidebar .navbar .dropdown-item[href$="CreateBenhAn.html"]::before {
+    content: "\f0fe";
+}
+
+.sidebar .navbar .dropdown-item[href$="medicines.html"]::before,
+.sidebar .navbar .dropdown-item[href$="medicine-detail.html"]::before {
+    content: "\f484";
+}
+
+.sidebar .navbar .dropdown-item[href="#"]::before {
+    content: "\f5da";
+}
+
+.sidebar .navbar .dropdown-item[href$="suppliers.html"]::before,
+.sidebar .navbar .dropdown-item[href$="supplier-detail.html"]::before {
+    content: "\f0d1";
+}
+
+.sidebar .navbar .dropdown-item[href$="imports.html"]::before,
+.sidebar .navbar .dropdown-item[href$="import_detail.html"]::before {
+    content: "\f019";
+}
+
+.sidebar .navbar .dropdown-item[href$="dispense.html"]::before {
+    content: "\f1b3";
+}
+
+.sidebar .navbar .dropdown-item[href$="inventory.html"]::before {
+    content: "\f494";
+}
+
+.sidebar .navbar .dropdown-item[href$="services.html"]::before {
+    content: "\f0fa";
+}
+
+.sidebar .navbar .dropdown-item[href$="invoices.html"]::before,
+.sidebar .navbar .dropdown-item[href$="invoice_detail.html"]::before {
+    content: "\f571";
 }
 
 .sidebar .navbar > .d-flex.align-items-center {
@@ -386,6 +476,141 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: flex-end;
     flex-wrap: wrap;
+}
+
+/* Brighter clinic theme overrides */
+:root {
+    --primary: #0d6efd;
+    --primary-light: #dbeafe;
+    --accent: #14b8a6;
+    --accent-light: #ccfbf1;
+    --warning-rich: #f59e0b;
+    --danger-rich: #ef4444;
+    --success-rich: #10b981;
+    --light: #eef6ff;
+    --border-color: #d8e2ef;
+    --surface: #ffffff;
+    --surface-soft: #f8fbff;
+    --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.08);
+}
+
+body {
+    background: #f8fbff !important;
+}
+
+.bg-light,
+.modal-content,
+.card,
+.ticket-card,
+.table-responsive,
+.table-schedule {
+    border: 1px solid rgba(216, 226, 239, 0.85) !important;
+    box-shadow: var(--shadow-soft) !important;
+}
+
+.bg-light,
+.card,
+.modal-content {
+    background: var(--surface) !important;
+}
+
+.btn.btn-primary {
+    background: #0d6efd !important;
+    border: 0 !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(13, 110, 253, 0.22);
+}
+
+.btn.btn-primary:hover,
+.btn.btn-primary:focus {
+    filter: brightness(1.04);
+    box-shadow: 0 10px 24px rgba(20, 184, 166, 0.26);
+    transform: translateY(-1px);
+}
+
+.btn.btn-success {
+    background: #22c55e !important;
+    border: 0 !important;
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.2);
+}
+
+.btn.btn-warning {
+    background: #f97316 !important;
+    border: 0 !important;
+    color: #fff !important;
+    box-shadow: 0 8px 18px rgba(245, 158, 11, 0.2);
+}
+
+.sidebar {
+    background: #ffffff !important;
+    box-shadow: 6px 0 24px rgba(15, 23, 42, 0.06) !important;
+}
+
+.sidebar .navbar .navbar-nav .nav-link:hover,
+.sidebar .navbar .navbar-nav .nav-link.active {
+    color: #075985 !important;
+    background: #dbeafe !important;
+    box-shadow: inset 3px 0 0 #14b8a6;
+}
+
+.content .navbar {
+    background: rgba(255, 255, 255, 0.94) !important;
+    backdrop-filter: blur(12px);
+}
+
+.modal-header,
+.modal-header.bg-primary {
+    background: #0d6efd !important;
+    color: #fff !important;
+}
+
+.form-control,
+.form-select {
+    border-color: #cbd5e1;
+    border-radius: 7px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #14b8a6;
+    box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.18);
+}
+
+.table thead th,
+.table-schedule thead th {
+    background: #0d6efd !important;
+    color: #fff !important;
+}
+
+.badge.bg-primary,
+.status-badge.bg-primary {
+    background: #0d6efd !important;
+}
+
+.alert-info {
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+    color: #075985;
+}
+
+.exam-type-card {
+    border: 1px solid #d8e2ef;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.exam-type-card:hover,
+.exam-type-card.active {
+    border-color: #14b8a6;
+    box-shadow: 0 12px 28px rgba(20, 184, 166, 0.16);
+    transform: translateY(-2px);
+}
+
+.ticket-card .card-header {
+    background: #0d6efd !important;
+    color: #fff;
 }
 
 .table-pagination__item {

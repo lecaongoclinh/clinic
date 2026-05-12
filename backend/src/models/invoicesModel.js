@@ -28,7 +28,7 @@ function buildFilterClause(filters = {}) {
 
     if (filters.doctor) {
         // hỗ trợ cả lọc theo MaNV hoặc theo tên bác sĩ
-        conditions.push(`(COALESCE(ba.MaBacSi, pk.MaBacSi) = ? OR bs.HoTen = ?)`);
+        conditions.push(`(COALESCE(dt_filter.MaBacSiKeDon, ba.MaBacSi, pk.MaBacSi) = ? OR bs.HoTen = ?)`);
         params.push(filters.doctor, filters.doctor);
     }
 
@@ -51,8 +51,9 @@ const InvoicesModel = {
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
             LEFT JOIN PhieuKham pk_direct ON hd.MaPK = pk_direct.MaPK
             LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
+            LEFT JOIN DonThuoc dt_filter ON dt_filter.MaBA = ba.MaBA
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
-            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(dt_filter.MaBacSiKeDon, ba.MaBacSi, pk.MaBacSi) = bs.MaNV
             ${whereClause}
         `, params);
 
@@ -71,7 +72,11 @@ const InvoicesModel = {
                 nv.MaNV,
                 nv.HoTen
             FROM NhanVien nv
-            INNER JOIN BenhAn ba ON nv.MaNV = ba.MaBacSi
+            INNER JOIN (
+                SELECT COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSi
+                FROM BenhAn ba
+                LEFT JOIN DonThuoc dt ON dt.MaBA = ba.MaBA
+            ) prescriber ON nv.MaNV = prescriber.MaBacSi
             GROUP BY nv.MaNV, nv.HoTen
             ORDER BY nv.HoTen ASC
         `);
@@ -105,13 +110,34 @@ const InvoicesModel = {
                 bn.SoDienThoai,
 
                 nv.HoTen AS TenNhanVien,
-                bs.HoTen AS TenBacSi
+                bs.HoTen AS TenBacSi,
+                bs.HoTen AS TenBacSiKeDon,
+                dt_info.NgayKeDon,
+                COALESCE(dt_info.MaBacSiKeDon, ba.MaBacSi, pk.MaBacSi) AS MaBacSiKeDon,
+                px_info.MaPX AS MaPhieuXuatThuoc,
+                px_info.NgayXuat AS NgayCapPhat,
+                kx_info.TenKho AS KhoXuatThuoc,
+                ds_info.MaNV AS MaDuocSi,
+                ds_info.HoTen AS TenDuocSiCapPhat
             FROM HoaDon hd
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
+            LEFT JOIN DonThuoc dt_info ON dt_info.MaBA = ba.MaBA
+            LEFT JOIN PhieuXuatThuoc px_info
+                ON px_info.MaDT = dt_info.MaDT
+               AND px_info.TrangThai = 'HoanThanh'
+               AND px_info.MaPX = (
+                    SELECT MAX(px2.MaPX)
+                    FROM PhieuXuatThuoc px2
+                    JOIN DonThuoc dt2 ON dt2.MaDT = px2.MaDT
+                    WHERE dt2.MaBA = ba.MaBA
+                      AND px2.TrangThai = 'HoanThanh'
+               )
+            LEFT JOIN Kho kx_info ON px_info.MaKho = kx_info.MaKho
             LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
             LEFT JOIN NhanVien nv ON hd.MaNhanVien = nv.MaNV
-            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(dt_info.MaBacSiKeDon, ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN NhanVien ds_info ON COALESCE(px_info.MaNhanVienXuat, px_info.MaNhanVien) = ds_info.MaNV
             ${whereClause}
             ORDER BY hd.NgayTao DESC, hd.MaHD DESC
         `, params);
@@ -154,13 +180,35 @@ const InvoicesModel = {
 
                 nv.HoTen AS TenNhanVien,
                 bs.MaNV AS MaBacSi,
-                bs.HoTen AS TenBacSi
+                bs.HoTen AS TenBacSi,
+                bs.MaNV AS MaBacSiKeDon,
+                bs.HoTen AS TenBacSiKeDon,
+                dt_info.MaDT,
+                dt_info.NgayKeDon,
+                px_info.MaPX AS MaPhieuXuatThuoc,
+                px_info.NgayXuat AS NgayCapPhat,
+                kx_info.TenKho AS KhoXuatThuoc,
+                ds_info.MaNV AS MaDuocSi,
+                ds_info.HoTen AS TenDuocSiCapPhat
             FROM HoaDon hd
             LEFT JOIN BenhAn ba ON hd.MaBA = ba.MaBA
+            LEFT JOIN DonThuoc dt_info ON dt_info.MaBA = ba.MaBA
+            LEFT JOIN PhieuXuatThuoc px_info
+                ON px_info.MaDT = dt_info.MaDT
+               AND px_info.TrangThai = 'HoanThanh'
+               AND px_info.MaPX = (
+                    SELECT MAX(px2.MaPX)
+                    FROM PhieuXuatThuoc px2
+                    JOIN DonThuoc dt2 ON dt2.MaDT = px2.MaDT
+                    WHERE dt2.MaBA = ba.MaBA
+                      AND px2.TrangThai = 'HoanThanh'
+               )
+            LEFT JOIN Kho kx_info ON px_info.MaKho = kx_info.MaKho
             LEFT JOIN PhieuKham pk ON COALESCE(hd.MaPK, ba.MaPK) = pk.MaPK
             LEFT JOIN BenhNhan bn ON pk.MaBN = bn.MaBN
             LEFT JOIN NhanVien nv ON hd.MaNhanVien = nv.MaNV
-            LEFT JOIN NhanVien bs ON COALESCE(ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(dt_info.MaBacSiKeDon, ba.MaBacSi, pk.MaBacSi) = bs.MaNV
+            LEFT JOIN NhanVien ds_info ON COALESCE(px_info.MaNhanVienXuat, px_info.MaNhanVien) = ds_info.MaNV
             LEFT JOIN ChuyenKhoa ck ON pk.MaChuyenKhoa = ck.MaChuyenKhoa
             LEFT JOIN PhongKham phong ON pk.MaPhong = phong.MaPhong
             WHERE hd.MaHD = ?
@@ -226,10 +274,17 @@ const InvoicesModel = {
         if (!cleanIds.length) return [];
 
         const [rows] = await connection.query(`
-            SELECT MaDichVu, TenDichVu, Gia
-            FROM DichVu
-            WHERE MaDichVu IN (?)
-              AND COALESCE(TrangThai, 1) = 1
+            SELECT
+                d.MaDichVu,
+                d.TenDichVu,
+                d.Gia,
+                d.Loai,
+                COALESCE(ch.CanChiDinhBacSi, d.CanChiDinhBacSi, 0) AS CanChiDinhBacSi
+            FROM DichVu d
+            LEFT JOIN CauHinhDichVu ch ON ch.MaDichVu = d.MaDichVu
+            WHERE d.MaDichVu IN (?)
+              AND COALESCE(d.TrangThai, 1) = 1
+              AND d.Loai IN ('XetNghiem', 'SieuAm')
         `, [cleanIds]);
 
         return rows;
@@ -253,12 +308,21 @@ const InvoicesModel = {
                 dv.TenDichVu,
                 dv.Loai AS LoaiDichVu,
                 t.TenThuoc,
-                px_map.SoLo
+                px_map.SoLo,
+                px.NgayXuat AS NgayCapPhat,
+                k.TenKho AS KhoXuatThuoc,
+                ds.HoTen AS TenDuocSiCapPhat
             FROM ChiTietHoaDon cthd
             LEFT JOIN DichVu dv
                 ON cthd.MaDichVu = dv.MaDichVu
             LEFT JOIN Thuoc t
                 ON cthd.MaThuoc = t.MaThuoc
+            LEFT JOIN PhieuXuatThuoc px
+                ON cthd.MaPX = px.MaPX
+            LEFT JOIN Kho k
+                ON px.MaKho = k.MaKho
+            LEFT JOIN NhanVien ds
+                ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = ds.MaNV
             LEFT JOIN (
                 SELECT
                     ctp.MaPX,
@@ -329,6 +393,13 @@ const InvoicesModel = {
 
                 px.MaPX,
                 px.NgayXuat,
+                px.MaKho,
+                k.TenKho AS KhoXuatThuoc,
+                COALESCE(px.MaNhanVienXuat, px.MaNhanVien) AS MaDuocSi,
+                ds.HoTen AS TenDuocSiCapPhat,
+                COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) AS MaBacSiKeDon,
+                bs.HoTen AS TenBacSiKeDon,
+                dt.NgayKeDon,
                 ctp.MaCTPX,
                 ctp.SoLuong,
                 ctp.DonGia,
@@ -348,6 +419,9 @@ const InvoicesModel = {
             INNER JOIN ChiTietPhieuXuat ctp ON ctp.MaPX = px.MaPX
             INNER JOIN LoThuoc l ON l.MaLo = ctp.MaLo
             INNER JOIN Thuoc t ON t.MaThuoc = l.MaThuoc
+            LEFT JOIN Kho k ON px.MaKho = k.MaKho
+            LEFT JOIN NhanVien ds ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = ds.MaNV
+            LEFT JOIN NhanVien bs ON COALESCE(dt.MaBacSiKeDon, ba.MaBacSi) = bs.MaNV
             WHERE hd.MaHD = ?
               AND (hd.MaPX IS NULL OR hd.MaPX = px.MaPX)
             ORDER BY px.NgayXuat ASC, px.MaPX ASC, ctp.MaCTPX ASC
@@ -359,15 +433,15 @@ const InvoicesModel = {
     replaceDrugDetailsFromDispense: async (invoiceId, connection = db) => {
         const dispenseRows = await InvoicesModel.getCompletedDispenseItemsByInvoice(invoiceId, connection);
 
-        if (!dispenseRows.length) {
-            return [];
-        }
-
         await connection.query(`
             DELETE FROM ChiTietHoaDon
             WHERE MaHD = ?
               AND LoaiMuc = 'Thuoc'
         `, [invoiceId]);
+
+        if (!dispenseRows.length) {
+            return [];
+        }
 
         const values = dispenseRows.map((row) => ([
             invoiceId,
@@ -501,58 +575,7 @@ const InvoicesModel = {
             WHERE MaHD = ?
               AND LoaiMuc = 'Thuoc'
         `, [invoiceId]);
-
-        const [rows] = await connection.query(`
-            SELECT
-                dt.MaDT,
-                ct.MaThuoc,
-                ct.SoLuong,
-                t.TenThuoc,
-                COALESCE(t.GiaBan, 0) AS DonGia
-            FROM DonThuoc dt
-            INNER JOIN ChiTietDonThuoc ct ON ct.MaDT = dt.MaDT
-            INNER JOIN Thuoc t ON t.MaThuoc = ct.MaThuoc
-            WHERE dt.MaBA = ?
-            ORDER BY dt.MaDT DESC, ct.MaCTDT ASC
-        `, [maBA]);
-
-        if (!rows.length) return [];
-
-        const values = rows.map((row) => {
-            const soLuong = Number(row.SoLuong || 0);
-            const donGia = Number(row.DonGia || 0);
-            const thanhTien = soLuong * donGia;
-            return [
-                invoiceId,
-                null,
-                thanhTien,
-                row.MaThuoc,
-                "Thuoc",
-                soLuong,
-                donGia,
-                thanhTien,
-                `${row.TenThuoc || "Thuoc"} | Don #${row.MaDT}`,
-                null
-            ];
-        });
-
-        await connection.query(`
-            INSERT INTO ChiTietHoaDon (
-                MaHD,
-                MaDichVu,
-                SoTien,
-                MaThuoc,
-                LoaiMuc,
-                SoLuong,
-                DonGia,
-                ThanhTien,
-                DienGiai,
-                MaPX
-            )
-            VALUES ?
-        `, [values]);
-
-        return rows;
+        return [];
     },
 
     create: async ({

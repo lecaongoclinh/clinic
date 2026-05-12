@@ -14,6 +14,16 @@ const DispenseController = {
         }
     },
 
+    getDispenseWarehouse: async (_req, res) => {
+        try {
+            const data = await DispenseService.getDispenseWarehouse();
+            if (!data) return res.status(404).json({ message: "Chưa cấu hình kho cấp phát" });
+            res.json(data);
+        } catch (error) {
+            handleError(res, error);
+        }
+    },
+
     getCatalog: async (req, res) => {
         try {
             const data = await DispenseService.getCatalog(req.query);
@@ -28,8 +38,18 @@ const DispenseController = {
             const data = await DispenseService.getMedicinePreview({
                 MaThuoc: req.params.id,
                 MaKho: req.query.MaKho,
+                MaNCC: req.query.MaNCC,
                 SoLuong: req.query.SoLuong || 1
             });
+            res.json(data);
+        } catch (error) {
+            handleError(res, error);
+        }
+    },
+
+    getReturnableSupplierLots: async (req, res) => {
+        try {
+            const data = await DispenseService.getReturnableSupplierLots(req.query);
             res.json(data);
         } catch (error) {
             handleError(res, error);

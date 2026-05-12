@@ -179,9 +179,15 @@ export const createPatient = async (req, res) => {
 
     try {
         await ensurePatientSchema();
-        const { hoTen, ngaySinh, soDienThoai, soCCCD } = req.body;
-        if (!hoTen || !ngaySinh || !soDienThoai || !soCCCD) {
-            return res.status(400).json({ success: false, message: 'Vui long nhap ho ten, ngay sinh, so dien thoai va CCCD' });
+        const hoTen = String(req.body.hoTen ?? '').trim();
+        const ngaySinh = req.body.ngaySinh;
+        const soDienThoai = String(req.body.soDienThoai ?? '').trim();
+        const soCCCD = String(req.body.soCCCD ?? '').trim();
+        const diaChi = String(req.body.diaChi ?? req.body.DiaChi ?? '').trim();
+        const gioiTinh = String(req.body.gioiTinh ?? req.body.GioiTinh ?? '').trim();
+
+        if (!hoTen || !ngaySinh || !soDienThoai || !soCCCD || !diaChi || !gioiTinh) {
+            return res.status(400).json({ success: false, message: 'Vui long nhap day du CCCD, ho ten, ngay sinh, gioi tinh, so dien thoai va dia chi' });
         }
 
         const maBN = String(soCCCD).trim();
@@ -196,9 +202,9 @@ export const createPatient = async (req, res) => {
         }
 
         const [result] = await pool.query(
-            `INSERT INTO BenhNhan (MaBN, HoTen, NgaySinh, SoDienThoai)
-             VALUES (?, ?, ?, ?)`,
-            [maBN, hoTen, ngaySinh, soDienThoai]
+            `INSERT INTO BenhNhan (MaBN, HoTen, NgaySinh, GioiTinh, SoDienThoai, DiaChi)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [maBN, hoTen, ngaySinh, gioiTinh, soDienThoai, diaChi]
         );
         const [rows] = await pool.query(
             'SELECT MaBN, HoTen, SoDienThoai, MaBN AS SoCCCD, NgaySinh, DiaChi, GioiTinh, Email FROM BenhNhan WHERE MaBN = ?',

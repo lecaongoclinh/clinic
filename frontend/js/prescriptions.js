@@ -5,7 +5,22 @@ const state = {
     detailModal: null
 };
 
+const ROLE = {
+    ADMIN: 1,
+    DOCTOR: 2,
+    PHARMACIST: 5
+};
+
 const $ = (id) => document.getElementById(id);
+
+function currentRole() {
+    return Number(localStorage.getItem('role'));
+}
+
+function canDispenseMedicine() {
+    const role = currentRole();
+    return role === ROLE.ADMIN || role === ROLE.PHARMACIST;
+}
 
 function escapeHtml(value) {
     return String(value ?? '')
@@ -30,15 +45,45 @@ function formatDateTime(value) {
 }
 
 function statusText(status) {
-    return status === 'DaXuat' ? 'Đã xuất' : 'Chưa xuất';
+    if (status === 'DaXuat') return 'Đã xuất';
+    if (status === 'XuatMotPhan') return 'Xuất một phần';
+    return 'Chưa xuất';
 }
 
 function statusClass(status) {
-    return status === 'DaXuat' ? 'status-done' : 'status-pending';
+    if (status === 'DaXuat') return 'status-done';
+    if (status === 'XuatMotPhan') return 'status-partial';
+    return 'status-pending';
+}
+
+function stockText(status) {
+    if (status === 'DuHang') return 'Đủ hàng';
+    if (status === 'ThieuHang') return 'Thiếu hàng';
+    return 'Hết hàng';
+}
+
+function stockClass(status) {
+    if (status === 'DuHang') return 'status-done';
+    if (status === 'ThieuHang') return 'status-partial';
+    return 'status-out';
+}
+
+function toNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
+}
+
+function pickNumber(row, keys) {
+    for (const key of keys) {
+        if (row[key] !== undefined && row[key] !== null && row[key] !== '') {
+            return toNumber(row[key]);
+        }
+    }
+    return 0;
 }
 
 async function fetchJson(url) {
-    const response = await fetch(url);
+    const response = await fetch(url, { cache: 'no-store' });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
         throw new Error(data.message || 'Có lỗi xảy ra');
@@ -91,6 +136,7 @@ async function loadPrescriptions() {
 }
 
 function renderPrescriptions(rows) {
+    const showDispenseAction = canDispenseMedicine();
     $('prescriptionCount').textContent = `${rows.length} đơn thuốc`;
     if (!rows.length) {
         $('prescriptionsTableBody').innerHTML = '<tr><td colspan="8" class="empty-row">Không có đơn thuốc phù hợp</td></tr>';
@@ -110,9 +156,16 @@ function renderPrescriptions(rows) {
             <td class="text-center">${Number(item.SoLoaiThuoc || 0)}</td>
             <td class="text-center"><span class="status-badge ${statusClass(item.TrangThai)}">${statusText(item.TrangThai)}</span></td>
             <td class="text-end">
-                <button class="btn btn-outline-primary btn-sm" onclick="openPrescriptionDetail(${item.MaDT})">
+                <div class="prescription-actions">
+                <button class="btn btn-outline-primary btn-sm prescription-action-btn" onclick="openPrescriptionDetail(${item.MaDT})">
                     <i class="fa fa-eye me-1"></i>Xem
                 </button>
+                ${showDispenseAction && ['ChuaXuat', 'XuatMotPhan'].includes(item.TrangThai) ? `
+                    <a class="btn btn-outline-success btn-sm prescription-action-btn" href="capphatthuoc.html">
+                        Cấp phát
+                    </a>
+                ` : ''}
+                </div>
             </td>
         </tr>
     `).join('');
@@ -125,34 +178,58 @@ async function openPrescriptionDetail(maDT) {
             $('prescriptionDetailBody').innerHTML = '<div class="text-muted">Không có chi tiết đơn thuốc</div>';
         } else {
             const patientName = data[0].HoTen || '';
+            const warning = data[0].CanhBaoKho
+                ? `<div class="alert alert-warning py-2">${escapeHtml(data[0].CanhBaoKho)}</div>`
+                : '';
             $('prescriptionDetailBody').innerHTML = `
                 <div class="mb-3">
                     <div class="fw-bold">Đơn #${maDT}</div>
                     <div class="text-muted">Bệnh nhân: ${escapeHtml(patientName)}</div>
+                    <div class="text-muted">Bác sĩ kê đơn: ${escapeHtml(data[0].TenBacSiKeDon || data[0].TenBacSi || '')}</div>
+                    <div class="text-muted">Thời gian kê đơn: ${formatDateTime(data[0].NgayKeDon)}</div>
+                    ${data[0].TenKhoQuay ? `<div class="text-muted">Kho cấp phát: ${escapeHtml(data[0].TenKhoQuay)}</div>` : ''}
                 </div>
+                ${warning}
                 <div class="table-responsive">
                     <table class="table table-sm">
                         <thead>
                             <tr>
                                 <th>Thuốc</th>
                                 <th class="text-center">Kê đơn</th>
-                                <th class="text-center" style="color: #0d6efd;">Thực xuất</th>
+                                <th class="text-center">Đã xuất</th>
+                                <th class="text-center">Còn cần xuất</th>
+                                <th class="text-center">Tồn kho quầy</th>
+                                <th class="text-center">Có thể xuất</th>
+                                <th class="text-center">Trạng thái</th>
                                 <th>Cách dùng</th>
-                                <th class="text-center">Tồn kho</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${data.map((row) => `
-                                <tr>
-                                    <td>${escapeHtml(row.TenThuoc || '')}</td>
-                                    <td class="text-center fw-bold">${row.SoLuong || 0}</td>
-                                    <td class="text-center fw-bold" style="color: ${row.SoLuongDaXuat < row.SoLuong ? '#dc3545' : '#198754'}">
-                                        ${row.SoLuongDaXuat || 0}
-                                    </td>
-                                    <td>${escapeHtml(row.CachDung || '')}</td>
-                                    <td class="text-center text-muted">${row.SoLuongTon ?? ''}</td>
-                                </tr>
-                            `).join('')}
+                            ${data.map((row) => {
+                                const soLuongKe = pickNumber(row, ['SoLuongKe', 'SoLuong']);
+                                const soLuongDaXuat = pickNumber(row, ['SoLuongDaXuat']);
+                                const conCanXuat = pickNumber(row, ['SoLuongConCanXuat']);
+                                const tonKhoQuay = pickNumber(row, ['TonKhoQuay', 'TongTonQuay']);
+                                const coTheXuat = pickNumber(row, ['CoTheXuat', 'SoLuongCoTheXuat']);
+                                const soLuongThieu = pickNumber(row, ['SoLuongThieu']);
+                                return `
+                                    <tr>
+                                        <td>${escapeHtml(row.TenThuoc || '')}</td>
+                                        <td class="text-center fw-bold">${soLuongKe}</td>
+                                        <td class="text-center fw-bold" style="color: ${soLuongDaXuat < soLuongKe ? '#dc3545' : '#198754'}">
+                                            ${soLuongDaXuat}
+                                        </td>
+                                        <td class="text-center">${conCanXuat}</td>
+                                        <td class="text-center fw-semibold">${tonKhoQuay}</td>
+                                        <td class="text-center fw-semibold">${coTheXuat}</td>
+                                        <td class="text-center">
+                                            <span class="status-badge ${stockClass(row.TrangThaiTon)}">${stockText(row.TrangThaiTon)}</span>
+                                            ${soLuongThieu > 0 ? `<div class="small text-danger">Thiếu ${soLuongThieu}</div>` : ''}
+                                        </td>
+                                        <td>${escapeHtml(row.LieuDung || row.CachDung || '')}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>`;

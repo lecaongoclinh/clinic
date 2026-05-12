@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8">
-    <title>Xuất thuốc</title>
+    <title>Xuất kho thuốc</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="../img/favicon.ico" rel="icon">
@@ -25,7 +25,6 @@
         .table td { vertical-align: middle; color: #111 !important; }
         .btn-primary { background: #3b82f6; border: none; border-radius: 6px; }
         .btn-primary:hover { background: #2563eb; }
-        .total-box { background: #f1f3f5; padding: 8px 12px; border-radius: 6px; font-weight: 600; }
         .hidden-dynamic { display: none !important; }
         .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
         .dropdown-box { position: absolute; max-height: 250px; overflow-y: auto; background: #fff; border: 1px solid #ddd; border-radius: 6px; z-index: 1055; display: none; top: calc(100% + 6px); left: 0; width: 100%; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
@@ -33,40 +32,17 @@
         .dropdown-box .item:hover { background: #f1f5f9; }
         .center-action { display: flex; justify-content: center; }
         .sidebar .dropdown-menu { position: static !important; transform: none !important; margin-top: 0; }
-        .prescription-filter-grid { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
-        .prescription-card { border: 1px solid #d8dee8; border-radius: 8px; padding: 12px 14px; background: #fff; margin-bottom: 10px; }
-        .prescription-card-title { font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .prescription-card-meta { color: #5d6675; font-size: 13px; margin-top: 4px; }
-        .prescription-card-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; }
-        .prescription-detail-meta { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 8px 16px; margin-bottom: 14px; }
-        .role-hidden { display: none !important; }
-        @media (max-width: 768px) {
-            .prescription-filter-grid, .prescription-detail-meta { grid-template-columns: 1fr; }
-            .prescription-card-actions { align-items: stretch; flex-direction: column; }
+        .btn-outline-accent { border: 1px solid #ced4da !important; color: #111 !important; background: #fff !important; border-radius: 6px; }
+        .btn-outline-accent:hover,
+        .btn-outline-accent:focus,
+        .btn-outline-accent:active { background: #009cff !important; border-color: #009cff !important; color: #111 !important; box-shadow: none !important; }
+        .dispense-actions { display: inline-grid; grid-template-columns: max-content; gap: 5px; justify-items: stretch; }
+        .dispense-action-btn { width: 100%; min-width: 0; padding-left: .75rem; padding-right: .75rem; }
+        @media print {
+            .sidebar, .navbar, #historyCard, #actionBar, .btn, #addMedicineBtn { display: none !important; }
+            .content { margin-left: 0 !important; width: 100% !important; }
+            .card-box { border: 0; padding: 0; }
         }
-
-.btn-outline-accent {
-    border: 1px solid #CED4DA !important;
-    color: #111 !important;
-    background: #fff !important;
-    border-radius: 6px;
-}
-
-.btn-outline-accent:hover,
-.btn-outline-accent:focus,
-.btn-outline-accent:active {
-    background: #009CFF !important;
-    border-color: #009CFF !important;
-    color: #111 !important;
-    box-shadow: none !important;
-}
-
-.btn-outline-accent:disabled {
-    border-color: #009CFF !important;
-    color: #111 !important;
-    background: #fff !important;
-    opacity: 0.65;
-}
     </style>
 </head>
 <body>
@@ -120,7 +96,7 @@
             <div class="navbar-nav ms-auto">
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
-                        <img class="rounded-circle me-lg-2" src="../img/user.jpg" style="width:40px">
+                        <img class="rounded-circle me-lg-2" src="../img/user.jpg" style="width:40px" alt="">
                         <span class="d-none d-lg-inline-flex" id="usernameNavbar"></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end bg-light border-0 rounded-0 rounded-bottom m-0">
@@ -137,61 +113,51 @@
                 <div class="col-md-5">
                     <div class="card-box h-100">
                         <div class="section-head">
-                            <div><h5 class="section-title" id="formTitle">Thông tin phiếu xuất</h5></div>
+                            <div><h5 class="section-title" id="formTitle">Thông tin phiếu xuất kho</h5></div>
                             <div class="fw-bold fs-5" id="draftCode"></div>
                         </div>
                         <div class="row g-3">
                             <div class="col-6">
-                                <label>Kho</label>
-                                <select id="khoSelect" class="form-select"></select>
-                            </div>
-                            <div class="col-6">
-                                <label id="dateLabel">Ngày xuất</label>
-                                <input id="ngayXuat" type="datetime-local" class="form-control" autocomplete="off">
-                            </div>
-                            <div class="col-6" id="exportTypeField">
                                 <label>Loại xuất</label>
                                 <select id="loaiXuat" class="form-select">
-                                    <option value="BanChoBN">Bệnh nhân</option>
-                                    <option value="NoiBo">Nội bộ</option>
-                                    <option value="TraNCC">Trả NCC</option>
-                                    <option value="Huy">Hủy</option>
+                                    <option value="DieuChuyenNoiBo">Điều chuyển nội bộ</option>
+                                    <option value="TraNCC">Trả nhà cung cấp</option>
+                                    <option value="XuatHuy">Xuất hủy</option>
+                                    <option value="VienTro">Xuất viện trợ</option>
+                                    <option value="XuatKiemKe">Xuất kiểm kê</option>
                                 </select>
                             </div>
-                            <div class="col-6" id="patientField">
-                                <label class="form-label">Bệnh nhân</label>
-                                <div class="input-group">
-                                    <input id="patientKeyword" class="form-control">
-                                    <button class="btn btn-outline-accent" type="button" id="searchPatientBtn">Tìm</button>
-                                </div>
-                                <input id="maBN" type="hidden">
-                                <div id="patientResult" class="mt-2"></div>
+                            <div class="col-6">
+                                <label>Ngày xuất</label>
+                                <input id="ngayXuat" type="datetime-local" class="form-control" autocomplete="off">
                             </div>
-                            <div class="col-6 hidden-dynamic" id="departmentField">
-                                <label class="form-label">Khoa</label>
-                                <select id="departmentSelect" class="form-select"></select>
+                            <div class="col-6" id="sourceWarehouseField">
+                                <label>Kho nguồn</label>
+                                <select id="khoSelect" class="form-select"></select>
                             </div>
-                            <div class="col-6 hidden-dynamic" id="supplierField">
+                            <div class="col-6" id="targetWarehouseField">
+                                <label>Kho nhận</label>
+                                <select id="khoNhanSelect" class="form-select"></select>
+                            </div>
+                            <div class="col-12 hidden-dynamic" id="supplierField">
                                 <label class="form-label">Nhà cung cấp</label>
                                 <select id="supplierSelect" class="form-select"></select>
                             </div>
-                            <div class="col-6 hidden-dynamic" id="reasonField">
-                                <label class="form-label">Lý do</label>
-                                <input id="reasonInput" class="form-control" placeholder="Nhập lý do hủy">
+                            <div class="col-12 hidden-dynamic" id="recipientField">
+                                <label class="form-label">Đơn vị nhận</label>
+                                <input id="recipientInput" class="form-control" placeholder="Nhập đơn vị nhận viện trợ">
                             </div>
-                            <div class="col-12">
-                                <label>Mã đơn thuốc</label>
-                                <div class="input-group">
-                                    <input id="maDT" class="form-control" placeholder="Nhập mã đơn thuốc">
-                                    <button class="btn btn-outline-accent" type="button" id="openPrescriptionModal">Chọn đơn</button>
-                                </div>
+                            <div class="col-12 hidden-dynamic" id="reasonField">
+                                <label class="form-label" id="reasonLabel">Lý do</label>
+                                <input id="reasonInput" class="form-control" placeholder="Nhập lý do">
+                            </div>
+                            <div class="col-12 hidden-dynamic" id="reportField">
+                                <label class="form-label">Mã biên bản kiểm kê</label>
+                                <input id="bienBanInput" class="form-control" placeholder="Nhập mã biên bản">
                             </div>
                             <div class="col-12 position-relative">
-                                <label>Tìm thuốc</label>
-                                <div class="input-group">
-                                    <input id="searchInput" class="form-control" placeholder="Tìm thuốc (auto FEFO)">
-                                    <button class="btn btn-outline-secondary" type="button" disabled>Auto</button>
-                                </div>
+                                <label>Tìm thuốc trong kho nguồn</label>
+                                <input id="searchInput" class="form-control" placeholder="Tìm thuốc, hệ thống tự chọn lô theo FEFO">
                                 <div id="medicineList" class="dropdown-box"></div>
                             </div>
                             <div class="col-4">
@@ -200,7 +166,7 @@
                             </div>
                             <div class="col-4">
                                 <label>Số lượng</label>
-                                <input id="quantity" class="form-control">
+                                <input id="quantity" type="number" min="1" class="form-control">
                             </div>
                             <div class="col-4">
                                 <label>Quy đổi</label>
@@ -208,7 +174,7 @@
                             </div>
                             <div class="col-12">
                                 <label>Ghi chú</label>
-                                <input id="ghiChu" class="form-control">
+                                <input id="ghiChu" class="form-control" placeholder="Ghi chú phiếu xuất">
                             </div>
                             <div class="col-12 center-action">
                                 <button class="btn btn-primary px-4" id="addMedicineBtn">+ Thêm vào phiếu</button>
@@ -219,7 +185,7 @@
 
                 <div class="col-md-7">
                     <div class="card-box h-100 d-flex flex-column">
-                        <h5 class="mb-3" id="cartTitle">Danh sách thuốc thêm vào phiếu</h5>
+                        <h5 class="mb-3" id="cartTitle">Danh sách thuốc xuất theo lô</h5>
                         <div class="flex-grow-1 overflow-auto mb-3">
                             <table class="table">
                                 <thead>
@@ -227,37 +193,41 @@
                                         <th>Thuốc</th>
                                         <th>Lô</th>
                                         <th>HSD</th>
-                                        <th>Số lượng</th>
-                                        <th>Đơn vị</th>
-                                        <th>Đơn giá</th>
-                                        <th>Thành tiền</th>
-                                        <th>Nội dung</th>
-                                        <th>Thao tác</th>
+                                        <th class="text-center">Tồn lô</th>
+                                        <th class="text-center">Số lượng xuất</th>
+                                        <th class="text-center">Đơn vị</th>
+                                        <th class="text-center">Quy đổi</th>
+                                        <th class="text-end value-col">Giá nhập</th>
+                                        <th class="text-end value-col">Thành tiền</th>
+                                        <th class="text-center">Thao tác</th>
                                     </tr>
                                 </thead>
                                 <tbody id="cartTable"></tbody>
                             </table>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <div class="total-box">Tổng tiền: <span id="totalMoney">0 đ</span></div>
-                            <button class="btn btn-primary" id="submitDispenseBtn" onclick="submitDispense()">Tạo phiếu</button>
+                        <div class="d-flex justify-content-end align-items-center mt-auto">
+                            <button class="btn btn-primary" id="submitDispenseBtn" onclick="submitDispense()">Tạo phiếu xuất</button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card-box mb-3">
-                <h5 class="mb-3" id="historyTitle">Danh sách phiếu xuất</h5>
+            <div class="card-box mb-3" id="historyCard">
+                <h5 class="mb-3" id="historyTitle">Danh sách phiếu xuất kho</h5>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0" id="dispenseTable" data-page-size="6">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Loại xuất</th>
-                                <th>Ngày xuất</th>
-                                <th>Trạng thái</th>
-                                <th>Ghi chú</th>
-                                <th>Tổng tiền</th>
+                                <th class="text-center">Mã phiếu</th>
+                                <th class="text-center">Loại xuất</th>
+                                <th>Kho nguồn</th>
+                                <th>Nơi nhận</th>
+                                <th class="text-center">Ngày xuất</th>
+                                <th>Nhân viên</th>
+                                <th class="text-center">Trạng thái</th>
+                                <th class="text-end">Giá trị xuất</th>
+                                <th>Ghi chú/Lý do</th>
+                                <th class="text-center">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -265,7 +235,7 @@
                 </div>
             </div>
 
-            <div class="card-box">
+            <div class="card-box" id="actionBar">
                 <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
                     <button class="btn btn-outline-primary" id="saveDraftBtn">Lưu tạm</button>
                     <button class="btn btn-primary" id="completeBtn">Hoàn thành</button>
@@ -277,52 +247,33 @@
     </div>
 </div>
 
-<div class="modal fade" id="prescriptionModal" tabindex="-1">
+<div class="modal fade" id="exportDetailModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="prescriptionModalTitle">Danh sách đơn thuốc chưa xuất</h5>
+                <h5 class="modal-title">Chi tiết phiếu xuất <span id="exportDetailTitle"></span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="prescription-filter-grid">
-                    <div>
-                        <label class="form-label">Khoa</label>
-                        <select class="form-select" id="prescriptionSpecialtyFilter"></select>
-                    </div>
-                    <div>
-                        <label class="form-label">Bác sĩ</label>
-                        <select class="form-select" id="prescriptionDoctorFilter"></select>
-                    </div>
-                    <div>
-                        <label class="form-label">Bệnh nhân</label>
-                        <input class="form-control" id="prescriptionPatientFilter" placeholder="Tên hoặc mã BN">
-                    </div>
-                    <div>
-                        <label class="form-label">Sắp xếp</label>
-                        <select class="form-select" id="prescriptionSortFilter">
-                            <option value="newest">Mới nhất</option>
-                            <option value="oldest">Lâu nhất</option>
-                        </select>
-                    </div>
+                <div class="row g-2 mb-3" id="exportDetailInfo"></div>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Thuốc</th>
+                                <th>Lô</th>
+                                <th class="text-center">HSD</th>
+                                <th class="text-center">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody id="exportDetailItems"></tbody>
+                    </table>
                 </div>
-                <div id="prescriptionModalList" class="aside-list"></div>
             </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="prescriptionDispenseDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Chi tiết đơn thuốc</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" id="prescriptionDispenseDetailBody"></div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-primary" id="confirmPrescriptionDispenseBtn">Xác nhận cấp phát</button>
             </div>
         </div>
     </div>
@@ -339,13 +290,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (username) {
         document.getElementById('usernameSidebar').textContent = username;
         document.getElementById('usernameNavbar').textContent = username;
-    }
-
-    localStorage.setItem('user', JSON.stringify({ MaNV: 29, HoTen: 'Nguyen The Anh' }));
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
-    if (user.HoTen) {
-        document.getElementById('usernameSidebar').textContent = user.HoTen;
-        document.getElementById('usernameNavbar').textContent = user.HoTen;
     }
 });
 </script>

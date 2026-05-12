@@ -51,6 +51,18 @@ const ImportsController = {
         }
     },
 
+    getDetail: async (req, res) => {
+        try {
+            const data = await ImportsService.getDetail(req.params.id);
+            if (!data) {
+                return res.status(404).json({ message: "Không tìm thấy phiếu nhập" });
+            }
+            res.json(data);
+        } catch (err) {
+            res.status(500).json({ message: err.message });
+        }
+    },
+
     // LOAD THUỐC THEO NCC
     getBySupplier: async (req, res) => {
         try {
@@ -60,7 +72,7 @@ const ImportsController = {
                 return res.status(400).json({ message: "Thiếu MaNCC" });
             }
 
-            const data = await MedicinesService.getMedicinesBySupplier(MaNCC);
+            const data = await MedicinesService.getMedicinesBySupplier({ MaNCC });
             res.json(data);
 
         } catch (err) {

@@ -36,10 +36,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalChuanDoan = document.getElementById('modalChuanDoan');
     const modalGhiChu = document.getElementById('modalGhiChu');
     const btnSaveCreateRecord = document.getElementById('btnSaveCreateRecord');
+    const serviceOrderSelect = document.getElementById('serviceOrderSelect');
+    const serviceOrderQty = document.getElementById('serviceOrderQty');
+    const btnAddServiceOrder = document.getElementById('btnAddServiceOrder');
+    const serviceOrderList = document.getElementById('serviceOrderList');
+    const serviceOrderTotal = document.getElementById('serviceOrderTotal');
 
     let allTickets = [];
     let allSpecialties = [];
     let allDoctors = [];
+    let clinicalServices = [];
+    let selectedServices = [];
 
     function authHeaders(hasBody = false) {
         const headers = { Authorization: `Bearer ${token}` };
@@ -90,6 +97,108 @@ document.addEventListener('DOMContentLoaded', function () {
     function formatDateTime(dateString) {
         if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleDateString('vi-VN');
+    }
+
+    function formatCurrency(value) {
+        return Number(value || 0).toLocaleString('vi-VN') + ' đ';
+    }
+
+    function renderSelectedServices() {
+        if (!serviceOrderList) return;
+        const total = selectedServices.reduce((sum, item) => sum + (Number(item.Gia || 0) * Number(item.SoLuong || 0)), 0);
+        if (serviceOrderTotal) serviceOrderTotal.textContent = formatCurrency(total);
+
+        if (!selectedServices.length) {
+            serviceOrderList.innerHTML = '<div class="border rounded p-2 small text-muted">Chưa chọn dịch vụ</div>';
+            return;
+        }
+
+        serviceOrderList.innerHTML = `
+            <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Tên dịch vụ</th>
+                        <th class="text-center">Loại dịch vụ</th>
+                        <th class="text-center" style="width: 90px;">Số lượng</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th class="text-center" style="width: 80px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${selectedServices.map((item, index) => {
+                        const thanhTien = Number(item.Gia || 0) * Number(item.SoLuong || 0);
+                        return `
+                            <tr>
+                                <td>${escapeHtml(item.TenDichVu)}</td>
+                                <td class="text-center">${escapeHtml(item.Loai || '')}</td>
+                                <td class="text-center">${escapeHtml(item.SoLuong)}</td>
+                                <td class="text-end">${formatCurrency(item.Gia)}</td>
+                                <td class="text-end fw-semibold">${formatCurrency(thanhTien)}</td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btn-remove-service-order" data-index="${index}">Xóa</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
+    async function loadClinicalServices() {
+        if (!serviceOrderSelect) return;
+        try {
+            let payload;
+            try {
+                payload = await fetchJson(`${API_BASE}/services/clinical/all`);
+            } catch (error) {
+                console.warn('Không tải được /services/clinical/all, dùng danh mục dịch vụ hiện có:', error);
+                payload = await fetchJson(`${API_BASE}/services?trangThai=1`);
+            }
+
+            clinicalServices = Array.isArray(payload) ? payload : payload.data || [];
+            clinicalServices = clinicalServices
+                .filter((service) => Number(service.TrangThai ?? 1) === 1 && ['XetNghiem', 'SieuAm'].includes(service.Loai))
+                .sort((a, b) => {
+                    const priority = Number(b.CanChiDinhBacSi || 0) - Number(a.CanChiDinhBacSi || 0);
+                    if (priority !== 0) return priority;
+                    return String(a.TenDichVu || '').localeCompare(String(b.TenDichVu || ''), 'vi');
+                });
+
+            serviceOrderSelect.innerHTML = '<option value="">Chọn dịch vụ xét nghiệm/siêu âm</option>';
+            clinicalServices.forEach((service) => {
+                serviceOrderSelect.add(new Option(`${service.TenDichVu} - ${service.Loai} - ${formatCurrency(service.Gia)}`, service.MaDichVu));
+            });
+            if (!clinicalServices.length) {
+                serviceOrderSelect.add(new Option('Chưa có dịch vụ xét nghiệm/siêu âm đang áp dụng', ''));
+            }
+        } catch (error) {
+            console.error('Lỗi load dịch vụ chỉ định:', error);
+            serviceOrderSelect.innerHTML = '<option value="">Không tải được danh sách dịch vụ</option>';
+        }
+    }
+
+    function addSelectedService() {
+        if (!serviceOrderSelect?.value) return;
+        const service = clinicalServices.find(item => Number(item.MaDichVu) === Number(serviceOrderSelect.value));
+        if (!service) return;
+        const qty = Math.max(Number(serviceOrderQty?.value || 1), 1);
+        const existing = selectedServices.find(item => Number(item.MaDichVu) === Number(service.MaDichVu));
+        if (existing) {
+            existing.SoLuong += qty;
+        } else {
+            selectedServices.push({
+                MaDichVu: service.MaDichVu,
+                TenDichVu: service.TenDichVu,
+                Loai: service.Loai,
+                Gia: Number(service.Gia || 0),
+                SoLuong: qty
+            });
+        }
+        serviceOrderSelect.value = '';
+        if (serviceOrderQty) serviceOrderQty.value = 1;
+        renderSelectedServices();
     }
 
     // Load specialties
@@ -172,10 +281,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Filter by status (done or ongoing - not cancelled, not pending)
+        // Only tickets that can still create a medical record.
         filtered = filtered.filter(ticket => {
             const status = String(ticket.TrangThai || '');
-            return status === 'DaKham' || status === 'DangKham' || status === 'Completed' || status === 'InProgress';
+            return status === 'ChoKham' || status === 'DangKham' || status === 'InProgress';
         });
 
         renderExamTickets(filtered);
@@ -193,8 +302,9 @@ document.addEventListener('DOMContentLoaded', function () {
         emptyState.style.display = 'none';
 
         tickets.forEach((ticket, index) => {
-            const statusBadgeClass = ticket.TrangThai === 'DangKham' || ticket.TrangThai === 'InProgress' ? 'badge-ongoing' : 'badge-done';
-            const statusText = ticket.TrangThai === 'DangKham' || ticket.TrangThai === 'InProgress' ? 'Đang khám' : 'Đã khám xong';
+            const isInProgress = ticket.TrangThai === 'DangKham' || ticket.TrangThai === 'InProgress';
+            const statusBadgeClass = isInProgress ? 'badge-ongoing' : 'badge-done';
+            const statusText = isInProgress ? 'Đang khám' : 'Chờ khám';
 
             const card = document.createElement('div');
             card.className = 'col-12 col-lg-6';
@@ -249,6 +359,8 @@ document.addEventListener('DOMContentLoaded', function () {
         modalTrieuChung.value = '';
         modalChuanDoan.value = '';
         modalGhiChu.value = '';
+        selectedServices = [];
+        renderSelectedServices();
 
         // Show modal
         createRecordModal.show();
@@ -283,7 +395,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     maBacSi: parseInt(maBacSi),
                     trieuChung,
                     chuanDoan,
-                    ghiChu
+                    ghiChu,
+                    ChiTietDichVu: selectedServices.map((item) => ({
+                        MaDichVu: item.MaDichVu,
+                        SoLuong: item.SoLuong
+                    }))
                 })
             });
 
@@ -313,11 +429,19 @@ document.addEventListener('DOMContentLoaded', function () {
     doctorFilter.addEventListener('change', filterAndRenderTickets);
 
     btnSaveCreateRecord.addEventListener('click', saveCreateRecord);
+    btnAddServiceOrder?.addEventListener('click', addSelectedService);
+    serviceOrderList?.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('.btn-remove-service-order');
+        if (!removeButton) return;
+        selectedServices.splice(Number(removeButton.dataset.index), 1);
+        renderSelectedServices();
+    });
 
     // Initialize
     (async function() {
         try {
             await loadSpecialties();
+            await loadClinicalServices();
             await loadExamTickets();
         } catch (error) {
             console.error('Lỗi khởi tạo:', error);

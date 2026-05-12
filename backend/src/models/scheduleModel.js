@@ -11,6 +11,16 @@ const Schedule = {
         return result;
     },
 
+    updateSchedule: async (maLich, maBacSi, maPhong, ngayLam, gioBatDau, gioKetThuc, connection = db) => {
+        const query = `
+            UPDATE LichLamViecBacSi
+            SET MaBacSi = ?, MaPhong = ?, NgayLam = ?, GioBatDau = ?, GioKetThuc = ?
+            WHERE MaLich = ?
+        `;
+        const [result] = await connection.execute(query, [maBacSi, maPhong, ngayLam, gioBatDau, gioKetThuc, maLich]);
+        return result;
+    },
+
     // Check if doctor exists
     checkDoctorExists: async (maBacSi, connection = db, forUpdate = false) => {
         const query = `
@@ -56,7 +66,8 @@ const Schedule = {
     },
 
     // Check for overlapping schedules
-    checkScheduleConflict: async (maBacSi, ngayLam, gioBatDau, gioKetThuc, connection = db) => {
+    checkScheduleConflict: async (maBacSi, ngayLam, gioBatDau, gioKetThuc, connection = db, excludeMaLich = null) => {
+        const params = [maBacSi, ngayLam, gioBatDau, gioKetThuc];
         const query = `
             SELECT
                 l.MaLich,
@@ -73,13 +84,16 @@ const Schedule = {
             WHERE l.MaBacSi = ?
             AND DATE(l.NgayLam) = DATE(?)
             AND (? < l.GioKetThuc AND ? > l.GioBatDau)
+            ${excludeMaLich ? 'AND l.MaLich <> ?' : ''}
         `;
-        const [rows] = await connection.execute(query, [maBacSi, ngayLam, gioBatDau, gioKetThuc]);
+        if (excludeMaLich) params.push(excludeMaLich);
+        const [rows] = await connection.execute(query, params);
         return rows.length > 0 ? rows : null;
     },
 
     // Check if a room is already assigned to any doctor in an overlapping time range
-    checkRoomConflict: async (maPhong, ngayLam, gioBatDau, gioKetThuc, connection = db) => {
+    checkRoomConflict: async (maPhong, ngayLam, gioBatDau, gioKetThuc, connection = db, excludeMaLich = null) => {
+        const params = [maPhong, ngayLam, gioBatDau, gioKetThuc];
         const query = `
             SELECT
                 l.MaLich,
@@ -96,8 +110,10 @@ const Schedule = {
             WHERE l.MaPhong = ?
             AND DATE(l.NgayLam) = DATE(?)
             AND (? < l.GioKetThuc AND ? > l.GioBatDau)
+            ${excludeMaLich ? 'AND l.MaLich <> ?' : ''}
         `;
-        const [rows] = await connection.execute(query, [maPhong, ngayLam, gioBatDau, gioKetThuc]);
+        if (excludeMaLich) params.push(excludeMaLich);
+        const [rows] = await connection.execute(query, params);
         return rows.length > 0 ? rows : null;
     },
 
@@ -135,14 +151,18 @@ const Schedule = {
                 l.MaLich,
                 l.MaBacSi,
                 n.HoTen as TenBacSi,
+                n.MaChuyenKhoa,
+                c.TenChuyenKhoa,
                 l.MaPhong,
                 p.TenPhong,
+                p.MaChuyenKhoa AS MaChuyenKhoaPhong,
                 l.NgayLam,
                 l.GioBatDau,
                 l.GioKetThuc
             FROM LichLamViecBacSi l
             JOIN NhanVien n ON l.MaBacSi = n.MaNV
             JOIN PhongKham p ON l.MaPhong = p.MaPhong
+            LEFT JOIN ChuyenKhoa c ON n.MaChuyenKhoa = c.MaChuyenKhoa
             WHERE l.MaLich = ?
         `;
         const [rows] = await db.execute(query, [maLich]);
@@ -172,10 +192,15 @@ const Schedule = {
     },
 
     // Delete schedule
-    deleteSchedule: async (maLich) => {
+    deleteSchedule: async (maLich, connection = db) => {
         const query = `DELETE FROM LichLamViecBacSi WHERE MaLich = ?`;
-        const [result] = await db.execute(query, [maLich]);
+        const [result] = await connection.execute(query, [maLich]);
         return result;
+    },
+
+    unlinkAppointmentsFromSchedule: async (maLich, connection = db) => {
+        await connection.execute(`UPDATE LichKham SET MaLich = NULL WHERE MaLich = ?`, [maLich]);
+        await connection.execute(`UPDATE PhieuKham SET MaLich = NULL WHERE MaLich = ?`, [maLich]);
     },
 
     // Get filtered schedules by specialty, doctor, date range

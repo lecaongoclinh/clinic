@@ -56,13 +56,17 @@ const patientController = {
     create: async (req, res) => {
         try {
             const maBN = String(req.body.maBN ?? req.body.MaBN ?? '').trim();
-            const { hoTen, soDienThoai, diaChi, ngaySinh } = req.body;
+            const hoTen = String(req.body.hoTen ?? req.body.HoTen ?? '').trim();
+            const soDienThoai = String(req.body.soDienThoai ?? req.body.SoDienThoai ?? '').trim();
+            const diaChi = String(req.body.diaChi ?? req.body.DiaChi ?? '').trim();
+            const ngaySinh = req.body.ngaySinh ?? req.body.NgaySinh ?? '';
+            const gioiTinh = String(req.body.gioiTinh ?? req.body.GioiTinh ?? '').trim();
 
-            if (!maBN || !hoTen || !soDienThoai || !diaChi || !ngaySinh) {
+            if (!maBN || !hoTen || !soDienThoai || !diaChi || !ngaySinh || !gioiTinh) {
                 return res.status(400).json({ message: 'Vui lòng điền đầy đủ thông tin bệnh nhân' });
             }
 
-            const createdMaBN = await Patient.create(maBN, hoTen, soDienThoai, diaChi, ngaySinh);
+            const createdMaBN = await Patient.create(maBN, hoTen, soDienThoai, diaChi, ngaySinh, gioiTinh);
             res.status(201).json({ 
                 message: 'Tạo bệnh nhân thành công',
                 maBN: createdMaBN,
@@ -88,8 +92,8 @@ const patientController = {
                 Email: String(req.body.Email ?? req.body.email ?? '').trim()
             };
 
-            if (!patient.HoTen || !patient.SoDienThoai) {
-                return res.status(400).json({ message: 'Vui long nhap ho ten va so dien thoai' });
+            if (!patient.HoTen || !patient.SoDienThoai || !patient.DiaChi || !patient.NgaySinh || !patient.GioiTinh) {
+                return res.status(400).json({ message: 'Vui long nhap day du ho ten, ngay sinh, gioi tinh, so dien thoai va dia chi' });
             }
 
             const affectedRows = await Patient.update(maBN, patient);

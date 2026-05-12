@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="vi">
 <head>
 <meta charset="utf-8">
 <title>Nhập thuốc</title>
@@ -8,7 +7,6 @@
 
 <link href="../img/favicon.ico" rel="icon">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -16,159 +14,45 @@
 <link href="../css/style.css" rel="stylesheet">
 
 <style>
-
-/* Đổi màu chữ toàn bộ thành đen */
-body, h5, label, th, td, .card-box, .total-box {
-    color: #111 !important;
-}
-
-/* Màu placeholder sáng hơn một chút cho dễ nhìn */
-.form-control::placeholder {
-    color: #666;
-}
-/* ===== GLOBAL ===== */
-body {
-    font-family: 'Inter', sans-serif;
-    background: #eef1f5;
-    color: #111;
-}
-
-/* ===== CARD ===== */
-.card-box {
-    background: #fff;
-    border-radius: 8px;
-    padding: 16px;
-    border: 1px solid #ddd;
-}
-
-/* ===== TITLE ===== */
-h5 {
-    font-weight: 600;
-    font-size: 16px;
-}
-
-/* ===== FORM ===== */
-label {
-    font-size: 13px;
-    margin-bottom: 4px;
-}
-
-.form-control, .form-select {
-    height: 38px;
-    font-size: 14px;
-    border-radius: 6px;
-}
-
-/* ===== TABLE ===== */
-.table {
-    font-size: 14px;
-}
-
-.table thead {
-    background: #f1f3f5;
-}
-
-.table th {
-    font-weight: 600;
-    font-size: 13px;
-}
-
-.table td {
-    vertical-align: middle;
-}
-
-/* ===== BUTTON ===== */
-.btn-primary {
-    background: #3b82f6;
-    border: none;
-    border-radius: 6px;
-}
-
-.btn-primary:hover {
-    background: #2563eb;
-}
-
-/* ===== TOTAL ===== */
-.total-box {
-    background: #f1f3f5;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-}
-
-.form-control, .form-select {
-    height: 38px;
-    font-size: 14px;
-    border-radius: 6px;
-    color: #111 !important;           /* thêm dòng này */
-}
-
-/* Phần mới thêm */
-.form-select {
-    color: #111 !important;
-}
-
-.form-select option {
-    color: #111 !important;
-}
-/* ===== FORM ===== */
-label {
-    font-size: 14px;           /* đồng bộ với input */
-    margin-bottom: 5px;
-    font-weight: 500;
-    color: #111;
-}
-
-.form-control, .form-select {
-    height: 38px;
-    font-size: 14px;           /* giữ nguyên 14px */
-    border-radius: 6px;
-}
-.lot-price-row {
-    align-items: flex-end;
-}
+body, h5, label, th, td, .card-box, .total-box { color: #111 !important; }
+.form-control::placeholder { color: #666; }
+body { font-family: 'Inter', sans-serif; background: #eef1f5; color: #111; }
+.card-box { background: #fff; border-radius: 8px; padding: 16px; border: 1px solid #ddd; }
+h5 { font-weight: 600; font-size: 16px; }
+label { font-size: 14px; margin-bottom: 5px; font-weight: 500; color: #111; }
+.form-control, .form-select { height: 38px; font-size: 14px; border-radius: 6px; color: #111 !important; }
+.form-select option { color: #111 !important; }
+.table { font-size: 14px; }
+.table thead { background: #f1f3f5; }
+.table th { font-weight: 600; font-size: 13px; }
+.table td { vertical-align: middle; }
+.btn-primary { background: #3b82f6; border: none; border-radius: 6px; }
+.btn-primary:hover { background: #2563eb; }
+.import-view-btn:hover, .import-view-btn:focus { background: #2563EB; border-color: #2563EB; color: #fff; }
+.total-box { background: #f1f3f5; padding: 8px 12px; border-radius: 6px; font-weight: 600; }
+.lot-price-row { align-items: flex-end; }
 </style>
-
 </head>
 
 <body>
 <div class="container-xxl position-relative bg-white d-flex p-0">
-
-   <!-- Sidebar -->
     <div class="sidebar pe-4 pb-3">
         <nav class="navbar bg-light navbar-light">
             <a href="../index.html" class="navbar-brand mx-4 mb-3"></a>
-
             <div class="d-flex align-items-center ms-4 mb-4">
                 <div class="position-relative">
                     <img class="rounded-circle" src="../img/user.jpg" alt="" style="width: 40px; height: 40px;">
                     <div class="bg-success rounded-circle border border-2 border-white position-absolute end-0 bottom-0 p-1"></div>
                 </div>
-                <div class="ms-3">
-                    <h6 class="mb-0" id="usernameSidebar"></h6>
-                </div>
+                <div class="ms-3"><h6 class="mb-0" id="usernameSidebar"></h6></div>
             </div>
 
             <div class="navbar-nav w-100">
-                <a href="../index.html" class="nav-item nav-link">
-                    <i class="fa fa-tachometer-alt me-2"></i>Thống kê
-                </a>
-
-                <a href="../schedule.html" class="nav-item nav-link">
-                    <i class="fa fa-th me-2"></i>Lịch làm việc
-                </a>
-
-                <a href="../LichKham.html" class="nav-item nav-link">
-                    <i class="fa fa-keyboard me-2"></i>Lịch khám
-                </a>
-                <a href="../phieukham.html" class="nav-item nav-link">
-                    <i class="fa fa-ticket-alt me-2"></i>Phiếu khám
-                </a>
-
-                <a href="../BenhAn.html" class="nav-item nav-link">
-                    <i class="fa fa-table me-2"></i>Bệnh án
-                </a>
-
+                <a href="../index.html" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i>Thống kê</a>
+                <a href="../schedule.html" class="nav-item nav-link"><i class="fa fa-th me-2"></i>Lịch làm việc</a>
+                <a href="../LichKham.html" class="nav-item nav-link"><i class="fa fa-keyboard me-2"></i>Lịch khám</a>
+                <a href="../phieukham.html" class="nav-item nav-link"><i class="fa fa-ticket-alt me-2"></i>Phiếu khám</a>
+                <a href="../BenhAn.html" class="nav-item nav-link"><i class="fa fa-table me-2"></i>Bệnh án</a>
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown"><i class="far fa-file-alt me-2"></i>Thuốc</a>
                     <div class="dropdown-menu bg-transparent border-0">
@@ -198,115 +82,113 @@ label {
         </nav>
     </div>
 
-<!-- CONTENT -->
 <div class="content">
-
 <div class="container-fluid pt-4 px-4">
 
-<!-- HEADER -->
 <div class="card-box mb-3 d-flex justify-content-between align-items-center">
     <h5>Nhập thuốc vào kho</h5>
     <input id="searchInput" class="form-control" style="width:250px" placeholder="Tìm thuốc...">
 </div>
 
-<!-- THÔNG TIN PHIẾU -->
 <div class="card-box mb-3">
 <div class="row g-3">
+    <div class="col-md-3">
+        <label id="supplierLabel">Nhà cung cấp</label>
+        <select id="supplierSelect" class="form-select"></select>
+        <select id="sourceSelect" class="form-select d-none">
+            <option value="">-- Chọn nguồn trả --</option>
+            <option value="BenhNhan">Bệnh nhân</option>
+            <option value="KhoaPhong">Khoa/phòng sử dụng</option>
+            <option value="KhoQuayThuoc">Kho Quầy Thuốc</option>
+            <option value="KhoThuocLanh">Kho Thuốc Lạnh</option>
+            <option value="Khac">Khác</option>
+        </select>
+        <input id="sourceInput" class="form-control d-none" placeholder="Nhập lý do kiểm kê">
+    </div>
 
-<div class="col-md-3">
-<label>Nhà cung cấp</label>
-<select id="supplierSelect" class="form-select"></select>
+    <div class="col-md-3 d-none" id="otherSourceGroup">
+        <label>Ghi rõ nguồn trả</label>
+        <input id="otherSourceInput" class="form-control" placeholder="Nhập nguồn trả">
+    </div>
+
+    <div class="col-md-3">
+        <label id="khoLabel">Kho</label>
+        <select id="khoSelect" class="form-select"></select>
+    </div>
+
+    <div class="col-md-3">
+        <label>Loại phiếu</label>
+        <select id="loaiPhieu" class="form-select">
+            <option value="NhapMua">Nhập mua</option>
+            <option value="NhapTra">Nhập trả</option>
+            <option value="NhapKiemKe">Nhập kiểm kê</option>
+            <option value="NhapVienTro">Nhập viện trợ</option>
+        </select>
+    </div>
+
+    <div class="col-md-3">
+        <label>Nhân viên</label>
+        <input id="staffName" class="form-control" disabled>
+    </div>
+
+    <div class="col-md-3 d-none" id="reasonGroup">
+        <label id="reasonLabel">Lý do</label>
+        <input id="reasonInput" class="form-control">
+    </div>
+
+    <div class="col-md-3 d-none" id="relatedGroup">
+        <label>Phiếu liên quan</label>
+        <input id="relatedInput" class="form-control">
+    </div>
+</div>
 </div>
 
-<div class="col-md-3">
-<label>Kho</label>
-<select id="khoSelect" class="form-select"></select>
-</div>
-
-<div class="col-md-3">
-<label>Loại phiếu</label>
-<select id="loaiPhieu" class="form-select">
-<option value="NhapMua">Nhập mua</option>
-<option value="NhapTra">Nhập trả</option>
-<option value="NhapKhac">Khác</option>
-</select>
-</div>
-
-<div class="col-md-3">
-<label>Nhân viên</label>
-<input id="staffName" class="form-control" disabled>
-</div>
-
-</div>
-</div>
-
-<!-- MAIN -->
 <div class="row g-3">
-
-    <!-- LEFT: Thêm thuốc -->
     <div class="col-md-4">
-        <div class="card-box h-100">   <!-- Thêm h-100 để chiều cao full -->
-
+        <div class="card-box h-100">
             <h5 class="mb-3">Thêm thuốc</h5>
-
             <select id="medicineSelect" class="form-select mb-2"></select>
-
-            <!-- Quy cách (load từ DB) -->
             <div id="packagingInfo" style="font-size:12px; color:#666;" class="mb-3"></div>
 
             <div class="row g-2 lot-price-row">
-
                 <div class="col-4">
                     <label>Đơn vị</label>
                     <select id="unitSelect" class="form-select"></select>
                 </div>
-
                 <div class="col-4">
                     <label>Số lượng</label>
                     <input id="quantity" class="form-control">
                 </div>
-
                 <div class="col-4">
                     <label>Quy đổi</label>
                     <input id="realQty" class="form-control" disabled placeholder="= 0">
                 </div>
-
-                <div class="col-6">
-                    <label>Giá nhập</label>
+                <div class="col-6" id="priceGroup">
+                    <label id="priceLabel">Giá nhập</label>
                     <input id="price" class="form-control">
                 </div>
-
                 <div class="col-6">
                     <label>Số lô *</label>
                     <input id="soLo" class="form-control">
                 </div>
-
                 <div class="col-6">
                     <label>NSX *</label>
                     <input type="date" id="nsx" class="form-control">
                 </div>
-
                 <div class="col-6">
                     <label>HSD *</label>
                     <input type="date" id="hsd" class="form-control">
                 </div>
-
             </div>
 
-            <button class="btn btn-primary w-100 mt-3" onclick="addToCart()">
-                + Thêm vào phiếu
-            </button>
-
+            <button class="btn btn-primary w-100 mt-3" onclick="addToCart()">+ Thêm vào phiếu</button>
         </div>
     </div>
 
-    <!-- RIGHT: Danh sách thuốc nhập -->
     <div class="col-md-8">
-        <div class="card-box h-100 d-flex flex-column">   <!-- Thêm h-100 + flex-column -->
-
+        <div class="card-box h-100 d-flex flex-column">
             <h5 class="mb-3">Danh sách thuốc nhập</h5>
-
-            <div class="flex-grow-1 overflow-auto mb-3">   <!-- Phần bảng co giãn -->
+            <div class="flex-grow-1 overflow-auto mb-3">
                 <table class="table">
                     <thead>
                         <tr>
@@ -314,8 +196,8 @@ label {
                             <th>Đơn vị</th>
                             <th>Số lượng</th>
                             <th>Quy đổi</th>
-                            <th>Giá</th>
-                            <th>Thành tiền</th>
+                            <th class="price-col" id="priceHeader">Giá đơn vị cơ bản</th>
+                            <th class="price-col" id="amountHeader">Thành tiền</th>
                             <th>Lô</th>
                             <th>HSD</th>
                             <th></th>
@@ -325,31 +207,28 @@ label {
                 </table>
             </div>
 
-            <!-- Phần tổng tiền và nút Tạo phiếu nằm cùng hàng với nút Thêm -->
             <div class="d-flex justify-content-between align-items-center mt-auto">
-                <div class="total-box">
-                    Tổng tiền: <span id="totalMoney">0 đ</span>
-                </div>
-                <button class="btn btn-primary" onclick="submitImport()">
-                    Tạo phiếu
-                </button>
+                <div class="total-box" id="totalBox"><span id="totalLabel">Tổng tiền:</span> <span id="totalMoney">0 đ</span></div>
+                <button class="btn btn-primary" onclick="submitImport()">Tạo phiếu</button>
             </div>
-
         </div>
     </div>
-
 </div>
 
-<!-- DANH SÁCH PHIẾU -->
 <div class="card-box mt-3">
 <h5>Danh sách phiếu nhập</h5>
-
 <table class="table mt-3">
 <thead>
 <tr>
 <th>ID</th>
-<th>Nhà cung cấp</th>
+<th>Nguồn nhập/NCC</th>
+<th>Kho nhập</th>
+<th>Loại phiếu</th>
+<th>Tổng tiền</th>
+<th>Nhân viên</th>
+<th>Trạng thái</th>
 <th>Ngày nhập</th>
+<th></th>
 </tr>
 </thead>
 <tbody id="importList"></tbody>
@@ -357,11 +236,7 @@ label {
 </div>
 
 </div>
-
-<div class="container-fluid pt-4 px-4 text-center" style="font-size:13px;color:#666;">
-© Clinic 2026
-</div>
-
+<div class="container-fluid pt-4 px-4 text-center" style="font-size:13px;color:#666;">© Clinic 2026</div>
 </div>
 </div>
 
@@ -369,6 +244,5 @@ label {
 <script src="../js/main.js"></script>
 <script src="../js/table_pagination.js"></script>
 <script src="../js/imports.js"></script>
-
 </body>
 </html>

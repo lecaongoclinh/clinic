@@ -72,7 +72,7 @@ const InventoryController = {
     exportInventory: async (req, res) => {
         try {
             const rows = await InventoryService.getAll(req.query);
-            const headers = ["Mã lô", "Thuốc", "Hoạt chất", "Số lô", "Ngày sản xuất", "Hạn dùng", "Tồn", "Giá nhập", "Kho", "Nhà cung cấp", "Trạng thái"];
+            const headers = ["Mã lô", "Thuốc", "Hoạt chất", "Số lô", "Ngày sản xuất", "Hạn dùng", "Tồn", "Đơn vị", "Giá nhập", "Kho", "Loại kho", "Nhà cung cấp", "Trạng thái"];
             const csvRows = [
                 headers.map(toCsvCell).join(","),
                 ...rows.map((row) => [
@@ -83,8 +83,10 @@ const InventoryController = {
                     row.NgaySanXuat,
                     row.HanSuDung,
                     row.Ton,
+                    row.DonViCoBan,
                     row.GiaNhap,
                     row.TenKho,
+                    row.IsDispenseWarehouse ? "DISPENSE" : row.LoaiKho,
                     row.TenNCC,
                     row.TrangThai
                 ].map(toCsvCell).join(","))
@@ -149,7 +151,11 @@ const InventoryController = {
 
     transferLot: async (req, res) => {
         try {
-            await InventoryService.transferLot(req.body);
+            const user = getAuthUser(req);
+            await InventoryService.transferLot({
+                ...req.body,
+                MaNhanVien: user?.MaNV || req.body.MaNhanVien || null
+            });
             res.json({ message: "Chuyển kho thành công" });
         } catch (err) {
             res.status(500).json({ message: "Lỗi chuyển kho", error: err.message });
