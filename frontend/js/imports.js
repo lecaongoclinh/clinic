@@ -159,21 +159,21 @@ async function loadMedicinesForCurrentType() {
         ? await fetchJson(`${API_IMPORT}/by-supplier?MaNCC=${encodeURIComponent(MaNCC)}`)
         : await fetchJson(API_MEDICINES);
 
-    medicineSelect.innerHTML = medicines.length
-        ? medicines.map(m => `<option value="${m.MaThuoc}">${escapeHtml(m.TenThuoc)}</option>`).join("")
-        : `<option value="">Không có thuốc</option>`;
-
-    if (medicines.length > 0) {
-        await loadUnits(medicines[0].MaThuoc);
-    } else {
-        unitSelect.innerHTML = "";
-        units = [];
-    }
+    medicineSelect.innerHTML = `
+        <option value="">-- Chọn thuốc --</option>
+        ${medicines.map(m => `<option value="${m.MaThuoc}">${escapeHtml(m.TenThuoc)}</option>`).join("")}
+    `;
+    unitSelect.innerHTML = "";
+    units = [];
     calcRealQty();
 }
 
 async function loadUnits(MaThuoc) {
-    if (!MaThuoc) return;
+    if (!MaThuoc) {
+        unitSelect.innerHTML = "";
+        units = [];
+        return;
+    }
 
     try {
         const response = await fetch(`${API_QD}?MaThuoc=${encodeURIComponent(MaThuoc)}`);
@@ -221,6 +221,18 @@ function clearDraftInputs({ clearPrice = true } = {}) {
     if (clearPrice) price.value = "";
     quantity.value = "";
     realQty.value = "";
+    soLo.value = "";
+    nsx.value = "";
+    hsd.value = "";
+}
+
+function clearMedicineInputs() {
+    medicineSelect.value = "";
+    unitSelect.innerHTML = "";
+    units = [];
+    quantity.value = "";
+    realQty.value = "";
+    price.value = "";
     soLo.value = "";
     nsx.value = "";
     hsd.value = "";
@@ -369,6 +381,7 @@ function addToCart() {
     });
 
     renderCart();
+    clearMedicineInputs();
 }
 
 function renderCart() {

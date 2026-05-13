@@ -12,12 +12,14 @@
     <link href="../css/bootstrap.min.css" rel="stylesheet">
     <link href="../css/style.css" rel="stylesheet">
     <style>
+        body { font-family: 'Inter', sans-serif !important; }
+        .form-control, .form-select { height: 42px; border-radius: 8px; font-size: 14px; }
         .page-shell { padding: 18px; }
         .page-panel { background: #fff; border: 1px solid #dbe3ef; border-radius: 8px; padding: 18px; }
         .filter-grid { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 10px; align-items: end; margin-bottom: 16px; }
         .table { border-collapse: separate; border-spacing: 0; }
         .table thead th { background: #f1f3f5 !important; color: #111 !important; font-weight: 700; padding: 16px 10px; text-align: center; font-size: 14.5px; border-bottom: 2px solid #dee2e6; white-space: nowrap; }
-        .table td { color: #111; vertical-align: middle; }
+        .table td { padding: 14px 10px; color: #111; vertical-align: middle; font-size: 14px; }
         .status-badge { display: inline-flex; padding: 5px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
         .status-pending { background: #fff3cd; color: #7a5200; }
         .status-partial { background: #ffedd5; color: #9a3412; }
@@ -68,7 +70,7 @@
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                     <div>
                         <h5 class="mb-1">Đơn thuốc</h5>
-                        <div class="text-muted small">Tra cứu đơn thuốc theo khoa, bác sĩ, bệnh nhân và trạng thái</div>
+                        <!-- <div class="text-muted small">Tra cứu đơn thuốc theo khoa, bác sĩ, bệnh nhân và trạng thái</div> -->
                     </div>
                     <button class="btn btn-outline-secondary" id="resetFiltersBtn"><i class="fa fa-redo me-2"></i>Làm mới</button>
                 </div>

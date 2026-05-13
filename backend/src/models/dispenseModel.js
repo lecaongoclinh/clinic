@@ -605,8 +605,6 @@ createDraftHeader: async ({ payload, noteData, connection = db }) => {
             FROM PhieuXuatThuoc px
             LEFT JOIN Kho k ON px.MaKho = k.MaKho
             LEFT JOIN BenhNhan bn ON px.MaBN = bn.MaBN
-            LEFT JOIN NhanVien nvx ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = nvx.MaNV
-            LEFT JOIN Kho k ON px.MaKho = k.MaKho
             LEFT JOIN NhanVien nv ON px.MaNhanVien = nv.MaNV
             LEFT JOIN NhanVien nvx ON COALESCE(px.MaNhanVienXuat, px.MaNhanVien) = nvx.MaNV
             LEFT JOIN DonThuoc dt ON px.MaDT = dt.MaDT

@@ -61,7 +61,18 @@
         .status-cancelled { background: #fce4ec; color: #880e4f; }
 
         /* ── Search bar ── */
-        .search-bar { max-width: 420px; }
+        .search-bar {
+            max-width: 360px;
+            flex: 0 1 360px;
+            margin-right: 6px;
+        }
+        #searchInput { padding-left: 10px !important; }
+        #btnCreateTicket {
+            min-width: 138px;
+            padding-left: 18px;
+            padding-right: 18px;
+            white-space: nowrap;
+        }
 
         /* ── Pagination ── */
         .pagination .page-link { border-radius: 8px !important; margin: 0 2px; }
