@@ -148,8 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!localStorage.getItem('token')) { window.location.href = 'signin.html'; return; }
 
     // Date label
-    document.getElementById('dateLabel').textContent =
-        'Ngày ' + new Date().toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const dateLabel = document.getElementById('dateLabel');
+    if (dateLabel) {
+        dateLabel.textContent = 'Ngày ' + new Date().toLocaleDateString('vi-VN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    }
 
     // Username
     const uname = localStorage.getItem('fullName') || localStorage.getItem('username') || (isDoctor ? 'Bác sĩ' : 'Lễ tân');
@@ -159,47 +161,49 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Nút tạo phiếu
-    if (canManage) document.getElementById('btnCreateTicket').style.display = '';
+    const btnCreateTicket = document.getElementById('btnCreateTicket');
+    if (canManage && btnCreateTicket) btnCreateTicket.style.display = '';
 
     // Modals
-    benhanModal = new bootstrap.Modal(document.getElementById('benhanModal'));
-    createModal = new bootstrap.Modal(document.getElementById('createTicketModal'));
-    kedonModal  = new bootstrap.Modal(document.getElementById('kedonModal'));
-    examModal   = new bootstrap.Modal(document.getElementById('examModal'));
-    serviceResultModal = new bootstrap.Modal(document.getElementById('serviceResultModal'));
-    document.getElementById('examModal').addEventListener('hidden.bs.modal', () => {
-        currentExamTicket = null;
-        currentExamState = null;
-        selectedServices = [];
-        selectedMedicines = [];
-        serviceAddPanelOpen = true;
-        medicineAddPanelOpen = true;
-    });
+    const benhanModalEl = document.getElementById('benhanModal');
+    if (benhanModalEl) benhanModal = new bootstrap.Modal(benhanModalEl);
+    
+    const createTicketModalEl = document.getElementById('createTicketModal');
+    if (createTicketModalEl) createModal = new bootstrap.Modal(createTicketModalEl);
+    
+    const kedonModalEl = document.getElementById('kedonModal');
+    if (kedonModalEl) kedonModal = new bootstrap.Modal(kedonModalEl);
+    
+    const examModalEl = document.getElementById('examModal');
+    if (examModalEl) {
+        examModal = new bootstrap.Modal(examModalEl);
+        examModalEl.addEventListener('hidden.bs.modal', () => {
+            currentExamTicket = null;
+            currentExamState = null;
+            selectedServices = [];
+            selectedMedicines = [];
+            serviceAddPanelOpen = true;
+            medicineAddPanelOpen = true;
+        });
+    }
+    
+    const serviceResultModalEl = document.getElementById('serviceResultModal');
+    if (serviceResultModalEl) serviceResultModal = new bootstrap.Modal(serviceResultModalEl);
 
     // Search
     const inp = document.getElementById('searchInput');
     const clr = document.getElementById('clearSearch');
-    inp.addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        clr.style.display = inp.value ? '' : 'none';
-        searchTimeout = setTimeout(() => { currentPage = 1; applyFilter(); }, 280);
-    });
-    clr.addEventListener('click', () => {
-        inp.value = ''; clr.style.display = 'none';
-        currentPage = 1; applyFilter();
-    });
-
-    // Modal search (bệnh nhân)
-    document.getElementById('modalSearchInput').addEventListener('input', () => {
-        clearTimeout(searchTimeout);
-        if (!validateModalSearchInput()) return;
-        searchTimeout = setTimeout(modalSearchPatients, 300);
-    });
-    document.getElementById('modalSearchBtn').addEventListener('click', () => {
-        clearTimeout(searchTimeout);
-        if (!validateModalSearchInput()) return;
-        modalSearchPatients();
-    });
+    if (inp && clr) {
+        inp.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            clr.style.display = inp.value ? '' : 'none';
+            searchTimeout = setTimeout(() => { currentPage = 1; applyFilter(); }, 280);
+        });
+        clr.addEventListener('click', () => {
+            inp.value = ''; clr.style.display = 'none';
+            currentPage = 1; applyFilter();
+        });
+    }
 
     // Modal search thuốc
     ['ex_kd_searchThuoc', 'kd_searchThuoc'].forEach((id) => {
@@ -210,6 +214,33 @@ document.addEventListener('DOMContentLoaded', () => {
             searchTimeout = setTimeout(searchMedicines, 300);
         });
     });
+
+    // Modal search dịch vụ
+    const searchServiceInp = document.getElementById('ex_searchService');
+    if (searchServiceInp) {
+        searchServiceInp.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(searchServices, 300);
+        });
+    }
+
+    // Modal search (bệnh nhân)
+    const modalSearchInput = document.getElementById('modalSearchInput');
+    if (modalSearchInput) {
+        modalSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            if (!validateModalSearchInput()) return;
+            searchTimeout = setTimeout(modalSearchPatients, 300);
+        });
+    }
+    const modalSearchBtn = document.getElementById('modalSearchBtn');
+    if (modalSearchBtn) {
+        modalSearchBtn.addEventListener('click', () => {
+            clearTimeout(searchTimeout);
+            if (!validateModalSearchInput()) return;
+            modalSearchPatients();
+        });
+    }
 
     loadWaitingList();
 });
@@ -391,12 +422,37 @@ function isCurrentExamInProgress() {
 }
 
 function setServiceAddPanelVisible(visible) {
-    const canAdd = isCurrentExamInProgress();
+    const hasRecord = Boolean(currentExamState?.medicalRecord?.MaBA);
+    const canAdd = isCurrentExamInProgress() && !hasRecord;
+    
     serviceAddPanelOpen = canAdd && Boolean(visible);
+    
     const panel = document.getElementById('ex_serviceAddPanel');
-    const showBtn = document.getElementById('ex_btnShowServiceAdd');
-    if (panel) panel.style.display = serviceAddPanelOpen ? '' : 'none';
-    if (showBtn) showBtn.style.display = canAdd && !serviceAddPanelOpen ? '' : 'none';
+    if (panel) {
+        panel.querySelectorAll('input').forEach(inp => inp.disabled = !canAdd);
+    }
+
+    const addCol = document.getElementById('ex_serviceAddCol');
+    const listCol = document.getElementById('ex_serviceListCol');
+    const btnShow = document.getElementById('ex_btnShowServiceAdd');
+    const warning = document.getElementById('ex_serviceNeedsNoRecord');
+    
+    if (warning) {
+        warning.style.display = (isCurrentExamInProgress() && hasRecord) ? '' : 'none';
+    }
+
+    if (addCol && listCol) {
+        if (serviceAddPanelOpen) {
+            addCol.style.display = '';
+            listCol.className = 'col-md-7';
+            if (btnShow) btnShow.style.display = 'none';
+        } else {
+            addCol.style.display = 'none';
+            listCol.className = 'col-md-12';
+            if (btnShow) btnShow.style.display = canAdd ? '' : 'none';
+        }
+    }
+    
     renderSelectedServices();
 }
 
@@ -405,16 +461,43 @@ function showServiceAddPanel() {
         showToast('warning', 'Phiếu khám đã kết thúc, không thể thêm chỉ định');
         return;
     }
+    if (currentExamState?.medicalRecord?.MaBA) {
+        showToast('warning', 'Bệnh án đã được lưu, không thể thêm chỉ định mới');
+        return;
+    }
     setServiceAddPanelVisible(true);
 }
 
 function setMedicineAddPanelVisible(visible) {
-    const canAdd = isCurrentExamInProgress() && Boolean(currentExamState?.medicalRecord?.MaBA);
+    const hasBA = Boolean(currentExamState?.medicalRecord?.MaBA);
+    const canAdd = isCurrentExamInProgress() && hasBA;
+    
     medicineAddPanelOpen = canAdd && Boolean(visible);
     const panel = document.getElementById('ex_medicineAddPanel');
-    const showBtn = document.getElementById('ex_btnShowMedicineAdd');
-    if (panel) panel.style.display = medicineAddPanelOpen ? '' : 'none';
-    if (showBtn) showBtn.style.display = canAdd && !medicineAddPanelOpen ? '' : 'none';
+    if (panel) {
+        panel.querySelectorAll('input').forEach(inp => inp.disabled = !canAdd);
+        const res = document.getElementById('ex_kd_searchResult');
+        if (!hasBA && res) {
+            res.innerHTML = '<div class="alert alert-warning py-2 small">Cần lưu bệnh án trước khi kê đơn</div>';
+        }
+    }
+
+    const addCol = document.getElementById('ex_medicineAddCol');
+    const listCol = document.getElementById('ex_medicineListCol');
+    const btnShow = document.getElementById('ex_btnShowMedicineAdd');
+
+    if (addCol && listCol) {
+        if (medicineAddPanelOpen) {
+            addCol.style.display = '';
+            listCol.className = 'col-md-7';
+            if (btnShow) btnShow.style.display = 'none';
+        } else {
+            addCol.style.display = 'none';
+            listCol.className = 'col-md-12';
+            if (btnShow) btnShow.style.display = canAdd ? '' : 'none';
+        }
+    }
+
     renderSelectedMedicines();
 }
 
@@ -486,17 +569,21 @@ function renderExamForms() {
     const hasRecord = Boolean(record?.MaBA);
     const canEditExam = isCurrentExamInProgress();
     const recordLocked = hasRecord || !canEditExam;
+    
     document.getElementById('ex_ba_maPK').value = currentExamTicket?.MaPK || '';
     document.getElementById('ex_ba_trieuChung').value = record?.TrieuChung || '';
     document.getElementById('ex_ba_chuanDoan').value = record?.ChuanDoan || '';
     document.getElementById('ex_ba_ghiChu').value = record?.GhiChu || '';
     document.getElementById('ex_benhanForm').classList.remove('was-validated');
+    
     ['ex_ba_trieuChung', 'ex_ba_chuanDoan', 'ex_ba_ghiChu'].forEach((id) => {
         const el = document.getElementById(id);
         if (el) el.readOnly = recordLocked;
     });
+    
     const btnSubmitRecord = document.getElementById('ex_btnSubmitBenhan');
     if (btnSubmitRecord) btnSubmitRecord.style.display = recordLocked ? 'none' : '';
+    
     const savedNotice = document.getElementById('ex_ba_savedNotice');
     if (savedNotice) {
         savedNotice.textContent = hasRecord
@@ -514,7 +601,13 @@ function renderExamForms() {
         KetQua: item.KetQua || item.KetQuaDichVu || '',
         IsSaved: true
     }));
-    setServiceAddPanelVisible(canEditExam && !selectedServices.length);
+    const searchService = document.getElementById('ex_searchService');
+    const searchServiceResult = document.getElementById('ex_searchServiceResult');
+    if (searchService) searchService.value = '';
+    if (searchServiceResult) searchServiceResult.innerHTML = '<div class="list-group-item text-muted text-center py-4">Nhập tên để tìm dịch vụ</div>';
+    
+    const hasSavedServices = selectedServices.some(s => s.IsSaved);
+    setServiceAddPanelVisible(canEditExam && !hasSavedServices);
 
     selectedMedicines = (currentExamState?.prescriptionItems || []).map((item) => ({
         MaThuoc: item.MaThuoc,
@@ -529,8 +622,10 @@ function renderExamForms() {
     const searchThuoc = document.getElementById('ex_kd_searchThuoc');
     const searchResult = document.getElementById('ex_kd_searchResult');
     if (searchThuoc) searchThuoc.value = '';
-    if (searchResult) searchResult.innerHTML = '';
-    setMedicineAddPanelVisible(canEditExam && !selectedMedicines.length);
+    if (searchResult) searchResult.innerHTML = '<div class="list-group-item text-muted text-center py-4">Nhập tên để tìm thuốc</div>';
+    
+    const hasSavedMedicines = selectedMedicines.some(m => m.IsSaved);
+    setMedicineAddPanelVisible(canEditExam && !hasSavedMedicines);
 }
 
 function renderExamCompletionState() {
@@ -552,39 +647,66 @@ function renderExamCompletionState() {
 }
 
 async function loadClinicalServices() {
-    const select = document.getElementById('ex_serviceOrderSelect');
-    if (!select || clinicalServices.length) return;
-
+    if (clinicalServices.length) return;
     try {
         const payload = await fetchJson(`${API_BASE_URL}/services/clinical/all`);
         clinicalServices = Array.isArray(payload) ? payload : (payload.data || []);
-        select.innerHTML = '<option value="">Chọn dịch vụ xét nghiệm/siêu âm</option>';
-        clinicalServices.forEach((service) => {
-            select.add(new Option(`${service.TenDichVu} - ${service.Loai} - ${formatCurrency(service.Gia)}`, service.MaDichVu));
-        });
-        if (!clinicalServices.length) {
-            select.add(new Option('Chưa có dịch vụ cận lâm sàng đang áp dụng', ''));
-        }
     } catch (error) {
-        select.innerHTML = '<option value="">Không tải được dịch vụ</option>';
-        throw error;
+        console.error('Lỗi tải dịch vụ:', error);
     }
 }
 
-function addSelectedService() {
+async function searchServices() {
+    if (currentExamTicket?.MaPK && !isCurrentExamInProgress()) {
+        showToast('warning', 'Phiếu khám đã kết thúc, không thể thêm chỉ định');
+        return;
+    }
+    if (currentExamState?.medicalRecord?.MaBA) {
+        showToast('warning', 'Bệnh án đã được lưu, không thể thêm chỉ định mới');
+        return;
+    }
+    const input = document.getElementById('ex_searchService');
+    const resDiv = document.getElementById('ex_searchServiceResult');
+    if (!input || !resDiv) return;
+    const kw = input.value.trim().toLowerCase();
+    if (!kw) {
+        resDiv.innerHTML = '<div class="list-group-item text-muted text-center py-4">Nhập tên để tìm dịch vụ</div>';
+        return;
+    }
+
+    const filtered = clinicalServices.filter(s =>
+        s.TenDichVu.toLowerCase().includes(kw) ||
+        (s.Loai && s.Loai.toLowerCase().includes(kw))
+    );
+
+    if (!filtered.length) {
+        resDiv.innerHTML = '<div class="list-group-item text-muted">Không tìm thấy dịch vụ</div>';
+        return;
+    }
+
+    resDiv.innerHTML = filtered.map(s => `
+        <button type="button" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+            onclick='selectService(${JSON.stringify(s).replace(/'/g, "&apos;")})'>
+            <div>
+                <strong>${s.TenDichVu}</strong><br>
+                <small class="text-muted">Loại: ${s.Loai || '—'} | Giá: ${formatCurrency(s.Gia)}</small>
+            </div>
+            <i class="fa fa-plus-circle text-primary"></i>
+        </button>
+    `).join('');
+}
+
+function selectService(s) {
     if (!isCurrentExamInProgress()) {
         showToast('warning', 'Phiếu khám đã kết thúc, không thể thêm chỉ định');
         return;
     }
-    const select = document.getElementById('ex_serviceOrderSelect');
-    const qtyInput = document.getElementById('ex_serviceOrderQty');
-    if (!select?.value) return;
-    const service = clinicalServices.find((item) => Number(item.MaDichVu) === Number(select.value));
-    if (!service) return;
-
-    const qty = Math.max(Number(qtyInput?.value || 1), 1);
+    if (currentExamState?.medicalRecord?.MaBA) {
+        showToast('warning', 'Bệnh án đã được lưu, không thể thêm chỉ định mới');
+        return;
+    }
     const existingSaved = selectedServices.find((item) =>
-        Number(item.MaDichVu) === Number(service.MaDichVu) && item.IsSaved
+        Number(item.MaDichVu) === Number(s.MaDichVu) && item.IsSaved
     );
     if (existingSaved) {
         showToast('warning', 'Dịch vụ này đã được chỉ định');
@@ -592,23 +714,21 @@ function addSelectedService() {
     }
 
     const existingDraft = selectedServices.find((item) =>
-        Number(item.MaDichVu) === Number(service.MaDichVu) && !item.IsSaved
+        Number(item.MaDichVu) === Number(s.MaDichVu) && !item.IsSaved
     );
     if (existingDraft) {
-        existingDraft.SoLuong += qty;
+        existingDraft.SoLuong += 1;
     } else {
         selectedServices.push({
-            MaDichVu: service.MaDichVu,
-            TenDichVu: service.TenDichVu,
-            Loai: service.Loai,
-            Gia: Number(service.Gia || 0),
-            SoLuong: qty,
+            MaDichVu: s.MaDichVu,
+            TenDichVu: s.TenDichVu,
+            Loai: s.Loai,
+            Gia: Number(s.Gia || 0),
+            SoLuong: 1,
             KetQua: '',
             IsSaved: false
         });
     }
-    select.value = '';
-    if (qtyInput) qtyInput.value = 1;
     renderSelectedServices();
 }
 
@@ -646,9 +766,9 @@ function renderSelectedServices() {
                     <th class="text-center">Loại</th>
                     <th class="text-center" style="width:100px">SL</th>
                     <th class="text-end">Đơn giá</th>
-                    <th class="text-end">Thành tiền</th>
-                    <th class="text-center" style="width:120px">Kết quả</th>
-                    <th class="text-center" style="width:140px">Thao tác</th>
+                    <th class="text-end">T.Tiền</th>
+                    <th class="text-center" style="width:100px">K.Quả</th>
+                    <th class="text-center" style="width:100px">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -904,7 +1024,6 @@ async function submitBenhan() {
         });
         // Nếu route /done chưa có → fallback update status qua cancel không cancel mà đổi status
         if (!resTK.ok) {
-            // Thử route khác
             await fetch(`${API_BASE_URL}/tickets/${maPK}/status`, {
                 method: 'PATCH',
                 headers: jsonHeaders(),
@@ -923,7 +1042,6 @@ async function submitBenhan() {
     }
 }
 
-// ── Hủy phiếu ────────────────────────────────────────────────────────────────
 async function cancelTicket(maPK) {
     if (!confirm('Xác nhận bệnh nhân bỏ khám? Phiếu khám sẽ được giữ lại và chuyển trạng thái Bỏ khám.')) return;
     try {
@@ -935,7 +1053,6 @@ async function cancelTicket(maPK) {
     } catch (e) { showToast('error', e.message); }
 }
 
-// ── Vào khám (ChoKham → DangKham) ─────────────────────────────────────────────
 async function startExam(maPK) {
     try {
         const res  = await fetch(`${API_BASE_URL}/tickets/${maPK}/start`, { method: 'PATCH', headers: authHeaders() });
@@ -946,7 +1063,6 @@ async function startExam(maPK) {
     } catch (e) { showToast('error', e.message); }
 }
 
-// ── Kê đơn thuốc ─────────────────────────────────────────────────────────────
 function openKedonModal(encodedData) {
     const t = JSON.parse(decodeURIComponent(encodedData));
     document.getElementById('kd_maPK').textContent = t.MaPK;
@@ -979,12 +1095,15 @@ async function searchMedicines() {
     const resDiv = currentExamTicket?.MaPK ? examResult : (legacyResult || examResult);
     if (!input || !resDiv) return;
     const kw = input.value.trim();
-    if (!kw) { resDiv.innerHTML = ''; return; }
+    
+    if (!kw) {
+        resDiv.innerHTML = '<div class="list-group-item text-muted text-center py-4">Nhập tên để tìm thuốc</div>';
+        return;
+    }
 
     try {
         const res = await fetch(`${API_BASE_URL}/medicines`, { headers: authHeaders() });
         const data = await res.json();
-        
         const filtered = (data || []).filter(m => m.TenThuoc.toLowerCase().includes(kw.toLowerCase()));
         
         if (!filtered.length) {
@@ -1045,6 +1164,7 @@ function updateMedicineInput(id, field, value) {
 
 function renderSelectedMedicines() {
     const tbody = document.getElementById('ex_kd_selectedMedicines') || document.getElementById('kd_selectedMedicines');
+    if (!tbody) return;
     if (!selectedMedicines.length) {
         tbody.innerHTML = '<tr id="kd_emptyRow"><td colspan="5" class="text-center text-muted py-4">Chưa có thuốc nào được chọn</td></tr>';
         return;
@@ -1106,7 +1226,6 @@ async function submitKedon() {
         return;
     }
 
-    // Validate
     const invalid = selectedMedicines.find(m => !m.inputSoLuong || m.inputSoLuong < 1 || !m.inputLieuDung.trim());
     if (invalid) {
         showToast('warning', 'Vui lòng nhập đầy đủ số lượng và liều dùng cho tất cả các thuốc');
@@ -1130,7 +1249,6 @@ async function submitKedon() {
             body: JSON.stringify({ maPK, medicines: items })
         });
         const data = await res.json();
-        
         if (!res.ok) throw new Error(data.message || 'Lỗi lưu đơn thuốc');
         
         showToast('success', 'Đã lưu đơn thuốc');
@@ -1148,7 +1266,6 @@ async function submitKedon() {
     }
 }
 
-// ── Tạo phiếu khám (admin / lễ tân) ─────────────────────────────────────────
 function openCreateTicketModal() {
     if (!canManage) { showToast('warning', 'Chỉ Admin và Lễ tân được tạo phiếu khám'); return; }
     resetModalForm();
@@ -1166,11 +1283,6 @@ function selectTicketType(type) {
     document.getElementById('specialtySection').style.display  = isWI ? 'block' : 'none';
     clearSelectedPatient();
     hideNewPatientForm();
-    const results = document.getElementById('modalSearchResults');
-    if (results) {
-        results.style.display = 'none';
-        results.innerHTML = '';
-    }
 }
 
 async function loadSpecialtiesToModal() {
@@ -1234,10 +1346,9 @@ async function modalSearchPatients() {
                 res.innerHTML = '<div class="text-muted p-2">Không có lịch hẹn phù hợp với CCCD này</div>';
                 return;
             }
-            const safeKeyword = kw.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
             res.innerHTML = `
                 <div class="text-muted p-2">Không tìm thấy bệnh nhân</div>
-                <button type="button" class="btn btn-sm btn-primary m-2" onclick="showNewPatientForm('${safeKeyword}')">
+                <button type="button" class="btn btn-sm btn-primary m-2" onclick="showNewPatientForm('${kw.replace(/'/g, "\\'")}')">
                     <i class="fa fa-user-plus me-1"></i>Tạo bệnh nhân mới
                 </button>
             `;
@@ -1257,23 +1368,10 @@ function selectPatientInModal(p) {
 
 function showNewPatientForm(cccd = '') {
     const form = document.getElementById('newPatientForm');
-    const results = document.getElementById('modalSearchResults');
     if (!form) return;
-    if (document.getElementById('selectedTicketType')?.value === 'APPOINTMENT') {
-        if (results) {
-            results.style.display = 'block';
-            results.innerHTML = '<div class="text-muted p-2">Không có lịch hẹn phù hợp với CCCD này</div>';
-        }
-        form.style.display = 'none';
-        return;
-    }
-
     form.style.display = 'block';
-    if (results) results.style.display = 'none';
-
-    document.getElementById('newPatientCCCD').value = cccd || document.getElementById('modalSearchInput')?.value.trim() || '';
-    document.getElementById('newPatientGender').value = '';
-    document.getElementById('newPatientAddress').value = '';
+    document.getElementById('modalSearchResults').style.display = 'none';
+    document.getElementById('newPatientCCCD').value = cccd;
     document.getElementById('newPatientName').focus();
 }
 
@@ -1291,7 +1389,7 @@ async function createPatientFromTicketModal() {
     const diaChi = document.getElementById('newPatientAddress').value.trim();
 
     if (!soCCCD || !hoTen || !ngaySinh || !soDienThoai || !gioiTinh || !diaChi) {
-        showToast('warning', 'Vui lòng nhập đầy đủ CCCD, họ tên, ngày sinh và số điện thoại');
+        showToast('warning', 'Vui lòng nhập đầy đủ thông tin');
         return;
     }
 
@@ -1306,15 +1404,11 @@ async function createPatientFromTicketModal() {
             body: JSON.stringify({ soCCCD, hoTen, ngaySinh, soDienThoai, gioiTinh, diaChi })
         });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message || 'Không tạo được bệnh nhân');
+        if (!res.ok || !data.success) throw new Error(data.message || 'Lỗi tạo bệnh nhân');
 
         selectPatientInModal(data.data);
         hideNewPatientForm();
         showToast('success', 'Đã tạo bệnh nhân mới');
-
-        ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone','newPatientGender','newPatientAddress'].forEach(id => {
-            document.getElementById(id).value = '';
-        });
     } catch (e) {
         showToast('error', e.message);
     } finally {
@@ -1326,28 +1420,24 @@ async function createPatientFromTicketModal() {
 function clearSelectedPatient() {
     selectedPatient = selectedAppointment = null;
     document.getElementById('selectedPatientInModal').style.display = 'none';
-    const al = document.getElementById('appointmentList');
-    if (al) al.innerHTML = '';
 }
 
 async function loadPatientAppointments(maBN) {
     const al = document.getElementById('appointmentList');
     if (!al) return;
-    selectedAppointment = null;
     al.innerHTML = '<div class="text-muted p-2">Đang tải lịch hẹn...</div>';
     try {
         const res  = await fetch(`${API_BASE_URL}/patients/${maBN}/appointments`, { headers: authHeaders() });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.message);
         const apps = data.data || [];
-        if (!apps.length) { al.innerHTML = '<div class="text-muted p-2">Bệnh nhân không có lịch hẹn.</div>'; return; }
+        if (!apps.length) { al.innerHTML = '<div class="text-muted p-2">Không có lịch hẹn.</div>'; return; }
         al.innerHTML = apps.map(a => `
             <button type="button" class="list-group-item list-group-item-action appointment-item"
                 onclick='selectAppointment(${JSON.stringify(a).replace(/'/g,"&apos;")})'>
                 <div class="fw-bold">${new Date(a.NgayHen).toLocaleDateString('vi-VN')}</div>
                 <small class="text-muted">${a.TenChuyenKhoa||''} - ${a.TenBacSi||''}</small>
             </button>`).join('');
-    } catch (e) { al.innerHTML = `<div class="text-danger p-2">${e.message}</div>`; }
+    } catch (e) { al.innerHTML = `<div class="text-danger p-2">Lỗi tải lịch hẹn</div>`; }
 }
 
 function selectAppointment(a) {
@@ -1357,7 +1447,7 @@ function selectAppointment(a) {
 }
 
 async function createTicket() {
-    if (!canManage) { showToast('warning', 'Không có quyền tạo phiếu'); return; }
+    if (!canManage) return;
     if (!selectedPatient) { showToast('warning', 'Chọn bệnh nhân trước'); return; }
     const type = document.getElementById('selectedTicketType').value;
     try {
@@ -1370,15 +1460,13 @@ async function createTicket() {
         } else {
             const mk = document.getElementById('modalSpecialtySelect')?.value;
             const mb = document.getElementById('modalDoctorSelect')?.value;
-            if (!mk) { showToast('warning', 'Chọn chuyên khoa'); return; }
-            if (!mb) { showToast('warning', 'Chọn bác sĩ'); return; }
+            if (!mk || !mb) { showToast('warning', 'Chọn chuyên khoa và bác sĩ'); return; }
             body = { MaBN: selectedPatient.MaBN, MaChuyenKhoa: Number(mk), MaBacSi: Number(mb) };
         }
         const res  = await fetch(url, { method:'POST', headers: jsonHeaders(), body: JSON.stringify(body) });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.message || 'Lỗi tạo phiếu');
         createModal.hide();
-        resetModalForm();
         showToast('success', 'Đã tạo phiếu khám thành công');
         await loadWaitingList();
     } catch (e) { showToast('error', e.message); }
@@ -1387,23 +1475,10 @@ async function createTicket() {
 function resetModalForm() {
     selectedPatient = selectedAppointment = null;
     document.getElementById('selectedTicketType').value = 'WALK_IN';
-    document.getElementById('appointmentSection').style.display = 'none';
-    document.getElementById('specialtySection').style.display = 'block';
     document.getElementById('selectedPatientInModal').style.display = 'none';
     document.getElementById('modalSearchInput').value = '';
-    setModalSearchError('');
-    document.getElementById('modalSearchResults').style.display = 'none';
     document.getElementById('modalSearchResults').innerHTML = '';
     hideNewPatientForm();
-    ['newPatientCCCD','newPatientName','newPatientBirth','newPatientPhone','newPatientGender','newPatientAddress'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
-    document.getElementById('appointmentList').innerHTML = '';
-    document.getElementById('modalSpecialtySelect').value = '';
-    const dr = document.getElementById('modalDoctorSelect');
-    dr.innerHTML = '<option value="">-- Chọn chuyên khoa trước --</option>';
-    dr.disabled = true;
 }
 
 function logout() {
@@ -1427,7 +1502,8 @@ window.startExam             = startExam;
 window.openExamModal         = openExamModal;
 window.showServiceAddPanel   = showServiceAddPanel;
 window.showMedicineAddPanel  = showMedicineAddPanel;
-window.addSelectedService    = addSelectedService;
+window.selectService         = selectService;
+window.searchServices        = searchServices;
 window.removeSelectedService = removeSelectedService;
 window.updateSelectedServiceQty = updateSelectedServiceQty;
 window.viewServiceResult     = viewServiceResult;
