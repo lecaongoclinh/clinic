@@ -140,6 +140,22 @@ class MedicalRecordsController {
         }
     }
 
+    static async getExamWorkspace(req, res) {
+        try {
+            const { maPK } = req.params;
+            const result = await MedicalRecordsService.getExamWorkspace(maPK);
+
+            if (!result.success) {
+                return res.status(400).json({ error: result.error });
+            }
+
+            res.json(result.data);
+        } catch (error) {
+            console.error('Loi getExamWorkspace:', error);
+            res.status(500).json({ error: 'Khong the tai du lieu kham benh' });
+        }
+    }
+
     // Cập nhật bệnh án
     static async updateMedicalRecord(req, res) {
         try {
@@ -166,6 +182,29 @@ class MedicalRecordsController {
         } catch (error) {
             console.error('Lỗi updateMedicalRecord:', error);
             res.status(500).json({ error: 'Lỗi server' });
+        }
+    }
+
+    static async upsertMedicalRecordForTicket(req, res) {
+        try {
+            const { maPK } = req.params;
+            const { trieuChung, chuanDoan, ghiChu, maBacSi } = req.body;
+            const currentDoctorId = req.user?.id || maBacSi;
+
+            const result = await MedicalRecordsService.upsertMedicalRecordForTicket(maPK, currentDoctorId, {
+                trieuChung,
+                chuanDoan,
+                ghiChu
+            });
+
+            if (!result.success) {
+                return res.status(400).json({ error: result.error });
+            }
+
+            res.json({ message: result.message, data: result.data });
+        } catch (error) {
+            console.error('Loi upsertMedicalRecordForTicket:', error);
+            res.status(500).json({ error: 'Loi server' });
         }
     }
 

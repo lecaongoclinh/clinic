@@ -193,6 +193,14 @@ const PrescriptionModel = {
         try {
             await connection.beginTransaction();
 
+            const [ticketRows] = await connection.query('SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ? LIMIT 1', [maPK]);
+            if (!ticketRows.length) {
+                throw new Error('Không tìm thấy phiếu khám.');
+            }
+            if (!['DangKham', 'IN_PROGRESS'].includes(ticketRows[0].TrangThai)) {
+                throw new Error('Chỉ có thể kê đơn thuốc khi phiếu khám đang ở trạng thái Đang khám.');
+            }
+
             // Tìm MaBA từ MaPK
             const [baRows] = await connection.query('SELECT MaBA, MaBacSi FROM BenhAn WHERE MaPK = ? ORDER BY MaBA DESC LIMIT 1', [maPK]);
             if (!baRows.length) {

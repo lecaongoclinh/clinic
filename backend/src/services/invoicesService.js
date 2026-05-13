@@ -19,6 +19,10 @@ function normalizeStatus(value) {
     return value;
 }
 
+function isExamTicketInProgress(status) {
+    return ["DangKham", "IN_PROGRESS"].includes(status);
+}
+
 function normalizePaymentMethod(value) {
     if (value === undefined || value === null || value === "") {
         return {
@@ -747,6 +751,17 @@ const InvoicesService = {
         const connection = externalConnection || await db.getConnection();
         try {
             if (!externalConnection) await connection.beginTransaction();
+            const [ticketRows] = await connection.query(
+                "SELECT MaPK, TrangThai FROM PhieuKham WHERE MaPK = ? LIMIT 1",
+                [payload.MaPK]
+            );
+            if (!ticketRows.length) {
+                throw new Error("Không tìm thấy phiếu khám");
+            }
+            if (!isExamTicketInProgress(ticketRows[0].TrangThai)) {
+                throw new Error("Chỉ có thể thêm chỉ định khi phiếu khám đang ở trạng thái Đang khám");
+            }
+
             const invoice = await getOrCreateInvoiceForVisit({
                 MaPK: payload.MaPK,
                 MaBA: payload.MaBA,

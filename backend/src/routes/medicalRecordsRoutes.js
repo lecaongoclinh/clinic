@@ -41,6 +41,9 @@ router.get('/history/:maBN', MedicalRecordsController.getMedicalHistory);
 // Lấy lịch sử bệnh án theo bệnh nhân
 router.get('/patient/:patientId', MedicalRecordsController.getMedicalHistoryByPatient);
 
+router.get('/ticket/:maPK/workspace', requireAuth, MedicalRecordsController.getExamWorkspace);
+router.put('/ticket/:maPK', requireAuth, MedicalRecordsController.upsertMedicalRecordForTicket);
+
 // Lấy chi tiết bệnh án
 router.get('/:maBA', MedicalRecordsController.getMedicalRecordDetail);
 

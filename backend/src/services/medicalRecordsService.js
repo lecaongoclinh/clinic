@@ -94,6 +94,29 @@ class MedicalRecordsService {
         }
     }
 
+    static async getExamWorkspace(maPK) {
+        try {
+            if (!maPK) {
+                throw new Error('Ma phieu kham khong hop le');
+            }
+
+            const detail = await MedicalRecordsModel.getExamWorkspace(maPK);
+            if (!detail) {
+                throw new Error('Khong tim thay phieu kham');
+            }
+
+            return {
+                success: true,
+                data: detail
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
     static async updateMedicalRecord(maBA, data) {
         try {
             // Validation
@@ -127,6 +150,37 @@ class MedicalRecordsService {
             return {
                 success: true,
                 message: 'Cập nhật bệnh án thành công'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    static async upsertMedicalRecordForTicket(maPK, maBacSi, data) {
+        try {
+            if (!maPK || !maBacSi) {
+                throw new Error('Thong tin khong hop le');
+            }
+            if (!data.trieuChung || !String(data.trieuChung).trim()) {
+                throw new Error('Vui long nhap trieu chung');
+            }
+            if (!data.chuanDoan || !String(data.chuanDoan).trim()) {
+                throw new Error('Vui long nhap chan doan');
+            }
+
+            const result = await MedicalRecordsModel.upsertMedicalRecordForTicket(maPK, maBacSi, {
+                trieuChung: String(data.trieuChung).trim(),
+                chuanDoan: String(data.chuanDoan).trim(),
+                ghiChu: data.ghiChu ? String(data.ghiChu).trim() : null
+            });
+
+            return {
+                success: true,
+                data: result,
+                message: 'Luu benh an thanh cong'
             };
         } catch (error) {
             return {

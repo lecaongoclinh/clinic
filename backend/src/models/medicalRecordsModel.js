@@ -198,9 +198,111 @@ class MedicalRecordsModel {
     }
 
     static async getMedicalRecordByTicket(maPK, connection = db) {
-        const query = `SELECT MaBA, MaPK FROM BenhAn WHERE MaPK = ? LIMIT 1`;
+        const query = `SELECT MaBA, MaPK, MaBacSi, TrieuChung, ChuanDoan, GhiChu, NgayLap FROM BenhAn WHERE MaPK = ? ORDER BY MaBA DESC LIMIT 1`;
         const [rows] = await connection.execute(query, [maPK]);
         return rows[0] || null;
+    }
+
+    static async getExamWorkspace(maPK, connection = db) {
+        const [ticketRows] = await connection.execute(`
+            SELECT
+                pk.MaPK,
+                CONCAT('PK', LPAD(pk.MaPK, 6, '0')) AS MaPhieu,
+                pk.STT,
+                pk.MaBN,
+                pk.MaLK,
+                pk.MaBacSi,
+                pk.MaChuyenKhoa,
+                pk.MaPhong,
+                pk.LoaiKham,
+                pk.NgayKham,
+                pk.TrangThai,
+                bn.HoTen AS TenBenhNhan,
+                bn.MaBN AS SoCCCD,
+                bn.NgaySinh,
+                bn.GioiTinh,
+                bn.DiaChi,
+                bn.SoDienThoai,
+                bs.HoTen AS TenBacSi,
+                ck.TenChuyenKhoa,
+                phong.TenPhong,
+                lk.NgayHen,
+                lk.GioHen,
+                lk.LyDoKham
+            FROM PhieuKham pk
+            LEFT JOIN BenhNhan bn ON bn.MaBN = pk.MaBN
+            LEFT JOIN LichKham lk ON lk.MaLK = pk.MaLK
+            LEFT JOIN NhanVien bs ON bs.MaNV = pk.MaBacSi
+            LEFT JOIN ChuyenKhoa ck ON ck.MaChuyenKhoa = pk.MaChuyenKhoa
+            LEFT JOIN PhongKham phong ON phong.MaPhong = pk.MaPhong
+            WHERE pk.MaPK = ?
+            LIMIT 1
+        `, [maPK]);
+
+        const ticket = ticketRows[0] || null;
+        if (!ticket) {
+            return null;
+        }
+
+        const medicalRecord = await MedicalRecordsModel.getMedicalRecordByTicket(maPK, connection);
+        const invoiceParams = medicalRecord?.MaBA ? [maPK, medicalRecord.MaBA] : [maPK, null];
+        const [invoiceRows] = await connection.execute(`
+            SELECT *
+            FROM HoaDon
+            WHERE MaPK = ? OR (? IS NOT NULL AND MaBA = ?)
+            ORDER BY MaHD DESC
+            LIMIT 1
+        `, [invoiceParams[0], invoiceParams[1], invoiceParams[1]]);
+        const invoice = invoiceRows[0] || null;
+        const invoiceDetails = invoice?.MaHD ? await InvoicesModel.getDetails(invoice.MaHD, connection) : [];
+        const orderedServices = invoiceDetails.filter((item) =>
+            item.LoaiMuc === 'DichVu' && ['XetNghiem', 'SieuAm'].includes(item.LoaiDichVu)
+        );
+
+        let prescription = null;
+        let prescriptionItems = [];
+        if (medicalRecord?.MaBA) {
+            const [prescriptionRows] = await connection.execute(`
+                SELECT *
+                FROM DonThuoc
+                WHERE MaBA = ?
+                ORDER BY MaDT DESC
+                LIMIT 1
+            `, [medicalRecord.MaBA]);
+            prescription = prescriptionRows[0] || null;
+
+            if (prescription?.MaDT) {
+                const [items] = await connection.execute(`
+                    SELECT
+                        ct.MaCTDT,
+                        ct.MaDT,
+                        ct.MaThuoc,
+                        t.TenThuoc,
+                        t.HoatChat,
+                        t.DonViCoBan,
+                        t.GiaBan,
+                        ct.SoLuong AS SoLuongKe,
+                        ct.SoLuong,
+                        ct.LieuDung,
+                        ct.LieuDung AS CachDung
+                    FROM ChiTietDonThuoc ct
+                    LEFT JOIN Thuoc t ON t.MaThuoc = ct.MaThuoc
+                    WHERE ct.MaDT = ?
+                    ORDER BY ct.MaCTDT ASC
+                `, [prescription.MaDT]);
+                prescriptionItems = items;
+            }
+        }
+
+        return {
+            ticket,
+            medicalRecord,
+            invoice,
+            invoiceDetails,
+            orderedServices,
+            prescription,
+            prescriptionItems
+        };
     }
 
     // Lấy danh sách bệnh nhân đã khám theo khoa (có phân trang, lọc theo ngày)
@@ -430,6 +532,64 @@ class MedicalRecordsModel {
         }
     }
 
+    static async upsertMedicalRecordForTicket(maPK, maBacSi, data) {
+        const connection = await db.getConnection();
+
+        try {
+            await connection.beginTransaction();
+
+            const ticket = await MedicalRecordsModel.getTicketForMedicalRecord(maPK, connection, true);
+            if (!ticket) {
+                throw new Error('Khong tim thay phieu kham');
+            }
+            if (!['DangKham', 'IN_PROGRESS'].includes(ticket.TrangThai)) {
+                throw new Error('Chi co the tao hoac cap nhat benh an khi phieu kham dang kham');
+            }
+
+            const doctor = await MedicalRecordsModel.getDoctorById(maBacSi, connection);
+            if (!doctor) {
+                throw new Error('Bac si khong co quyen lap benh an');
+            }
+            const assignedDoctorId = ticket.MaBacSi || ticket.MaBacSiLichHen;
+            if (assignedDoctorId && Number(assignedDoctorId) !== Number(maBacSi)) {
+                throw new Error('Bac si khong co quyen lap benh an');
+            }
+
+            const { trieuChung, chuanDoan, ghiChu } = data;
+            const existingRecord = await MedicalRecordsModel.getMedicalRecordByTicket(maPK, connection);
+            let maBA = existingRecord?.MaBA || null;
+
+            if (maBA) {
+                await connection.execute(`
+                    UPDATE BenhAn
+                    SET TrieuChung = ?, ChuanDoan = ?, GhiChu = ?
+                    WHERE MaBA = ?
+                `, [trieuChung, chuanDoan, ghiChu || null, maBA]);
+            } else {
+                const [insertResult] = await connection.execute(`
+                    INSERT INTO BenhAn (MaPK, MaBacSi, TrieuChung, ChuanDoan, GhiChu)
+                    VALUES (?, ?, ?, ?, ?)
+                `, [maPK, maBacSi, trieuChung, chuanDoan, ghiChu || null]);
+                maBA = insertResult.insertId;
+            }
+
+            await InvoicesService.linkMedicalRecordToVisitInvoice({
+                MaPK: maPK,
+                MaBA: maBA,
+                MaNhanVien: maBacSi,
+                connection
+            });
+
+            await connection.commit();
+            return await MedicalRecordsModel.getExamWorkspace(maPK);
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    }
+
     static async createMedicalRecordWithTicketUpdate(maPK, maBacSi, data) {
         const connection = await db.getConnection();
 
@@ -441,8 +601,8 @@ class MedicalRecordsModel {
                 throw new Error('Không tìm thấy phiếu khám');
             }
 
-            if (!['DangKham', 'ChoKham'].includes(ticket.TrangThai)) {
-                throw new Error('Phiếu khám không ở trạng thái cho phép lập bệnh án');
+            if (!['DangKham', 'IN_PROGRESS'].includes(ticket.TrangThai)) {
+                throw new Error('Phiếu khám không ở trạng thái đang khám');
             }
 
             const doctor = await MedicalRecordsModel.getDoctorById(maBacSi, connection);
@@ -472,11 +632,6 @@ class MedicalRecordsModel {
                 ghiChu || null
             ]);
 
-            await connection.execute(
-                `UPDATE PhieuKham SET TrangThai = 'DaKham' WHERE MaPK = ?`,
-                [maPK]
-            );
-
             await InvoicesService.linkMedicalRecordToVisitInvoice({
                 MaPK: maPK,
                 MaBA: insertResult.insertId,
@@ -494,6 +649,11 @@ class MedicalRecordsModel {
                     connection
                 });
             }
+
+            await connection.execute(
+                `UPDATE PhieuKham SET TrangThai = 'DaKham' WHERE MaPK = ?`,
+                [maPK]
+            );
 
             await connection.commit();
 
